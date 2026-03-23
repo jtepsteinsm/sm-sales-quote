@@ -1377,6 +1377,19 @@ function initMaps(){
       fetchTax(locLat,locLng);
     }
   });
+
+  // Manual plant address fields — autocomplete + geocode on select
+  ["pa1","pa2","hpa","fpa"].forEach(function(fid){
+    const el=document.getElementById(fid);
+    if(!el) return;
+    const ac=new google.maps.places.Autocomplete(el,{
+      fields:["place_id","formatted_address"]
+    });
+    ac.addListener("place_changed",function(){
+      const p=ac.getPlace();
+      if(p.place_id){ plantPid=p.place_id; tryMiles(); }
+    });
+  });
 }
 
 // ── PLANT SELECT ──────────────────────────────────
@@ -1402,24 +1415,37 @@ function tryMiles(){
   const milesMap={std:"mi1",split:"mi1",haul:"hmi",freight:"fmi",demo:"dmi"};
   const sid=statusMap[qt]||"m1ms";
   const mid=milesMap[qt]||"mi1";
-  const st=document.getElementById(sid);
-  if(st){ st.textContent="⟳ Calculating..."; st.className="ms ld"; }
-  const svc=new google.maps.DistanceMatrixService();
-  svc.getDistanceMatrix({
-    origins:[{placeId:plantPid}],
-    destinations:[{placeId:locPid}],
+  const stEl=document.getElementById(sid);
+  if(stEl){ stEl.textContent="⟳ Calculating route..."; stEl.className="ms ld"; }
+
+  // Use DirectionsService — supports avoidTolls + avoidFerries
+  const svc=new google.maps.DirectionsService();
+  svc.route({
+    origin:{placeId:plantPid},
+    destination:{placeId:locPid},
     travelMode:google.maps.TravelMode.DRIVING,
-    unitSystem:google.maps.UnitSystem.IMPERIAL
-  },function(resp,s){
-    if(s==="OK"){
-      const el=resp.rows[0].elements[0];
-      if(el.status==="OK"){
-        const mi=parseFloat(el.distance.text.replace(/[^0-9.]/g,""));
-        document.getElementById(mid).value=mi.toFixed(1);
-        if(st){ st.textContent="✓ "+el.distance.text+" driving"; st.className="ms ok"; }
-        calc();
-      } else if(st){ st.textContent="Could not calculate"; st.className="ms er"; }
-    } else if(st){ st.textContent="Maps error — enter manually"; st.className="ms er"; }
+    avoidTolls:true,
+    avoidFerries:true,
+    unitSystem:google.maps.UnitSystem.IMPERIAL,
+    provideRouteAlternatives:false
+  },function(result,status){
+    if(status===google.maps.DirectionsStatus.OK){
+      const leg=result.routes[0].legs[0];
+      const meters=leg.distance.value;
+      const miles=(meters/1609.344).toFixed(1);
+      const miEl=document.getElementById(mid);
+      if(miEl){
+        miEl.value=miles;
+        // Fire change event so calc() picks it up
+        miEl.dispatchEvent(new Event("input",{bubbles:true}));
+      }
+      if(stEl){ stEl.textContent="✓ "+leg.distance.text+" — no tolls, highways preferred"; stEl.className="ms ok"; }
+      calc();
+    } else if(status==="ZERO_RESULTS"){
+      if(stEl){ stEl.textContent="No route found — enter miles manually"; stEl.className="ms er"; }
+    } else {
+      if(stEl){ stEl.textContent="Route error ("+status+") — enter miles manually"; stEl.className="ms er"; }
+    }
   });
 }
 
