@@ -393,11 +393,11 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="fr2">
           <div class="field">
             <label>Miles <span id="m1ms" class="ms"></span></label>
-            <input type="number" id="mi1" placeholder="Auto" oninput="calc()" min="0">
+            <input type="number" id="mi1" placeholder="Auto" oninput="calc()" onchange="calc()" min="0">
           </div>
-          <div class="field"><label>Haul Rate ($/ton)</label><input type="number" id="hr1" value="3.38" oninput="calc()" min="0" step="0.01"></div>
+          <div class="field"><label>Haul Rate ($/ton)</label><input type="number" id="hr1" value="3.38" oninput="calc()" onchange="calc()" min="0" step="0.01"></div>
         </div>
-        <div class="field"><label>Mark Up ($/ton)</label><input type="number" id="mu1" value="0" oninput="calc()" min="0" step="0.01"></div>
+        <div class="field"><label>Mark Up ($/ton)</label><input type="number" id="mu1" value="0" oninput="calc()" onchange="calc()" min="0" step="0.01"></div>
         <div class="fr2">
           <div class="field">
             <label>Tax Rate (%) <span class="txbadge" id="txbadge"></span></label>
@@ -1320,6 +1320,13 @@ window.onload=function(){
   document.getElementById("qdate").value=new Date().toISOString().split("T")[0];
   qnum="Q"+Date.now().toString().slice(-6);
   document.getElementById("qid").textContent="QUOTE #"+qnum;
+  // Global safety net — any input/change anywhere recalculates
+  document.addEventListener("input", function(e){
+    if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT") calc();
+  });
+  document.addEventListener("change", function(e){
+    if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT") calc();
+  });
   calc();
 };
 
@@ -1501,12 +1508,13 @@ function calc(){
 
   if(qt==="std"||qt==="split"){
     const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1"),mi1=v("mi1"),mu1=v("mu1"),ef1=v("ef1");
-    const mat1=q1*p1, tax1=mat1*txr, efTax1=ef1*txr, haul1=(hr1+mu1)*mi1;
+    const effQ1=minTons(q1);
+    const mat1=q1*p1, tax1=mat1*txr, efTax1=ef1*txr, haul1=(hr1+mu1)*mi1*effQ1;
     const sub1=mat1+tax1+haul1+ef1+efTax1;
     sumH+=`<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,191,255,0.5);margin-bottom:5px;">MATERIAL 1</div>`;
     sumH+=tr("Material",fmt(mat1));
     if(tax1>0) sumH+=tr("Sales Tax ("+v("taxr")+"%)",fmt(tax1));
-    sumH+=tr("Haul",fmt(haul1));
+    sumH+=tr("Haul ("+effQ1+"t × "+mi1+"mi × $"+hr1+")",fmt(haul1));
     sumH+=tr("Env Fee",fmt(ef1));
     if(efTax1>0) sumH+=tr("Env Fee Tax",fmt(efTax1));
     grand+=sub1;
@@ -1603,11 +1611,12 @@ function genQuote(){
 
   if(qt==="std"||qt==="split"){
     const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1"),mi1=v("mi1"),ef1=v("ef1");
-    const mat1=q1*p1,tax1=mat1*txr,efTax1=ef1*txr,haul1=hr1*mi1;
+    const effQ1=minTons(q1);
+    const mat1=q1*p1,tax1=mat1*txr,efTax1=ef1*txr,haul1=(hr1)*mi1*effQ1;
     det+=`<div class="pst">Material 1 — ${s("mat1")||"Rock/Aggregate"}</div>`;
     det+=pl(q1+" tons @ "+fmt(p1)+"/ton",fmt(mat1));
     if(tax1>0) det+=pl("Sales Tax ("+v("taxr")+"%)",""+fmt(tax1));
-    det+=pl("Haul ("+mi1+" mi × $"+hr1+"/ton)",fmt(haul1));
+    det+=pl("Haul ("+effQ1+"t × "+mi1+"mi × $"+hr1+"/ton)",fmt(haul1));
     det+=pl("Environmental Fee",fmt(ef1));
     if(efTax1>0) det+=pl("Env Fee Tax",fmt(efTax1));
     if(qt==="split"){
