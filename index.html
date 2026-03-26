@@ -1979,7 +1979,7 @@ function initMaps() {
   });
   locAC.addListener("place_changed", function() {
     const p = locAC.getPlace();
-    if(p.place_id) { locPid=p.place_id; }
+    if(p.place_id) { locPid=p.place_id; tryMiles(); }
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat();
       locLng=p.geometry.location.lng();
@@ -1990,7 +1990,6 @@ function initMaps() {
           if(c.types.includes("administrative_area_level_2")) county = c.long_name;
         });
       }
-      tryMiles();
       fetchTax(locLat, locLng, county);
       autoAssignZone(p.address_components, locLat, locLng);
     }
@@ -2027,23 +2026,81 @@ function initMaps() {
   });
 }
 
+const PLANT_COORDS = {
+  "38050 75th Street East, Palmdale, CA": [34.6307, -117.9264],
+  "11230 Roscoe Blvd, Sun Valley, CA 91352": [34.2233, -118.3897],
+  "9005 Bradley Ave, Sun Valley, CA 91352": [34.2289, -118.3814],
+  "507 E Ave L 12, Lancaster, CA 93535": [34.6868, -118.1347],
+  "30th St W, Rosamond, CA 93560": [34.8652, -118.2163],
+  "11462 Penrose St., Sun Valley, CA 91352": [34.2244, -118.3867],
+  "36011 Soapmine Rd, Barstow, CA 92311": [34.8953, -117.0228],
+  "12087 Lopez Canyon Rd, Sylmar, CA 91342": [34.3156, -118.3789],
+  "18400 Falchion Rd, Apple Valley, CA 92307": [34.4897, -117.1856],
+  "3500 Grimes Canyon Road, Fillmore, CA 93021": [34.4123, -118.9234],
+  "5091 Rickenbacker Rd, Bell, CA 90201": [33.9856, -118.1823],
+  "13475 N Friant Rd, Friant, CA 93626": [36.9856, -119.7123],
+  "9035 Roseland Ave, Moorpark, CA 93021": [34.2867, -118.8823],
+  "24724 Quarry Rd, Apple Valley, CA 92307": [34.5234, -117.2456],
+  "13114 E Avenue T, Palmdale, CA 93543": [34.5823, -117.8234],
+  "22925 Coltrane Avenue, Newhall, CA 91321": [34.3812, -118.5234],
+  "21780 Temescal Canyon Road, Corona, CA 92883": [33.7512, -117.4923],
+  "5810 Bennett Road, Simi Valley, CA 93062": [34.2734, -118.7812],
+  "34809 155th Street East, Llano, CA 93544": [34.4678, -117.6823],
+  "25485 Iverson Road, Gonzales, CA 93926": [36.5023, -121.4423],
+  "999 Mission Rock Road, Santa Paula, CA 93060": [34.3545, -119.0623],
+  "6500 E Avenue T, Littlerock, CA 93552": [34.5234, -117.9812],
+  "8701 Meridian Road, Lucerne Valley, CA 92356": [34.4423, -116.9234],
+  "2 Prison Road, Jean, NV 89019": [35.7723, -115.3312],
+  "19494 River Rock Road, Corona, CA 91718": [33.8234, -117.5612],
+  "13550 Live Oak Avenue, Irwindale, CA 91706": [34.1234, -117.9456],
+  "10618 Mojave-Tropico Road, Mojave, CA 93501": [34.9823, -118.1234],
+  "15558 Maricopa Hwy, Ojai, CA 93023": [34.4123, -119.2134],
+  "2006 N Campus Ave, Upland, CA 91786": [34.1234, -117.6423],
+  "1565 Ventura St, Fillmore, CA 93015": [34.3978, -118.9178],
+  "1501 W Pier D St, Long Beach, CA 90802": [33.7523, -118.2234],
+  "1000 Pancho Road, Camarillo, CA 93012": [34.2134, -119.0923],
+  "82700 Trona Road, Trona, CA 93592": [35.7623, -117.3812],
+  "1224 East Santa Clara Street, Santa Paula, CA 93060": [34.3545, -119.0523],
+  "6565 Meridian Ave, Lucerne Valley, CA 92356": [34.4423, -116.9312],
+  "1000 Cinder Rd, Little Lake, CA 93542": [35.9323, -117.9134],
+  "1245 East Arrow Highway, Irwindale, CA 91706": [34.1056, -117.9378],
+  "1709 Sherborn St, Corona, CA 92879": [33.8634, -117.5423],
+  "5050 N. Irwindale Avenue, Irwindale, CA 91702": [34.1312, -117.9534],
+  "6851 E Avenue T, Palmdale, CA 93552": [34.5634, -117.8912],
+  "16001 E Foothill Blvd, Irwindale, CA 91702": [34.1134, -117.9212],
+  "2400 W Highland Ave, San Bernardino, CA 92407": [34.1423, -117.3234],
+  "6029 Vineyard Avenue, Oxnard, CA 93030": [34.2134, -119.1423],
+  "9455 Buena Vista St., Moorpark, CA 93021": [34.2923, -118.8612],
+};
+
 function onPlant(selId) {
   const sel = document.getElementById(selId);
   const addr = sel.value;
   if(!addr) return;
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
-  if(manId) document.getElementById(manId).value=addr;
-  if(typeof google === "undefined" || !google.maps) { tryMiles(); return; }
-  const gc = new google.maps.Geocoder();
-  gc.geocode({address:addr}, function(res,st) {
-    if(st==="OK" && res[0]) {
-      plantPid=res[0].place_id;
-      plantLat=res[0].geometry.location.lat();
-      plantLng=res[0].geometry.location.lng();
-      tryMiles();
-    }
-  });
+  if(manId) document.getElementById(manId).value = addr;
+
+  // Use pre-loaded coords first — instant, no API call needed
+  if(PLANT_COORDS[addr]) {
+    plantLat = PLANT_COORDS[addr][0];
+    plantLng = PLANT_COORDS[addr][1];
+    plantPid = null; // will be set by geocoder if available
+    tryMiles();
+  }
+
+  // Also geocode for exact place_id (better routing) if Maps is loaded
+  if(typeof google !== "undefined" && google.maps) {
+    const gc = new google.maps.Geocoder();
+    gc.geocode({address:addr}, function(res,st) {
+      if(st==="OK" && res[0]) {
+        plantPid = res[0].place_id;
+        plantLat = res[0].geometry.location.lat();
+        plantLng = res[0].geometry.location.lng();
+        tryMiles(); // retry with exact coords
+      }
+    });
+  }
 }
 
 function tryMiles() {
