@@ -481,6 +481,20 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <label>Haul Rate ($/ton) <span style="font-size:9px;color:#4a7cc7;">(auto or override)</span></label>
             <input type="number" id="hr1" placeholder="Auto from formula" min="0" step="0.01">
           </div>
+        <div class="field gap" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
+          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">⛽ FUEL / COL SURCHARGE</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="scOn1" onchange="calc()" style="width:auto;margin:0;"> Enable
+            </label>
+            <select id="scType1" onchange="calc()" style="width:90px;font-size:12px;padding:4px 6px;">
+              <option value="pct">% of haul</option>
+              <option value="flat">$/ton flat</option>
+            </select>
+            <input type="number" id="scAmt1" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calc()">
+            <span id="scBadge1" style="font-size:11px;color:#b8860b;font-weight:700;"></span>
+          </div>
+        </div>
         </div>
         <div class="fr2">
           <div class="field">
@@ -899,6 +913,21 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="fr2">
           <div class="field"><label>Miles <span class="ms" id="hms"></span></label><input type="number" id="hmi" placeholder="Auto" min="0"></div>
           <div class="field"><label>Haul Rate ($/ton)</label><input type="number" id="hhr" placeholder="Auto from formula" min="0" step="0.01"></div>
+        <div class="field gap" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
+          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">⛽ FUEL / COL SURCHARGE</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="scOnh" onchange="calc()" style="width:auto;margin:0;"> Enable
+            </label>
+            <select id="scTypeh" onchange="calc()" style="width:90px;font-size:12px;padding:4px 6px;">
+              <option value="pct">% of haul</option>
+              <option value="flat">$/ton flat</option>
+            </select>
+            <input type="number" id="scAmth" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calc()">
+            <span id="scBadgeh" style="font-size:11px;color:#b8860b;font-weight:700;"></span>
+          </div>
+        </div>
+
         </div>
       </div>
     </div>
@@ -1096,6 +1125,21 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="fr2">
           <div class="field"><label>Miles <span class="ms" id="fms"></span></label><input type="number" id="fmi" placeholder="Auto" min="0"></div>
           <div class="field"><label>Freight Rate ($/ton)</label><input type="number" id="ffr" placeholder="Auto from formula" min="0" step="0.01"></div>
+        <div class="field gap" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
+          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">⛽ FUEL / COL SURCHARGE</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="scOnf" onchange="calc()" style="width:auto;margin:0;"> Enable
+            </label>
+            <select id="scTypef" onchange="calc()" style="width:90px;font-size:12px;padding:4px 6px;">
+              <option value="pct">% of haul</option>
+              <option value="flat">$/ton flat</option>
+            </select>
+            <input type="number" id="scAmtf" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calc()">
+            <span id="scBadgef" style="font-size:11px;color:#b8860b;font-weight:700;"></span>
+          </div>
+        </div>
+
         </div>
         <div class="field"><label>Fuel Surcharge ($/ton)</label><input type="number" id="ffs" value="0" min="0" step="0.01"></div>
       </div>
@@ -1251,6 +1295,21 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="fr2">
           <div class="field"><label>Miles <span class="ms" id="dms"></span></label><input type="number" id="dmi" placeholder="Auto" min="0"></div>
           <div class="field"><label>Haul Rate ($/ton)</label><input type="number" id="dhr" placeholder="Auto from formula" min="0" step="0.01"></div>
+        <div class="field gap" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
+          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">⛽ FUEL / COL SURCHARGE</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="scOnd" onchange="calc()" style="width:auto;margin:0;"> Enable
+            </label>
+            <select id="scTyped" onchange="calc()" style="width:90px;font-size:12px;padding:4px 6px;">
+              <option value="pct">% of haul</option>
+              <option value="flat">$/ton flat</option>
+            </select>
+            <input type="number" id="scAmtd" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calc()">
+            <span id="scBadged" style="font-size:11px;color:#b8860b;font-weight:700;"></span>
+          </div>
+        </div>
+
         </div>
         <div class="fr2">
           <div class="field"><label>Dump Fee ($/ton)</label><input type="number" id="ddf" placeholder="0.00" min="0" step="0.01"></div>
@@ -1801,6 +1860,36 @@ function applyZonePremium(baseFreight, tons) {
 }
 
 // ── MAIN CALC ─────────────────────────────────────────────────────────────────
+// ── SURCHARGE HELPER ──────────────────────────────────────────────────────────
+function applySurcharge(baseRate, suffix) {
+  const onEl = document.getElementById("scOn" + suffix);
+  if(!onEl || !onEl.checked) return baseRate;
+  const type = (document.getElementById("scType" + suffix)||{}).value || "pct";
+  const amt  = parseFloat((document.getElementById("scAmt"  + suffix)||{}).value) || 0;
+  if(amt <= 0) return baseRate;
+  let effective;
+  if(type === "pct") {
+    effective = baseRate * (1 + amt / 100);
+  } else {
+    effective = baseRate + amt;
+  }
+  effective = Math.round(effective * 100) / 100;
+  // Update badge
+  const badge = document.getElementById("scBadge" + suffix);
+  if(badge) {
+    const added = effective - baseRate;
+    badge.textContent = type === "pct"
+      ? `+${amt}% → +$${added.toFixed(2)}/ton`
+      : `+$${amt.toFixed(2)}/ton`;
+  }
+  return effective;
+}
+
+function clearSurchargeBadge(suffix) {
+  const badge = document.getElementById("scBadge" + suffix);
+  if(badge) badge.textContent = "";
+}
+
 function calc() {
   let grand=0, sumH="", perTon=0, showMin=false, minVal=0, zonePrem=0;
   const txr = v("taxr") / 100;
@@ -1897,7 +1986,7 @@ function calc() {
     const dtxr = v("dtaxr")/100;
     const tons=v("dtons"), mi=currentMiles||v("dmi"), df=v("ddf"), ef=v("def_"), mu=v("dmu");
     const autoHR = getAutoHaulRate(mi);
-    const hr = v("dhr") || autoHR;
+    const hr = applySurcharge(v("dhr") || autoHR, "d");
     if(!v("dhr") && autoHR>0) {
       const el=document.getElementById("dhr");
       if(el && !el.value) el.placeholder=fmt(autoHR)+" (auto)";
@@ -2026,81 +2115,23 @@ function initMaps() {
   });
 }
 
-const PLANT_COORDS = {
-  "38050 75th Street East, Palmdale, CA": [34.6307, -117.9264],
-  "11230 Roscoe Blvd, Sun Valley, CA 91352": [34.2233, -118.3897],
-  "9005 Bradley Ave, Sun Valley, CA 91352": [34.2289, -118.3814],
-  "507 E Ave L 12, Lancaster, CA 93535": [34.6868, -118.1347],
-  "30th St W, Rosamond, CA 93560": [34.8652, -118.2163],
-  "11462 Penrose St., Sun Valley, CA 91352": [34.2244, -118.3867],
-  "36011 Soapmine Rd, Barstow, CA 92311": [34.8953, -117.0228],
-  "12087 Lopez Canyon Rd, Sylmar, CA 91342": [34.3156, -118.3789],
-  "18400 Falchion Rd, Apple Valley, CA 92307": [34.4897, -117.1856],
-  "3500 Grimes Canyon Road, Fillmore, CA 93021": [34.4123, -118.9234],
-  "5091 Rickenbacker Rd, Bell, CA 90201": [33.9856, -118.1823],
-  "13475 N Friant Rd, Friant, CA 93626": [36.9856, -119.7123],
-  "9035 Roseland Ave, Moorpark, CA 93021": [34.2867, -118.8823],
-  "24724 Quarry Rd, Apple Valley, CA 92307": [34.5234, -117.2456],
-  "13114 E Avenue T, Palmdale, CA 93543": [34.5823, -117.8234],
-  "22925 Coltrane Avenue, Newhall, CA 91321": [34.3812, -118.5234],
-  "21780 Temescal Canyon Road, Corona, CA 92883": [33.7512, -117.4923],
-  "5810 Bennett Road, Simi Valley, CA 93062": [34.2734, -118.7812],
-  "34809 155th Street East, Llano, CA 93544": [34.4678, -117.6823],
-  "25485 Iverson Road, Gonzales, CA 93926": [36.5023, -121.4423],
-  "999 Mission Rock Road, Santa Paula, CA 93060": [34.3545, -119.0623],
-  "6500 E Avenue T, Littlerock, CA 93552": [34.5234, -117.9812],
-  "8701 Meridian Road, Lucerne Valley, CA 92356": [34.4423, -116.9234],
-  "2 Prison Road, Jean, NV 89019": [35.7723, -115.3312],
-  "19494 River Rock Road, Corona, CA 91718": [33.8234, -117.5612],
-  "13550 Live Oak Avenue, Irwindale, CA 91706": [34.1234, -117.9456],
-  "10618 Mojave-Tropico Road, Mojave, CA 93501": [34.9823, -118.1234],
-  "15558 Maricopa Hwy, Ojai, CA 93023": [34.4123, -119.2134],
-  "2006 N Campus Ave, Upland, CA 91786": [34.1234, -117.6423],
-  "1565 Ventura St, Fillmore, CA 93015": [34.3978, -118.9178],
-  "1501 W Pier D St, Long Beach, CA 90802": [33.7523, -118.2234],
-  "1000 Pancho Road, Camarillo, CA 93012": [34.2134, -119.0923],
-  "82700 Trona Road, Trona, CA 93592": [35.7623, -117.3812],
-  "1224 East Santa Clara Street, Santa Paula, CA 93060": [34.3545, -119.0523],
-  "6565 Meridian Ave, Lucerne Valley, CA 92356": [34.4423, -116.9312],
-  "1000 Cinder Rd, Little Lake, CA 93542": [35.9323, -117.9134],
-  "1245 East Arrow Highway, Irwindale, CA 91706": [34.1056, -117.9378],
-  "1709 Sherborn St, Corona, CA 92879": [33.8634, -117.5423],
-  "5050 N. Irwindale Avenue, Irwindale, CA 91702": [34.1312, -117.9534],
-  "6851 E Avenue T, Palmdale, CA 93552": [34.5634, -117.8912],
-  "16001 E Foothill Blvd, Irwindale, CA 91702": [34.1134, -117.9212],
-  "2400 W Highland Ave, San Bernardino, CA 92407": [34.1423, -117.3234],
-  "6029 Vineyard Avenue, Oxnard, CA 93030": [34.2134, -119.1423],
-  "9455 Buena Vista St., Moorpark, CA 93021": [34.2923, -118.8612],
-};
-
 function onPlant(selId) {
   const sel = document.getElementById(selId);
   const addr = sel.value;
   if(!addr) return;
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
-  if(manId) document.getElementById(manId).value = addr;
-
-  // Use pre-loaded coords first — instant, no API call needed
-  if(PLANT_COORDS[addr]) {
-    plantLat = PLANT_COORDS[addr][0];
-    plantLng = PLANT_COORDS[addr][1];
-    plantPid = null; // will be set by geocoder if available
-    tryMiles();
-  }
-
-  // Also geocode for exact place_id (better routing) if Maps is loaded
-  if(typeof google !== "undefined" && google.maps) {
-    const gc = new google.maps.Geocoder();
-    gc.geocode({address:addr}, function(res,st) {
-      if(st==="OK" && res[0]) {
-        plantPid = res[0].place_id;
-        plantLat = res[0].geometry.location.lat();
-        plantLng = res[0].geometry.location.lng();
-        tryMiles(); // retry with exact coords
-      }
-    });
-  }
+  if(manId) document.getElementById(manId).value=addr;
+  if(typeof google === "undefined" || !google.maps) { tryMiles(); return; }
+  const gc = new google.maps.Geocoder();
+  gc.geocode({address:addr}, function(res,st) {
+    if(st==="OK" && res[0]) {
+      plantPid=res[0].place_id;
+      plantLat=res[0].geometry.location.lat();
+      plantLng=res[0].geometry.location.lng();
+      tryMiles();
+    }
+  });
 }
 
 function tryMiles() {
