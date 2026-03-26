@@ -1979,7 +1979,7 @@ function initMaps() {
   });
   locAC.addListener("place_changed", function() {
     const p = locAC.getPlace();
-    if(p.place_id) { locPid=p.place_id; tryMiles(); }
+    if(p.place_id) { locPid=p.place_id; }
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat();
       locLng=p.geometry.location.lng();
@@ -1990,6 +1990,7 @@ function initMaps() {
           if(c.types.includes("administrative_area_level_2")) county = c.long_name;
         });
       }
+      tryMiles();
       fetchTax(locLat, locLng, county);
       autoAssignZone(p.address_components, locLat, locLng);
     }
