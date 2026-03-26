@@ -163,7 +163,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     <button class="qtab on" onclick="setQt('std')">📦 Standard</button>
     <button class="qtab" onclick="setQt('split')">✂️ Split Load</button>
     <button class="qtab" onclick="setQt('haul')">🚛 Haul Rate</button>
-    <button class="qtab" onclick="setQt('freight')">📋 Freight</button>
     <button class="qtab" onclick="setQt('demo')">🏗️ Demo/Export</button>
   </div>
 
@@ -1312,7 +1311,12 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 
         </div>
         <div class="fr2">
-          <div class="field"><label>Dump Fee ($/ton)</label><input type="number" id="ddf" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="field">
+            <label>Dump Fee</label>
+            <div class="tog" style="margin-bottom:6px;"><button class="tbtn on" id="ddfTypeTon" onclick="setDumpFeeType('ton')">$/TON</button><button class="tbtn" id="ddfTypeLoad" onclick="setDumpFeeType('load')">$/PER LOAD</button></div>
+            <div id="ddfTonWrap"><input type="number" id="ddf" placeholder="0.00" min="0" step="0.01" oninput="calc()"></div>
+            <div id="ddfLoadWrap" style="display:none"><div style="display:flex;gap:6px;"><input type="number" id="ddfLoad" placeholder="$/load" min="0" step="0.01" style="flex:1;" oninput="calc()"><input type="number" id="ddfLoads" placeholder="# loads" min="1" step="1" style="flex:1;" oninput="calc()"></div><div style="font-size:10px;color:var(--sand);margin-top:3px;">$/load × # of loads</div></div>
+          </div>
           <div class="field"><label>Env Fee ($)</label><input type="number" id="def_" value="10" min="0" step="0.01"></div>
         </div>
         <div class="fr2">
@@ -1354,6 +1358,14 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           <option value="7">7 days</option><option value="14">14 days</option>
           <option value="30" selected>30 days</option><option value="60">60 days</option>
         </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">QUOTE STYLE</div>
+        <div class="tog"><button class="tbtn on" id="qsStd" onclick="setQStyle('standard')">Standard</button><button class="tbtn" id="qsBrk" onclick="setQStyle('breakdown')">Breakdown</button></div>
+      </div>
+      <div id="brkMatCountWrap" style="display:none;margin-bottom:12px;">
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">MATERIALS TO SHOW</div>
+        <select id="brkMatCount" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
       </div>
       <button class="btn btnp" onclick="genQuote()">▶ GENERATE QUOTE</button>
       <button class="btn btns" onclick="printQ()">⎙ PRINT / SAVE PDF</button>
@@ -1397,6 +1409,53 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     </div>
     <div id="pnotes" class="pnotes" style="display:none;"><strong>Notes:</strong> <span id="pnotestxt"></span></div>
     <div class="pfoot">Quote valid for <span id="pvdf">30</span> days. Prices subject to change. Thank you — SM Sales.</div>
+  </div>
+
+  <!-- BREAKDOWN PRINT AREA -->
+  <div class="parea" id="pareaBrk" style="display:none;">
+    <div class="ph">
+      <div class="plr">
+        <div><div class="pcn">SM SALES</div><div class="pcs">75th St Decorative Landscape Rock</div></div>
+      </div>
+      <div class="pmeta"><strong>Quote #<span id="bpqn">—</span></strong><div>Date: <span id="bpdt">—</span></div><div>Valid: <span id="bpvd">30 days</span></div></div>
+    </div>
+    <div class="pg2">
+      <div>
+        <div class="pst">Bill To</div>
+        <div id="bpcust" style="font-weight:700;font-size:13px;"></div>
+        <div id="bpcon"></div><div id="bpadr"></div><div id="bpcz"></div>
+        <div id="bpph" style="margin-top:3px;"></div><div id="bpem"></div>
+      </div>
+      <div>
+        <div class="pst">Project</div>
+        <div id="bpproj" style="font-weight:700;font-size:13px;"></div>
+        <div id="bploc"></div>
+        <div id="bptrk" style="font-size:10px;color:#4a7cc7;"></div>
+        <div id="bpsd" style="color:#4a7cc7;margin-top:3px;"></div>
+        <div id="bpdur" style="color:#4a7cc7;"></div>
+      </div>
+    </div>
+    <hr style="border:none;border-top:2px solid #1a3a6b;margin:10px 0 0 0;">
+    <table id="brkTable" style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px;">
+      <thead>
+        <tr style="background:#1a3a6b;color:#fff;">
+          <th style="padding:8px 10px;text-align:center;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;width:30px;">#</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;">Description</th>
+          <th style="padding:8px 10px;text-align:right;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;width:80px;">Qty</th>
+          <th style="padding:8px 10px;text-align:center;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;width:60px;">Unit</th>
+          <th style="padding:8px 10px;text-align:right;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;width:90px;">Unit Price</th>
+          <th style="padding:8px 10px;text-align:right;font-weight:700;letter-spacing:1px;font-size:10px;text-transform:uppercase;width:90px;">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="brkTableBody"></tbody>
+    </table>
+    <hr style="border:none;border-top:2px solid #1a3a6b;margin:0 0 10px 0;">
+    <div class="ptb">
+      <div id="bptotd"></div>
+      <div class="pgrand"><span id="bppaylbl">TOTAL (CASH/CHECK)</span><span id="bpgtotal">$0.00</span></div>
+    </div>
+    <div id="bpnotes" class="pnotes" style="display:none;"><strong>Notes:</strong> <span id="bpnotestxt"></span></div>
+    <div class="pfoot">Quote valid for <span id="bpvdf">30</span> days. Prices subject to change. Thank you — SM Sales.</div>
   </div>
 </div><!-- end pgQuote -->
 
@@ -1541,13 +1600,12 @@ function showPage(id) {
 // ── QUOTE TYPE ────────────────────────────────────────────────────────────────
 function setQt(t) {
   qt = t;
-  document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","freight","demo"][i]===t));
+  document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","demo"][i]===t));
   document.getElementById("matSec").classList.toggle("gone", !["std","split"].includes(t));
   document.getElementById("mat2Sec").classList.toggle("gone", t!=="split");
   document.getElementById("haulSec").classList.toggle("gone", t!=="haul");
-  document.getElementById("freightSec").classList.toggle("gone", t!=="freight");
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
-  document.getElementById("truckSec").classList.toggle("gone", t==="freight");
+  document.getElementById("truckSec").classList.toggle("gone", false);
   plantPid=null; locPid=null;
   calc();
 }
@@ -1993,14 +2051,14 @@ function calc() {
     }
     const eff = minTons(tons);
     const haul = (hr+mu)*eff;
-    const dump = df*eff;
+    const dump = (typeof getDumpFeeTotal === 'function') ? getDumpFeeTotal(eff) : df*eff;
     const efTax = ef*dtxr;
     zonePrem = applyZonePremium(haul, eff);
     const sub = haul+dump+ef+efTax+zonePrem;
     if(eff>tons && tons>0) { showMin=true; minVal=haul; }
     sumH += hdr("DEMO / EXPORT");
     sumH += tr2("Haul", fmt(haul));
-    sumH += tr2("Dump Fee", fmt(dump));
+    sumH += tr2((typeof getDumpFeeLabel === 'function') ? getDumpFeeLabel(eff) : "Dump Fee", fmt(dump));
     sumH += tr2("Env Fee", fmt(ef));
     if(efTax>0) sumH += tr2("Env Fee Tax ("+v("dtaxr")+"%)",""+fmt(efTax));
     if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
@@ -2459,6 +2517,7 @@ function loadSettings() {
 
 // ── GENERATE QUOTE ────────────────────────────────────────────────────────────
 function genQuote() {
+  if(typeof qStyle!=="undefined" && qStyle==='breakdown') { genBreakdownQuote(); return; }
   calc();
   const grand = parseFloat(document.getElementById("tgrand").textContent.replace("$",""))||0;
   const cc = grand*0.04;
@@ -2529,12 +2588,12 @@ function genQuote() {
   } else if(qt==="demo") {
     const dtxr=v("dtaxr")/100, tons=v("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
     const hr=v("dhr")||getAutoHaulRate(mi), eff=minTons(tons);
-    const haul=(hr+mu)*eff, dump=df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
+    const haul=(hr+mu)*eff, dump=(typeof getDumpFeeTotal==='function')?getDumpFeeTotal(eff):df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
     det+=`<div class="pst">Demo / Export — ${s("dmat")||"Material"}</div>`;
     det+=pl("Site",s("dsite"));
     det+=pl("Disposal",s("ddisp"));
     det+=pl("Haul ("+eff+"t @ "+fmt(hr+mu)+"/ton)",fmt(haul));
-    det+=pl("Dump Fee ("+fmt(df)+"/ton)",fmt(dump));
+    det+=pl((typeof getDumpFeeLabel==='function')?getDumpFeeLabel(eff):"Dump Fee ("+fmt(df)+"/ton)",fmt(dump));
     det+=pl("Environmental Fee",fmt(ef));
     if(efTax>0) det+=pl("Env Fee Tax ("+v("dtaxr")+"%)",""+fmt(efTax));
     if(zp>0) det+=pl("Zone Premium: "+activeZone.name,fmt(zp));
@@ -2549,6 +2608,158 @@ function genQuote() {
   document.getElementById("pnotestxt").textContent=n;
   document.getElementById("parea").classList.add("show");
   document.getElementById("parea").scrollIntoView({behavior:"smooth"});
+}
+
+// ── QUOTE STYLE ───────────────────────────────────────────────────────────────
+let qStyle = 'standard';
+let dumpFeeType = 'ton';
+
+function setQStyle(style) {
+  qStyle = style;
+  document.getElementById("qsStd").classList.toggle("on", style==="standard");
+  document.getElementById("qsBrk").classList.toggle("on", style==="breakdown");
+  document.getElementById("brkMatCountWrap").style.display = style==="breakdown" ? "block" : "none";
+}
+
+function setDumpFeeType(type) {
+  dumpFeeType = type;
+  document.getElementById("ddfTypeTon").classList.toggle("on", type==="ton");
+  document.getElementById("ddfTypeLoad").classList.toggle("on", type==="load");
+  document.getElementById("ddfTonWrap").style.display = type==="ton" ? "block" : "none";
+  document.getElementById("ddfLoadWrap").style.display = type==="load" ? "block" : "none";
+  calc();
+}
+
+function getDumpFeeTotal(eff) {
+  if(dumpFeeType === "load") {
+    const perLoad = parseFloat((document.getElementById("ddfLoad")||{}).value)||0;
+    const numLoads = parseFloat((document.getElementById("ddfLoads")||{}).value)||0;
+    return perLoad * numLoads;
+  }
+  return v("ddf") * eff;
+}
+
+function getDumpFeeLabel(eff) {
+  if(dumpFeeType === "load") {
+    const perLoad = parseFloat((document.getElementById("ddfLoad")||{}).value)||0;
+    const numLoads = parseFloat((document.getElementById("ddfLoads")||{}).value)||0;
+    return "Dump Fee (" + numLoads + " loads @ " + fmt(perLoad) + "/load)";
+  }
+  return "Dump Fee (" + fmt(v("ddf")) + "/ton)";
+}
+
+// ── BREAKDOWN QUOTE GENERATOR ─────────────────────────────────────────────────
+function genBreakdownQuote() {
+  calc();
+  const grand = parseFloat(document.getElementById("tgrand").textContent.replace("$",""))||0;
+  const cc = grand*0.04;
+  const disp = pay==="cc" ? grand+cc : grand;
+  const vd = s("vdays");
+  const numMat = parseInt((document.getElementById("brkMatCount")||{value:"3"}).value)||3;
+
+  document.getElementById("bpqn").textContent=qnum;
+  document.getElementById("bpdt").textContent=new Date(s("qdate")+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  document.getElementById("bpvd").textContent=vd+" days";
+  document.getElementById("bpvdf").textContent=vd;
+  document.getElementById("bpcust").textContent=s("customer");
+  document.getElementById("bpcon").textContent=s("contact");
+  document.getElementById("bpadr").textContent=s("address");
+  document.getElementById("bpcz").textContent=[s("city"),s("zip")].filter(Boolean).join(", ");
+  document.getElementById("bpph").textContent=s("phone")?"☏ "+s("phone"):"";
+  document.getElementById("bpem").textContent=s("email")?"✉ "+s("email"):"";
+  document.getElementById("bpproj").textContent=s("projname");
+  document.getElementById("bploc").textContent=s("location");
+  document.getElementById("bptrk").textContent=truck?"Truck: "+truckLabel():"";
+  document.getElementById("bpsd").textContent=s("sdate")?"Start: "+new Date(s("sdate")+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"";
+  document.getElementById("bpdur").textContent=s("duration")?"Duration: "+s("duration"):"";
+
+  const txr = v("taxr")/100;
+  const mi1 = currentMiles||v("mi1");
+  const autoHR = getAutoHaulRate(mi1);
+
+  let rows = "";
+  let rowNum = 1;
+
+  function brkTR(num, desc, qty, unit, unitPrice, amount, alt) {
+    const bg = alt ? "#f4f8fd" : "#ffffff";
+    return '<tr style="background:'+bg+';border-bottom:1px solid #dce8f5;">'
+      +'<td style="padding:7px 10px;text-align:center;color:#6a8ab0;font-size:11px;">'+(num||"")+'</td>'
+      +'<td style="padding:7px 10px;">'+desc+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;font-family:\'DM Mono\',monospace;">'+(qty||"")+'</td>'
+      +'<td style="padding:7px 10px;text-align:center;color:#6a8ab0;">'+(unit||"")+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;font-family:\'DM Mono\',monospace;">'+(unitPrice||"")+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a3a6b;">'+(amount||"")+'</td>'
+      +'</tr>';
+  }
+
+  function brkBlank(num, alt) {
+    const bg = alt ? "#f4f8fd" : "#ffffff";
+    return '<tr style="background:'+bg+';border-bottom:1px solid #dce8f5;">'
+      +'<td style="padding:12px 10px;text-align:center;color:#c0d0e0;font-size:11px;">'+(num||"")+'</td>'
+      +'<td style="padding:12px 10px;color:#c0d0e0;font-size:11px;font-style:italic;"></td>'
+      +'<td style="padding:12px 10px;"></td><td style="padding:12px 10px;"></td><td style="padding:12px 10px;"></td>'
+      +'<td style="padding:12px 10px;"></td>'
+      +'</tr>';
+  }
+
+  if(qt==="std"||qt==="split") {
+    const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
+    const effQ1=minTons(q1), mat1=q1*p1, tax1=mat1*txr, efTax1=ef1*txr, haul1=hr1*effQ1;
+    const zonePrem=applyZonePremium(haul1,effQ1);
+    const matName1=s("mat1")||"Rock/Aggregate";
+    rows+=brkTR(rowNum++,matName1,q1+" ton"+(q1!==1?"s":""),"ton",fmt(p1)+"/ton",fmt(mat1),(rowNum-2)%2===0);
+    if(tax1>0) rows+=brkTR("","&nbsp;&nbsp;Sales Tax ("+v("taxr")+"%)"," "," "," ",fmt(tax1),(rowNum-2)%2===0);
+    rows+=brkTR(rowNum++,"Haul &amp; Delivery",effQ1+" ton"+(effQ1!==1?"s":""),"ton",fmt(hr1)+"/ton",fmt(haul1),(rowNum-2)%2===0);
+    if(zonePrem>0) rows+=brkTR("","&nbsp;&nbsp;Zone: "+activeZone.name," "," "," ",fmt(zonePrem),(rowNum-2)%2===0);
+    rows+=brkTR(rowNum++,"Environmental Fee"," "," "," ",fmt(ef1),(rowNum-2)%2===0);
+    if(efTax1>0) rows+=brkTR("","&nbsp;&nbsp;Env Fee Tax"," "," "," ",fmt(efTax1),(rowNum-2)%2===0);
+    if(qt==="split") {
+      const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+      const mat2=q2*p2,tax2=mat2*txr,efTax2=ef2*txr;
+      const matName2=s("mat2")||"2nd Material";
+      rows+=brkTR(rowNum++,matName2,q2+" ton"+(q2!==1?"s":""),"ton",fmt(p2)+"/ton",fmt(mat2),(rowNum-2)%2===0);
+      if(tax2>0) rows+=brkTR("","&nbsp;&nbsp;Sales Tax ("+v("taxr")+"%)"," "," "," ",fmt(tax2),(rowNum-2)%2===0);
+      rows+=brkTR(rowNum++,"Split Load Fee"," "," "," ",fmt(slf),(rowNum-2)%2===0);
+      rows+=brkTR(rowNum++,"Environmental Fee (Load 2)"," "," "," ",fmt(ef2),(rowNum-2)%2===0);
+      if(efTax2>0) rows+=brkTR("","&nbsp;&nbsp;Env Fee Tax"," "," "," ",fmt(efTax2),(rowNum-2)%2===0);
+    }
+  } else if(qt==="haul") {
+    const tons=v("htons"),mi=currentMiles||v("hmi"),rate=v("hhr")||getAutoHaulRate(mi);
+    const eff=minTons(tons), haul=rate*eff, zp=applyZonePremium(haul,eff);
+    rows+=brkTR(rowNum++,"Haul &amp; Delivery \u2014 "+(s("hmat")||"Material"),eff+" ton"+(eff!==1?"s":""),"ton",fmt(rate)+"/ton",fmt(haul),(rowNum-2)%2===0);
+    if(zp>0) rows+=brkTR("","&nbsp;&nbsp;Zone: "+activeZone.name," "," "," ",fmt(zp),(rowNum-2)%2===0);
+  } else if(qt==="demo") {
+    const dtxr=v("dtaxr")/100,tons=v("dtons"),mi=currentMiles||v("dmi"),ef=v("def_"),mu=v("dmu");
+    const hr=v("dhr")||getAutoHaulRate(mi), eff=minTons(tons);
+    const haul=(hr+mu)*eff, dumpTotal=getDumpFeeTotal(eff), efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
+    rows+=brkTR(rowNum++,"Demo/Export Hauling \u2014 "+(s("dmat")||"Material"),eff+" ton"+(eff!==1?"s":""),"ton",fmt(hr+mu)+"/ton",fmt(haul),(rowNum-2)%2===0);
+    if(zp>0) rows+=brkTR("","&nbsp;&nbsp;Zone: "+activeZone.name," "," "," ",fmt(zp),(rowNum-2)%2===0);
+    if(dumpFeeType==="load") {
+      const perLoad=parseFloat((document.getElementById("ddfLoad")||{}).value)||0;
+      const numLoads=parseFloat((document.getElementById("ddfLoads")||{}).value)||0;
+      rows+=brkTR(rowNum++,"Dump Fee",numLoads+" loads","load",fmt(perLoad)+"/load",fmt(dumpTotal),(rowNum-2)%2===0);
+    } else {
+      rows+=brkTR(rowNum++,"Dump Fee",eff+" ton"+(eff!==1?"s":""),"ton",fmt(v("ddf"))+"/ton",fmt(dumpTotal),(rowNum-2)%2===0);
+    }
+    rows+=brkTR(rowNum++,"Environmental Fee"," "," "," ",fmt(ef),(rowNum-2)%2===0);
+    if(efTax>0) rows+=brkTR("","&nbsp;&nbsp;Env Fee Tax ("+v("dtaxr")+"%)","",""," ",fmt(efTax),(rowNum-2)%2===0);
+  }
+
+  while(rowNum-1 < numMat) {
+    rows += brkBlank(rowNum, (rowNum-1)%2===0);
+    rowNum++;
+  }
+
+  document.getElementById("brkTableBody").innerHTML = rows;
+  document.getElementById("bptotd").innerHTML = pl("Subtotal",fmt(grand))+(pay==="cc"?pl("CC Fee (4%)",fmt(cc)):"");
+  document.getElementById("bppaylbl").textContent = pay==="cc"?"TOTAL (CREDIT CARD)":"TOTAL (CASH/CHECK)";
+  document.getElementById("bpgtotal").textContent = fmt(disp);
+  const n=s("notes");
+  document.getElementById("bpnotes").style.display = n?"block":"none";
+  document.getElementById("bpnotestxt").textContent = n;
+  document.getElementById("pareaBrk").style.display = "block";
+  document.getElementById("parea").style.display = "none";
+  document.getElementById("pareaBrk").scrollIntoView({behavior:"smooth"});
 }
 
 function printQ() { genQuote(); setTimeout(()=>window.print(),300); }
@@ -2585,6 +2796,7 @@ function clearAll() {
   plantPid=null; locPid=null; locLat=null; locLng=null;
   currentMiles=0; truck=null; activeZone=null;
   document.getElementById("parea").classList.remove("show");
+  if(document.getElementById("pareaBrk")) document.getElementById("pareaBrk").style.display="none";
   document.getElementById("zoneBadge").classList.remove("show");
   document.getElementById("formulaBox").style.display="none";
   document.querySelectorAll(".tc").forEach(c=>c.classList.remove("on"));
