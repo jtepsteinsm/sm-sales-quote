@@ -214,35 +214,61 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- ZONE BADGE -->
   <div class="zone-badge gap" id="zoneBadge"></div>
 
-  <!-- TRUCK -->
+  <!-- TRUCK + RATE SETTINGS -->
   <div class="card gap" id="truckSec">
-    <div class="ct">Truck Type</div>
+    <div class="ct">Truck &amp; Delivery Details</div>
     <div class="trucks">
-      <div class="tc" onclick="selTruck('s10')" id="tr_s10"><div class="ti">🚛</div><div class="tn">Super 10</div><div class="tt">17t min · $135/hr</div></div>
-      <div class="tc" onclick="selTruck('tf')" id="tr_tf"><div class="ti">🚚</div><div class="tn">Transfer</div><div class="tt">25t min · $155/hr</div></div>
-      <div class="tc" onclick="selTruck('bd')" id="tr_bd"><div class="ti">🔽</div><div class="tn">Bottom Dump</div><div class="tt">25t min · $140/hr</div></div>
-      <div class="tc" onclick="selTruck('ed')" id="tr_ed"><div class="ti">⬆️</div><div class="tn">End Dump</div><div class="tt">22t min · $145/hr</div></div>
+      <div class="tc" onclick="selTruck('s10')" id="tr_s10"><div class="ti">🚛</div><div class="tn">Super 10</div><div class="tt">17t min</div></div>
+      <div class="tc" onclick="selTruck('tf')" id="tr_tf"><div class="ti">🚚</div><div class="tn">Transfer</div><div class="tt">25t min</div></div>
+      <div class="tc" onclick="selTruck('bd')" id="tr_bd"><div class="ti">🔽</div><div class="tn">Bottom Dump</div><div class="tt">25t min</div></div>
+      <div class="tc" onclick="selTruck('ed')" id="tr_ed"><div class="ti">⬆️</div><div class="tn">End Dump</div><div class="tt">22t min</div></div>
     </div>
-    <!-- HAUL-BACK TOGGLE -->
-    <div id="haulbackRow" style="margin-bottom:10px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">HAUL DIRECTION</div>
-      <div class="tog">
-        <button class="tbtn on" id="hbOne" onclick="setHaulback('one')">One-Way</button>
-        <button class="tbtn" id="hbRound" onclick="setHaulback('round')">Round Trip</button>
-        <button class="tbtn" id="hbBack" onclick="setHaulback('back')">Haul-Back Credit</button>
+
+    <div class="g2">
+      <div>
+        <!-- Q1: Truck access -->
+        <div class="field">
+          <label>Can a large delivery truck access the site?</label>
+          <select id="q_access" onchange="calc()">
+            <option value="easy">✅ Yes — easy access (wide streets, flat, open)</option>
+            <option value="commercial">🏭 Yes — commercial or industrial yard</option>
+            <option value="tight">⚠️ With difficulty — tight or narrow streets</option>
+            <option value="canyon">🏔️ With difficulty — canyon or steep road</option>
+            <option value="no_close">🚫 No — but staging area is nearby (&lt;1 mile)</option>
+            <option value="no_far">🚫 No — staging area is far (&gt;1 mile from site)</option>
+          </select>
+        </div>
+        <!-- Q2: Job type -->
+        <div class="field">
+          <label>Job type</label>
+          <select id="q_jobtype" onchange="calc()">
+            <option value="standard">Standard delivery</option>
+            <option value="repeat">Repeat or high-volume customer</option>
+            <option value="rush">Rush, single load, or small order</option>
+          </select>
+        </div>
+        <!-- HAUL DIRECTION -->
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;margin-bottom:6px;margin-top:4px;">HAUL DIRECTION</div>
+        <div class="tog" style="margin-bottom:0;">
+          <button class="tbtn on" id="hbOne" onclick="setHaulback('one')">One-Way</button>
+          <button class="tbtn" id="hbRound" onclick="setHaulback('round')">Round Trip</button>
+          <button class="tbtn" id="hbBack" onclick="setHaulback('back')">Haul-Back Credit</button>
+        </div>
       </div>
-    </div>
-    <!-- FORMULA BOX -->
-    <div class="formula-box" id="formulaBox" style="display:none;">
-      <div class="formula-title">⚡ Haul Rate Formula</div>
-      <div class="formula-row"><span>Truck Rate</span><span class="formula-val" id="fTruckRate">—</span></div>
-      <div class="formula-row"><span>Miles</span><span class="formula-val" id="fMiles">—</span></div>
-      <div class="formula-row"><span>Drive Time (round-trip @ 50mph)</span><span class="formula-val" id="fDriveTime">—</span></div>
-      <div class="formula-row"><span>Load/Unload Allowance</span><span class="formula-val" id="fLoadTime">0.5 hrs</span></div>
-      <div class="formula-row"><span>Total Cycle Time</span><span class="formula-val" id="fCycleTime">—</span></div>
-      <div class="formula-row"><span>Truck Capacity</span><span class="formula-val" id="fCapacity">—</span></div>
-      <div class="formula-row"><span>Haul-Back</span><span class="formula-val" id="fHaulback">One-Way</span></div>
-      <div class="formula-big" id="fResult">$0.00 / ton</div>
+
+      <!-- FORMULA RESULT -->
+      <div class="formula-box" id="formulaBox" style="display:none;margin:0;">
+        <div class="formula-title">⚡ Freight Rate — Step by Step</div>
+        <div class="formula-row"><span>Base calc</span><span class="formula-val" id="fTruckRate">—</span></div>
+        <div class="formula-row"><span>Before zone</span><span class="formula-val" id="fMiles">—</span></div>
+        <div class="formula-row"><span>Zone</span><span class="formula-val" id="fDriveTime">—</span></div>
+        <div class="formula-row"><span>After zone</span><span class="formula-val" id="fLoadTime">—</span></div>
+        <div class="formula-row"><span>Access adj.</span><span class="formula-val" id="fCycleTime">—</span></div>
+        <div class="formula-row"><span>Transfer fee</span><span class="formula-val" id="fCapacity">—</span></div>
+        <div class="formula-row"><span>Direction</span><span class="formula-val" id="fHaulback">—</span></div>
+        <div class="formula-big" id="fResult">$0.00 / ton</div>
+        <div id="zoneAutoNote" style="font-size:10px;color:rgba(0,191,255,.6);margin-top:6px;"></div>
+      </div>
     </div>
   </div>
 
@@ -1363,52 +1389,45 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <!-- ═══════════════════════════════════════════════════ -->
 <div class="page" id="pgSettings">
   <div style="margin-top:16px;" class="card">
-    <div class="ct">Truck Hourly Rates</div>
-    <p style="font-size:12px;color:#4a7cc7;margin-bottom:16px;">These rates drive the auto haul formula: <strong>Freight $/ton = (Rate × Cycle Time) ÷ Capacity</strong></p>
+    <div class="ct">Freight Rate Formula Reference</div>
+    <p style="font-size:12px;color:#4a7cc7;margin-bottom:16px;">
+      <strong>Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)</strong><br>
+      <span style="font-size:11px;color:#6090b0;">Minimum rate: $10.50/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
+    </p>
     <div class="g2">
       <div>
-        <div class="rate-card">
-          <div class="rate-title">🚛 Super 10</div>
-          <div class="fr2">
-            <div class="field"><label>Hourly Rate ($/hr)</label><input type="number" id="rs10" value="135" min="0" step="1"></div>
-            <div class="field"><label>Capacity (tons)</label><input type="number" id="cs10" value="17" min="1" step="1"></div>
-          </div>
-        </div>
-        <div class="rate-card">
-          <div class="rate-title">🚚 Transfer</div>
-          <div class="fr2">
-            <div class="field"><label>Hourly Rate ($/hr)</label><input type="number" id="rtf" value="155" min="0" step="1"></div>
-            <div class="field"><label>Capacity (tons)</label><input type="number" id="ctf" value="25" min="1" step="1"></div>
+        <div class="rate-card"><div class="rate-title">Zone Multipliers</div>
+          <div style="font-size:12px;line-height:2;color:#1e2a4a;">
+            <div><strong>Z0</strong> ×1.00 — Open/Rural</div>
+            <div><strong>Z1</strong> ×1.05 — Highway Corridor</div>
+            <div><strong>Z2</strong> ×1.15 — Suburban</div>
+            <div><strong>Z3</strong> ×1.30 — Urban Valley</div>
+            <div><strong>Z4</strong> ×1.40 — Urban LA Core</div>
+            <div><strong>Z5</strong> ×1.55 — Premium/Difficult</div>
           </div>
         </div>
       </div>
       <div>
-        <div class="rate-card">
-          <div class="rate-title">🔽 Bottom Dump</div>
-          <div class="fr2">
-            <div class="field"><label>Hourly Rate ($/hr)</label><input type="number" id="rbd" value="140" min="0" step="1"></div>
-            <div class="field"><label>Capacity (tons)</label><input type="number" id="cbd" value="25" min="1" step="1"></div>
+        <div class="rate-card"><div class="rate-title">Access Modifiers</div>
+          <div style="font-size:12px;line-height:2;color:#1e2a4a;">
+            <div>Canyon or steep road: <strong>+$0.10/ton</strong></div>
+            <div>Tight residential/narrow street: <strong>+$0.05/ton</strong></div>
+            <div>Commercial/industrial yard: <strong>−$0.05/ton</strong></div>
+            <div>Repeat/high-volume job: <strong>−$0.05/ton</strong></div>
+            <div>Single load, rush, small order: <strong>+$0.10/ton</strong></div>
+            <div>Transfer staging &gt;1mi from site: <strong>+$1.75/ton</strong></div>
           </div>
         </div>
-        <div class="rate-card">
-          <div class="rate-title">⬆️ End Dump</div>
-          <div class="fr2">
-            <div class="field"><label>Hourly Rate ($/hr)</label><input type="number" id="red_" value="145" min="0" step="1"></div>
-            <div class="field"><label>Capacity (tons)</label><input type="number" id="ced" value="22" min="1" step="1"></div>
+        <div class="rate-card" style="margin-top:10px;"><div class="rate-title">Truck Minimums</div>
+          <div style="font-size:12px;line-height:2;color:#1e2a4a;">
+            <div>🚛 Super 10: <strong>17 tons min</strong></div>
+            <div>🚚 Transfer: <strong>25 tons min</strong></div>
+            <div>🔽 Bottom Dump: <strong>25 tons min</strong></div>
+            <div>⬆️ End Dump: <strong>22 tons min</strong></div>
           </div>
         </div>
       </div>
     </div>
-    <div class="rate-card" style="margin-top:4px;">
-      <div class="rate-title">Formula Settings</div>
-      <div class="fr3">
-        <div class="field"><label>Planning Speed (mph)</label><input type="number" id="planSpeed" value="50" min="10" step="5"></div>
-        <div class="field"><label>Load/Unload Allowance (hrs)</label><input type="number" id="loadAllow" value="0.5" min="0" step="0.25"></div>
-        <div class="field"><label>Haul-Back Credit (%)</label><input type="number" id="haulbackPct" value="30" min="0" max="100" step="5"></div>
-      </div>
-    </div>
-    <button class="btn btnp" style="margin-top:14px;" onclick="saveSettings()">💾 Save Settings</button>
-    <div id="settingsSaved" style="display:none;margin-top:8px;padding:7px 10px;background:rgba(42,138,74,.2);border-radius:4px;font-size:11px;color:#60c880;">✓ Settings saved</div>
   </div>
 </div>
 
@@ -1421,7 +1440,7 @@ const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
-let plantPid=null, locPid=null, locLat=null, locLng=null;
+let plantPid=null, locPid=null, locLat=null, locLng=null, plantLat=null, plantLng=null;
 let milesTimer=null;
 let currentMiles=0;
 let gfMap=null, gfDrawing=null, gfPolygon=null, gfPoints=[], gfMarkers=[], gfPolyline=null;
@@ -1439,7 +1458,14 @@ window.onload = function() {
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) calc();
   });
   document.addEventListener("change", function(e) {
-    if(["INPUT","SELECT"].includes(e.target.tagName)) calc();
+    if(["INPUT","SELECT"].includes(e.target.tagName)) {
+      // Show/hide transfer staging row
+      if(e.target.id === "accNoTransfer") {
+        const stagingRow = document.getElementById("stagingRow");
+        if(stagingRow) stagingRow.style.display = e.target.checked ? "flex" : "none";
+      }
+      calc();
+    }
   });
   calc();
 };
@@ -1515,58 +1541,71 @@ function getTruckConfig() {
 // Cycle Time = (2 × miles ÷ speed) + load_allowance  [one-way]
 // Round trip  = same (already 2× in drive time)
 // Haul-back   = one-way drive + load_allowance, reduced by credit %
+// ── FREIGHT RATE FORMULA ─────────────────────────────────────────────────────
+// Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)
+// Minimum: $10.50
+
+const ZONE_MULTIPLIERS = {
+  Z0: {mult:1.00, label:"Z0 — Open/Rural (Palmdale, Lancaster, Victorville, Mojave)"},
+  Z1: {mult:1.05, label:"Z1 — Highway Corridor (Santa Clarita, Simi Valley, Oxnard)"},
+  Z2: {mult:1.15, label:"Z2 — Suburban (Burbank, Glendale, Pasadena)"},
+  Z3: {mult:1.30, label:"Z3 — Urban Valley (Van Nuys, Sherman Oaks, N. Hollywood)"},
+  Z4: {mult:1.40, label:"Z4 — Urban LA Core (Hollywood, Downtown LA)"},
+  Z5: {mult:1.55, label:"Z5 — Premium/Difficult (Malibu, Pac Palisades, Canyon Roads)"}
+};
+
+function getZoneMult() {
+  const z = s("zoneSelect");
+  return z && ZONE_MULTIPLIERS[z] ? ZONE_MULTIPLIERS[z].mult : 1.00;
+}
+
+function getAccessMod() {
+  let mod = 0;
+  if(document.getElementById("accCanyon")  && document.getElementById("accCanyon").checked)   mod += 0.10;
+  if(document.getElementById("accTight")   && document.getElementById("accTight").checked)    mod += 0.05;
+  if(document.getElementById("accComm")    && document.getElementById("accComm").checked)     mod -= 0.05;
+  if(document.getElementById("accRepeat")  && document.getElementById("accRepeat").checked)   mod -= 0.05;
+  if(document.getElementById("accRush")    && document.getElementById("accRush").checked)     mod += 0.10;
+  return mod;
+}
+
+function getTransferFee() {
+  const cantReach = document.getElementById("accNoTransfer") && document.getElementById("accNoTransfer").checked;
+  const farStaging = document.getElementById("accFarStaging") && document.getElementById("accFarStaging").checked;
+  return (cantReach && farStaging) ? 1.75 : 0;
+}
+
 function calcHaulRate(miles) {
-  if(!truck || miles <= 0) return 0;
-  const tc = getTruckConfig();
-  const speed = v("planSpeed") || 50;
-  const loadAllow = v("loadAllow") || 0.5;
-  const hbPct = (v("haulbackPct") || 30) / 100;
-
-  const driveTime = (2 * miles) / speed; // round-trip drive time in hrs
-  let cycleTime = driveTime + loadAllow;
-
-  if(haulback === "round") {
-    cycleTime = driveTime + loadAllow; // same — round trip already in formula
-  } else if(haulback === "back") {
-    // Haul-back: one-way drive only (truck stays productive on return)
-    const owDrive = miles / speed;
-    cycleTime = owDrive + loadAllow;
-    cycleTime = cycleTime * (1 - hbPct); // apply credit
-  }
-
-  const rate = (tc.rate * cycleTime) / tc.cap;
-  return rate;
+  if(miles <= 0) return 0;
+  const zoneMult = getZoneMult();
+  const accessMod = getAccessMod();
+  const transferFee = getTransferFee();
+  const base = ((0.2175 * miles) + 2.7) * 1.25 * zoneMult + accessMod + transferFee;
+  return Math.max(Math.round(base * 100) / 100, 10.50);
 }
 
 function updateFormulaBox(miles) {
-  if(!truck || miles <= 0) {
-    document.getElementById("formulaBox").style.display = "none";
-    return;
-  }
-  document.getElementById("formulaBox").style.display = "block";
-  const tc = getTruckConfig();
-  const speed = v("planSpeed") || 50;
-  const loadAllow = v("loadAllow") || 0.5;
-  const hbPct = (v("haulbackPct") || 30) / 100;
-  const driveTime = (2 * miles) / speed;
-  let cycleTime = driveTime + loadAllow;
-  let hbLabel = "One-Way";
-  if(haulback === "round") { hbLabel = "Round Trip"; }
-  else if(haulback === "back") {
-    const owDrive = miles / speed;
-    cycleTime = (owDrive + loadAllow) * (1 - hbPct);
-    hbLabel = "Haul-Back (" + Math.round(hbPct*100) + "% credit)";
-  }
-  const rate = (tc.rate * cycleTime) / tc.cap;
+  const fb = document.getElementById("formulaBox");
+  if(miles <= 0) { fb.style.display="none"; return; }
+  fb.style.display = "block";
+  const zoneMult = getZoneMult();
+  const accessMod = getAccessMod();
+  const transferFee = getTransferFee();
+  const baseCalc = ((0.2175 * miles) + 2.7) * 1.25;
+  const afterZone = baseCalc * zoneMult;
+  const afterAccess = afterZone + accessMod;
+  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 10.50);
+  const zoneKey = s("zoneSelect") || "Z0";
+  const zoneLabel = ZONE_MULTIPLIERS[zoneKey] ? ZONE_MULTIPLIERS[zoneKey].label : "Z0 — Open/Rural";
 
-  document.getElementById("fTruckRate").textContent = "$" + tc.rate + "/hr";
-  document.getElementById("fMiles").textContent = miles.toFixed(1) + " mi";
-  document.getElementById("fDriveTime").textContent = driveTime.toFixed(2) + " hrs";
-  document.getElementById("fLoadTime").textContent = loadAllow + " hrs";
-  document.getElementById("fCycleTime").textContent = cycleTime.toFixed(2) + " hrs";
-  document.getElementById("fCapacity").textContent = tc.cap + " tons";
-  document.getElementById("fHaulback").textContent = hbLabel;
-  document.getElementById("fResult").textContent = fmt(rate) + " / ton";
+  document.getElementById("fTruckRate").textContent  = "Base: (0.2175 × "+miles.toFixed(1)+" mi) + 2.7";
+  document.getElementById("fMiles").textContent      = fmt(baseCalc) + "/ton (before zone)";
+  document.getElementById("fDriveTime").textContent  = "×"+zoneMult+" → "+zoneLabel.split("—")[0].trim();
+  document.getElementById("fLoadTime").textContent   = fmt(afterZone) + "/ton after zone";
+  document.getElementById("fCycleTime").textContent  = (accessMod>=0?"+":"")+accessMod.toFixed(2)+" access modifier";
+  document.getElementById("fCapacity").textContent   = transferFee>0 ? "+$1.75/ton transfer staging fee" : "No transfer fee";
+  document.getElementById("fHaulback").textContent   = haulback==="back"?"Haul-Back applied":haulback==="round"?"Round Trip":"One-Way";
+  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===10.50?" (minimum)":"");
 }
 
 function getAutoHaulRate(miles) {
@@ -1590,25 +1629,154 @@ function pointInPolygon(lat, lng, polygon) {
   return inside;
 }
 
+// ── AUTO ZONE ASSIGNMENT ──────────────────────────────────────────────────────
+// Zone labels for the select element — must be declared BEFORE CITY_ZONES
+const Z0="Z0",Z1="Z1",Z2="Z2",Z3="Z3",Z4="Z4",Z5="Z5";
+
+const CITY_ZONES = {
+  // Z0 — Open/Rural
+  "palmdale":Z0,"lancaster":Z0,"victorville":Z0,"mojave":Z0,"rosamond":Z0,
+  "tehachapi":Z0,"barstow":Z0,"apple valley":Z0,"hesperia":Z0,"adelanto":Z0,
+  "lucerne valley":Z0,"29 palms":Z0,"twentynine palms":Z0,"trona":Z0,
+  "little lake":Z0,"jean":Z0,"littlerock":Z0,"llano":Z0,"pearblossom":Z0,
+  "lake los angeles":Z0,"quartz hill":Z0,"acton":Z0,
+
+  // Z1 — Highway Corridor
+  "santa clarita":Z1,"valencia":Z1,"saugus":Z1,"newhall":Z1,"canyon country":Z1,
+  "stevenson ranch":Z1,"castaic":Z1,"simi valley":Z1,"moorpark":Z1,
+  "thousand oaks":Z1,"camarillo":Z1,"oxnard":Z1,"ventura":Z1,"santa paula":Z1,
+  "fillmore":Z1,"ojai":Z1,"corona":Z1,"norco":Z1,"mira loma":Z1,"eastvale":Z1,
+  "fontana":Z1,"rialto":Z1,"san bernardino":Z1,"redlands":Z1,"yucaipa":Z1,
+  "upland":Z1,"rancho cucamonga":Z1,"ontario":Z1,"chino":Z1,"chino hills":Z1,
+  "gonzales":Z1,"irwindale":Z1,"azusa":Z1,"glendora":Z1,"san dimas":Z1,
+  "la verne":Z1,"pomona":Z1,"claremont":Z1,"montclair":Z1,"sun valley":Z1,
+  "sylmar":Z1,"san fernando":Z1,"granada hills":Z1,"northridge":Z1,
+  "chatsworth":Z1,"porter ranch":Z1,"mission hills":Z1,"pacoima":Z1,
+
+  // Z2 — Suburban
+  "burbank":Z2,"glendale":Z2,"pasadena":Z2,"arcadia":Z2,"monrovia":Z2,
+  "duarte":Z2,"el monte":Z2,"rosemead":Z2,"temple city":Z2,"san gabriel":Z2,
+  "alhambra":Z2,"monterey park":Z2,"montebello":Z2,"pico rivera":Z2,
+  "whittier":Z2,"la habra":Z2,"brea":Z2,"fullerton":Z2,"anaheim":Z2,
+  "orange":Z2,"placentia":Z2,"yorba linda":Z2,"la puente":Z2,"hacienda heights":Z2,
+  "rowland heights":Z2,"diamond bar":Z2,"walnut":Z2,"west covina":Z2,
+  "covina":Z2,"baldwin park":Z2,"el monte":Z2,"south el monte":Z2,
+  "la canada flintridge":Z2,"montrose":Z2,"la crescenta":Z2,"tujunga":Z2,
+  "sunland":Z2,"altadena":Z2,"san marino":Z2,"sierra madre":Z2,
+  "long beach":Z2,"carson":Z2,"torrance":Z2,"gardena":Z2,"hawthorne":Z2,
+  "lawndale":Z2,"redondo beach":Z2,"hermosa beach":Z2,"manhattan beach":Z2,
+  "el segundo":Z2,"inglewood":Z2,"lynwood":Z2,"compton":Z2,"paramount":Z2,
+  "downey":Z2,"norwalk":Z2,"cerritos":Z2,"bellflower":Z2,"lakewood":Z2,
+  "bell":Z2,"bell gardens":Z2,"south gate":Z2,"maywood":Z2,"cudahy":Z2,
+  "huntington park":Z2,"florence":Z2,
+
+  // Z3 — Urban Valley
+  "van nuys":Z3,"sherman oaks":Z3,"north hollywood":Z3,"studio city":Z3,
+  "toluca lake":Z3,"reseda":Z3,"tarzana":Z3,"encino":Z3,"canoga park":Z3,
+  "woodland hills":Z3,"west hills":Z3,"winnetka":Z3,"panorama city":Z3,
+  "arleta":Z3,"sun valley":Z3,"lake balboa":Z3,"valley village":Z3,
+  "west hollywood":Z3,"silver lake":Z3,"echo park":Z3,"los feliz":Z3,
+  "atwater village":Z3,"eagle rock":Z3,"highland park":Z3,"mount washington":Z3,
+  "glassell park":Z3,"boyle heights":Z3,"east los angeles":Z3,
+  "city of commerce":Z3,"vernon":Z3,"huntington park":Z3,
+  "culver city":Z3,"marina del rey":Z3,"playa del rey":Z3,
+  "westchester":Z3,"ladera heights":Z3,"view park":Z3,"windsor hills":Z3,
+  "leimert park":Z3,"crenshaw":Z3,"mid-city":Z3,"koreatown":Z3,
+  "mid-wilshire":Z3,"hancock park":Z3,"larchmont":Z3,"beverlywood":Z3,
+  "palms":Z3,"mar vista":Z3,"santa monica":Z3,"venice":Z3,
+
+  // Z4 — Urban LA Core
+  "downtown los angeles":Z4,"downtown la":Z4,"los angeles":Z4,
+  "hollywood":Z4,"east hollywood":Z4,"thai town":Z4,"little armenia":Z4,
+  "mid-city west":Z4,"fairfax":Z4,"beverly hills":Z4,"century city":Z4,
+  "westwood":Z4,"brentwood":Z4,"bel air":Z4,"westside":Z4,
+  "chinatown":Z4,"little tokyo":Z4,"arts district":Z4,"south park":Z4,
+  "financial district":Z4,"bunker hill":Z4,"civic center":Z4,
+
+  // Z5 — Premium/Difficult
+  "malibu":Z5,"pacific palisades":Z5,"topanga":Z5,"calabasas":Z5,
+  "agoura hills":Z5,"westlake village":Z5,"hidden hills":Z5,
+  "lake sherwood":Z5,"lake hughes":Z5,"elizabeth lake":Z5,
+  "lebec":Z5,"gorman":Z5,"frazier park":Z5,"wrightwood":Z5,
+  "big bear":Z5,"big bear lake":Z5,"arrowhead":Z5,"lake arrowhead":Z5,
+  "crestline":Z5,"running springs":Z5,"twin peaks":Z5,
+};
+
+function autoAssignZone(addressComponents, lat, lng) {
+  let city = "", neighborhood = "", sublocality = "";
+
+  if(addressComponents) {
+    addressComponents.forEach(c => {
+      if(c.types.includes("locality")) city = c.long_name.toLowerCase();
+      if(c.types.includes("neighborhood")) neighborhood = c.long_name.toLowerCase();
+      if(c.types.includes("sublocality") || c.types.includes("sublocality_level_1")) sublocality = c.long_name.toLowerCase();
+    });
+  }
+
+  // Try city first, then neighborhood, then sublocality
+  const lookup = city || neighborhood || sublocality || "";
+  let zone = null;
+
+  // Exact match
+  if(CITY_ZONES[lookup]) {
+    zone = CITY_ZONES[lookup];
+  } else {
+    // Partial match — check if any key is contained in the lookup
+    for(const [key, z] of Object.entries(CITY_ZONES)) {
+      if(lookup.includes(key) || key.includes(lookup)) {
+        zone = z; break;
+      }
+    }
+  }
+
+  // Coordinate-based fallback for unrecognized cities
+  if(!zone && lat && lng) {
+    // Rough bounding box logic for SoCal
+    if(lat > 34.5 || lng < -118.5) zone = "Z0";       // far north/east = rural
+    else if(lat > 34.3) zone = "Z1";                   // SCV corridor
+    else if(lat > 34.15 && lng < -118.1) zone = "Z2";  // outer suburban
+    else if(lat > 34.05) zone = "Z3";                  // valley
+    else zone = "Z4";                                  // core LA
+  }
+
+  if(zone) {
+    const sel = document.getElementById("zoneSelect");
+    if(sel) {
+      sel.value = zone;
+      sel.style.borderColor = "#2a8a4a";
+      sel.style.boxShadow = "0 0 0 2px rgba(42,138,74,0.2)";
+      // Show confirmation
+      const txst = document.getElementById("txst");
+      if(txst) {
+        const existing = txst.textContent;
+        setTimeout(() => {
+          txst.textContent = (existing ? existing + " · " : "") + "🗺 Zone auto-set: " + zone + " (" + (city||neighborhood||"unknown area") + ")";
+        }, 100);
+      }
+    }
+    // Still check drawn polygon zones too
+    checkZones(lat, lng);
+    calc();
+  }
+}
+
 function checkZones(lat, lng) {
-  activeZone = null;
+  // Only applies drawn polygon zones (overrides city-based if inside a polygon)
+  if(!zones || zones.length === 0) return;
   for(const z of zones) {
     if(pointInPolygon(lat, lng, z.points)) {
       activeZone = z;
-      break;
+      const badge = document.getElementById("zoneBadge");
+      if(badge) { badge.textContent="🗺 Zone: "+z.name+" — "+zoneRuleText(z); badge.classList.add("show"); }
+      document.getElementById("zonerow").classList.remove("gone");
+      calc();
+      return;
     }
   }
+  activeZone = null;
   const badge = document.getElementById("zoneBadge");
-  const zonerow = document.getElementById("zonerow");
-  if(activeZone) {
-    badge.textContent = "🗺 Zone: " + activeZone.name + " — " + zoneRuleText(activeZone);
-    badge.classList.add("show");
-    zonerow.classList.remove("gone");
-  } else {
-    badge.classList.remove("show");
-    zonerow.classList.add("gone");
-  }
-  calc();
+  if(badge) badge.classList.remove("show");
+  document.getElementById("zonerow").classList.add("gone");
 }
 
 function zoneRuleText(z) {
@@ -1807,7 +1975,7 @@ function initMaps() {
 
   // Job site
   const locAC = new google.maps.places.Autocomplete(document.getElementById("location"),{
-    componentRestrictions:{country:"us"}, fields:["place_id","geometry","formatted_address"]
+    componentRestrictions:{country:"us"}, fields:["place_id","geometry","formatted_address","address_components"]
   });
   locAC.addListener("place_changed", function() {
     const p = locAC.getPlace();
@@ -1815,21 +1983,29 @@ function initMaps() {
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat();
       locLng=p.geometry.location.lng();
-      fetchTax(locLat, locLng);
-      checkZones(locLat, locLng);
+      // Extract county for tax fallback
+      let county = "";
+      if(p.address_components) {
+        p.address_components.forEach(c => {
+          if(c.types.includes("administrative_area_level_2")) county = c.long_name;
+        });
+      }
+      fetchTax(locLat, locLng, county);
+      autoAssignZone(p.address_components, locLat, locLng);
     }
   });
 
   // Demo site
   const demoAC = new google.maps.places.Autocomplete(document.getElementById("dsite"),{
-    fields:["place_id","geometry"]
+    fields:["place_id","geometry","address_components"]
   });
   demoAC.addListener("place_changed", function() {
     const p = demoAC.getPlace();
     if(p.place_id) { locPid=p.place_id; tryMiles(); }
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat(); locLng=p.geometry.location.lng();
-      fetchTax(locLat,locLng); checkZones(locLat,locLng);
+      fetchTax(locLat,locLng);
+      autoAssignZone(p.address_components, locLat, locLng);
     }
   });
 
@@ -1837,10 +2013,15 @@ function initMaps() {
   ["pa1","pa2","hpa","fpa"].forEach(function(fid) {
     const el = document.getElementById(fid);
     if(!el) return;
-    const ac = new google.maps.places.Autocomplete(el,{fields:["place_id","formatted_address"]});
+    const ac = new google.maps.places.Autocomplete(el,{fields:["place_id","formatted_address","geometry"]});
     ac.addListener("place_changed", function() {
       const p = ac.getPlace();
-      if(p.place_id) { plantPid=p.place_id; tryMiles(); }
+      if(p.place_id) { plantPid=p.place_id; }
+      if(p.geometry && p.geometry.location) {
+        plantLat=p.geometry.location.lat();
+        plantLng=p.geometry.location.lng();
+      }
+      tryMiles();
     });
   });
 }
@@ -1852,14 +2033,42 @@ function onPlant(selId) {
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
   if(manId) document.getElementById(manId).value=addr;
+  if(typeof google === "undefined" || !google.maps) { tryMiles(); return; }
   const gc = new google.maps.Geocoder();
   gc.geocode({address:addr}, function(res,st) {
-    if(st==="OK" && res[0]) { plantPid=res[0].place_id; tryMiles(); }
+    if(st==="OK" && res[0]) {
+      plantPid=res[0].place_id;
+      plantLat=res[0].geometry.location.lat();
+      plantLng=res[0].geometry.location.lng();
+      tryMiles();
+    }
   });
 }
 
 function tryMiles() {
-  if(!plantPid || !locPid) return;
+  if(typeof google === "undefined" || !google.maps) {
+    straightLineFallback(function(miles, label) {
+      currentMiles = parseFloat(miles);
+      const milesMap = {std:"mi1",split:"mi1",haul:"hmi",freight:"fmi",demo:"dmi"};
+      const mid = milesMap[qt]||"mi1";
+      const miEl = document.getElementById(mid);
+      if(miEl) miEl.value = parseFloat(miles).toFixed(1);
+      const autoHR = getAutoHaulRate(currentMiles);
+      if(autoHR > 0) {
+        const hrFields = {std:"hr1",split:"hr1",haul:"hhr",freight:"ffr",demo:"dhr"};
+        const hrEl = document.getElementById(hrFields[qt]||"hr1");
+        if(hrEl && !hrEl.value) hrEl.value = autoHR.toFixed(2);
+      }
+      calc();
+    }, document.getElementById((({std:"m1ms",split:"m1ms",haul:"hms",freight:"fms",demo:"dms"})[qt]||"m1ms")));
+    return;
+  }
+
+  // Need either place IDs or coordinates for both origin and destination
+  const hasPlaceIds = plantPid && locPid;
+  const hasCoords   = plantLat && plantLng && locLat && locLng;
+  if(!hasPlaceIds && !hasCoords) return;
+
   const statusMap = {std:"m1ms",split:"m1ms",haul:"hms",freight:"fms",demo:"dms"};
   const milesMap  = {std:"mi1",split:"mi1",haul:"hmi",freight:"fmi",demo:"dmi"};
   const sid = statusMap[qt]||"m1ms";
@@ -1867,67 +2076,148 @@ function tryMiles() {
   const stEl = document.getElementById(sid);
   if(stEl) { stEl.textContent="⟳ Calculating route..."; stEl.className="ms ld"; }
 
-  const svc = new google.maps.DirectionsService();
-  svc.route({
-    origin:{placeId:plantPid},
-    destination:{placeId:locPid},
+  function applyMiles(miles, label) {
+    currentMiles = parseFloat(miles);
+    const miEl = document.getElementById(mid);
+    if(miEl) miEl.value = parseFloat(miles).toFixed(1);
+    if(stEl) { stEl.textContent="✓ "+label; stEl.className="ms ok"; }
+    const autoHR = getAutoHaulRate(currentMiles);
+    if(autoHR > 0) {
+      const hrFields = {std:"hr1",split:"hr1",haul:"hhr",freight:"ffr",demo:"dhr"};
+      const hrEl = document.getElementById(hrFields[qt]||"hr1");
+      if(hrEl && !hrEl.value) {
+        hrEl.value = autoHR.toFixed(2);
+        hrEl.style.borderColor = "rgba(0,191,255,.5)";
+      }
+    }
+    calc();
+  }
+
+  // Build origin/destination — prefer place IDs, fall back to lat/lng
+  const origin      = plantPid ? {placeId:plantPid} : {lat:plantLat, lng:plantLng};
+  const destination = locPid   ? {placeId:locPid}   : {lat:locLat,   lng:locLng};
+
+  // Try Directions API first (avoidTolls)
+  const dirSvc = new google.maps.DirectionsService();
+  dirSvc.route({
+    origin, destination,
     travelMode:google.maps.TravelMode.DRIVING,
     avoidTolls:true,
     avoidFerries:true,
     unitSystem:google.maps.UnitSystem.IMPERIAL
-  }, function(result,status) {
+  }, function(result, status) {
     if(status === google.maps.DirectionsStatus.OK) {
       const leg = result.routes[0].legs[0];
       const miles = (leg.distance.value / 1609.344).toFixed(1);
-      currentMiles = parseFloat(miles);
-      const miEl = document.getElementById(mid);
-      if(miEl) miEl.value = miles;
-      if(stEl) { stEl.textContent="✓ "+leg.distance.text+" — no tolls, highways preferred"; stEl.className="ms ok"; }
-      // Auto-fill haul rate from formula
-      const autoHR = getAutoHaulRate(currentMiles);
-      if(autoHR > 0) {
-        const hrFields = {std:"hr1",split:"hr1",haul:"hhr",freight:"ffr",demo:"dhr"};
-        const hrEl = document.getElementById(hrFields[qt]||"hr1");
-        if(hrEl && !hrEl.value) {
-          hrEl.value = autoHR.toFixed(2);
-          hrEl.style.borderColor = "rgba(0,191,255,.5)";
-        }
-      }
-      calc();
-    } else if(status==="ZERO_RESULTS") {
-      if(stEl) { stEl.textContent="No route found — enter miles manually"; stEl.className="ms er"; }
+      applyMiles(miles, leg.distance.text + " — no tolls, highways preferred");
     } else {
-      if(stEl) { stEl.textContent="Route error ("+status+") — check API billing"; stEl.className="ms er"; }
+      // Fallback to Distance Matrix
+      if(stEl) { stEl.textContent="⟳ Trying alternate..."; stEl.className="ms ld"; }
+      const matSvc = new google.maps.DistanceMatrixService();
+      matSvc.getDistanceMatrix({
+        origins:[origin],
+        destinations:[destination],
+        travelMode:google.maps.TravelMode.DRIVING,
+        unitSystem:google.maps.UnitSystem.IMPERIAL,
+        avoidTolls:true
+      }, function(resp, st2) {
+        if(st2==="OK") {
+          const el = resp.rows[0].elements[0];
+          if(el.status==="OK") {
+            const miles = (el.distance.value / 1609.344).toFixed(1);
+            applyMiles(miles, el.distance.text + " driving");
+          } else {
+            straightLineFallback(applyMiles, stEl);
+          }
+        } else {
+          straightLineFallback(applyMiles, stEl);
+        }
+      });
     }
   });
 }
+  const statusMap = {std:"m1ms",split:"m1ms",haul:"hms",freight:"fms",demo:"dms"};
+
+// ── STRAIGHT-LINE DISTANCE FALLBACK ──────────────────────────────────────────
+function straightLineFallback(applyMiles, stEl) {
+  if(!plantLat || !plantLng || !locLat || !locLng) {
+    if(stEl) { stEl.textContent="⚠ Enable billing in Google Cloud for auto-miles"; stEl.className="ms er"; }
+    return;
+  }
+  // Haversine formula
+  const R = 3958.8; // miles
+  const dLat = (locLat - plantLat) * Math.PI / 180;
+  const dLng = (locLng - plantLng) * Math.PI / 180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(plantLat*Math.PI/180)*Math.cos(locLat*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+  const straightLine = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  // Apply 1.35 road factor (standard trucking estimate)
+  const roadMiles = (straightLine * 1.35).toFixed(1);
+  applyMiles(roadMiles, roadMiles+" mi (estimated — enable billing for exact route)");
+  if(stEl) { stEl.textContent="⚠ Estimated miles (×1.35 road factor) — enable Google billing for exact route"; stEl.className="ms"; stEl.style.color="#c8a020"; }
+}
+
+// ── CA COUNTY TAX FALLBACK TABLE ──────────────────────────────────────────────
+const CA_TAX = {
+  "los angeles":0.1025,"san bernardino":0.0775,"riverside":0.0775,
+  "orange":0.0775,"ventura":0.0775,"san diego":0.0775,"kern":0.0775,
+  "santa barbara":0.0775,"san luis obispo":0.0775,"fresno":0.0975,
+  "tulare":0.0775,"kings":0.0725,"monterey":0.0925,"santa cruz":0.0875,
+  "san benito":0.0775,"merced":0.0775,"madera":0.0775,"stanislaus":0.0875,
+  "san joaquin":0.0775,"alameda":0.1025,"contra costa":0.0875,
+  "san francisco":0.0875,"san mateo":0.0875,"santa clara":0.0925,
+  "marin":0.0875,"sonoma":0.0875,"napa":0.0775,"solano":0.0775,
+  "yolo":0.0775,"sacramento":0.0875,"el dorado":0.0775,"placer":0.0725,
+  "nevada":0.0725,"shasta":0.0775,"humboldt":0.0875,"default":0.0775
+};
+
+function applyTaxRate(pct, source, badge) {
+  document.getElementById("taxr").value = pct;
+  document.getElementById("dtaxr").value = pct;
+  const txst = document.getElementById("txst");
+  ["txbadge","dtxbadge"].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){ b.textContent=badge; b.style.display="inline"; }
+  });
+  if(txst){ txst.textContent=source; txst.style.color="#2a8a4a"; }
+  calc();
+}
 
 // ── CA TAX LOOKUP ─────────────────────────────────────────────────────────────
-function fetchTax(lat,lng) {
+function fetchTax(lat, lng, countyHint) {
   const txst = document.getElementById("txst");
   if(txst) { txst.textContent="⟳ Looking up CA sales tax..."; txst.style.color="#4a7cc7"; }
   const cdtfaUrl = `https://services.maps.cdtfa.ca.gov/api/taxrate/GetRateByLngLat?Longitude=${lng}&Latitude=${lat}`;
+
   function applyRate(data) {
     if(data.taxRateInfo && data.taxRateInfo.length>0) {
       const info = data.taxRateInfo[0];
       const pct = (info.rate*100).toFixed(4).replace(/\.?0+$/,"");
       const jur = info.jurisdiction||info.city||info.county||"CA";
       const cty = info.county||"";
-      document.getElementById("taxr").value=pct;
-      document.getElementById("dtaxr").value=pct;
-      const badge = `✓ ${pct}% — ${jur}${cty&&cty!==jur?", "+cty:""}`;
-      ["txbadge","dtxbadge"].forEach(id=>{const b=document.getElementById(id);if(b){b.textContent=badge;b.style.display="inline";}});
-      if(txst) { txst.textContent="✓ CA tax rate auto-filled — edit if needed"; txst.style.color="#2a8a4a"; }
-      calc();
+      applyTaxRate(pct, "✓ CA tax rate auto-filled — edit if needed", `✓ ${pct}% — ${jur}${cty&&cty!==jur?", "+cty:""}`);
+      return true;
     }
+    return false;
   }
-  fetch(cdtfaUrl)
-    .then(r=>r.json()).then(d=>applyRate(d))
-    .catch(()=>fetch(`https://corsproxy.io/?${encodeURIComponent(cdtfaUrl)}`)
-      .then(r=>r.json()).then(d=>applyRate(d))
-      .catch(()=>fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cdtfaUrl)}`)
-        .then(r=>r.json()).then(w=>applyRate(JSON.parse(w.contents)))
-        .catch(()=>{ if(txst){ txst.textContent="⚠ Tax lookup unavailable — enter manually"; txst.style.color="#c8a020"; }})
+
+  function countyFallback() {
+    // Use county from address components or try to reverse-geocode
+    const county = (countyHint||"").toLowerCase().replace(" county","").trim();
+    const rate = CA_TAX[county] || CA_TAX["los angeles"]; // default to LA rate
+    const pct = (rate*100).toFixed(2).replace(/\.?0+$/,"");
+    const label = county ? county.replace(/\b\w/g,c=>c.toUpperCase())+" County" : "Los Angeles County";
+    applyTaxRate(pct, `⚠ Estimated rate (${label}) — CDTFA lookup unavailable`, `~${pct}% — ${label} (est.)`);
+  }
+
+  fetch(cdtfaUrl, {signal: AbortSignal.timeout(4000)})
+    .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
+    .catch(()=>fetch(`https://corsproxy.io/?${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
+      .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
+      .catch(()=>fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
+        .then(r=>r.json()).then(w=>{ if(!applyRate(JSON.parse(w.contents))) countyFallback(); })
+        .catch(()=>countyFallback())
       )
     );
 }
@@ -2214,7 +2504,14 @@ function clearAll() {
   document.getElementById("qdate").value=new Date().toISOString().split("T")[0];
   calc();
 }
+function mapsLoadError() {
+  console.warn("Google Maps failed to load — running in offline mode");
+  document.querySelectorAll(".ms").forEach(el => {
+    el.textContent = "⚠ Maps unavailable — enter miles manually";
+    el.style.color = "#c8a020";
+  });
+}
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
 </body>
 </html>
