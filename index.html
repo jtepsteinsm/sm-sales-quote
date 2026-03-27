@@ -196,6 +196,18 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 
 @media(max-width:640px){.g2,.fr2,.trucks{grid-template-columns:1fr 1fr;}.g3,.fr3{grid-template-columns:1fr 1fr;}.g4{grid-template-columns:1fr 1fr;}.topbar{padding:8px 12px;}.blogo{width:44px;height:44px;}.navtabs .ntab{font-size:9px;padding:10px 4px;}}
 .pac-container{z-index:99999!important;font-family:'DM Sans',sans-serif;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+/* ── MULTI-MATERIAL INPUT ──────────────────────────────────────────────────── */
+#mmSec{margin-top:16px;}
+.mm-table{width:100%;border-collapse:collapse;font-size:12px;}
+.mm-table thead tr{background:#1a3a6b;color:#fff;}
+.mm-table th{padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
+.mm-table th:nth-child(2){text-align:left;}
+.mm-table td{padding:4px 4px;vertical-align:middle;border-bottom:1px solid rgba(0,191,255,.1);}
+.mm-table td:first-child{text-align:center;color:var(--sand);font-size:11px;font-weight:700;width:24px;}
+.mm-table input{padding:6px 7px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);width:100%;}
+.mm-table input:focus{border-color:var(--acc);outline:none;}
+.mm-table input::placeholder{color:rgba(122,179,240,.4);font-size:11px;}
+.mm-row-hidden{display:none;}
 </style>
 </head>
 <body>
@@ -1391,6 +1403,27 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     </div>
   </div>
 
+  <!-- MULTI-MATERIAL INPUT (Breakdown mode) -->
+  <div class="card gap gone" id="mmSec">
+    <div class="ct">Materials &amp; Pricing</div>
+    <div style="font-size:10px;color:#4a7cc7;margin-bottom:10px;">Enter each material below. Haul rate auto-fills from the job site miles — override per row if needed. Tax rate is shared from the job site lookup above.</div>
+    <table class="mm-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th style="text-align:left;min-width:180px;">Material Description</th>
+          <th style="min-width:70px;">Qty (tons)</th>
+          <th style="min-width:80px;">$/ton Price</th>
+          <th style="min-width:80px;">Haul ($/ton)</th>
+          <th style="min-width:70px;">Env Fee ($)</th>
+        </tr>
+      </thead>
+      <tbody id="mmTbody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+
   <!-- TOTALS + ACTIONS -->
   <div class="g2 gap">
     <div class="cdark">
@@ -1426,7 +1459,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       </div>
       <div id="brkMatCountWrap" style="display:none;margin-bottom:12px;">
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">MATERIALS TO SHOW</div>
-        <select id="brkMatCount" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
+        <select id="brkMatCount" onchange="renderMMRows()" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
       </div>
       <button class="btn btnp" onclick="genQuote()">▶ GENERATE QUOTE</button>
       <button class="btn btns" onclick="printQ()">⎙ PRINT / SAVE PDF</button>
@@ -2776,6 +2809,75 @@ function setQStyle(style) {
   document.getElementById("qsStd").classList.toggle("on", style==="standard");
   document.getElementById("qsBrk").classList.toggle("on", style==="breakdown");
   document.getElementById("brkMatCountWrap").style.display = style==="breakdown" ? "block" : "none";
+  // Show/hide multi-material section vs normal panels
+  const mmSec = document.getElementById("mmSec");
+  const matSec = document.getElementById("matSec");
+  const mat2Sec = document.getElementById("mat2Sec");
+  const haulSec = document.getElementById("haulSec");
+  const demoSec = document.getElementById("demoSec");
+  const truckSec = document.getElementById("truckSec");
+  if(style === "breakdown") {
+    if(mmSec) mmSec.classList.remove("gone");
+    if(matSec) matSec.classList.add("gone");
+    if(mat2Sec) mat2Sec.classList.add("gone");
+    if(haulSec) haulSec.classList.add("gone");
+    if(demoSec) demoSec.classList.add("gone");
+    renderMMRows();
+  } else {
+    if(mmSec) mmSec.classList.add("gone");
+    // Restore visibility based on current qt
+    setQt(qt);
+  }
+}
+
+// ── MULTI-MATERIAL ROWS ───────────────────────────────────────────────────────
+function renderMMRows() {
+  const n = parseInt((document.getElementById("brkMatCount")||{}).value) || 3;
+  const tbody = document.getElementById("mmTbody");
+  if(!tbody) return;
+  // Preserve existing values
+  const existing = [];
+  tbody.querySelectorAll("tr").forEach(function(tr) {
+    existing.push({
+      desc: tr.querySelector(".mm-desc") ? tr.querySelector(".mm-desc").value : "",
+      qty:  tr.querySelector(".mm-qty")  ? tr.querySelector(".mm-qty").value  : "",
+      price:tr.querySelector(".mm-price")? tr.querySelector(".mm-price").value: "",
+      haul: tr.querySelector(".mm-haul") ? tr.querySelector(".mm-haul").value : "",
+      env:  tr.querySelector(".mm-env")  ? tr.querySelector(".mm-env").value  : "10"
+    });
+  });
+  const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || v("fmi"));
+  let html = "";
+  for(let i = 0; i < n; i++) {
+    const ex = existing[i] || {};
+    const haulPh = autoHR > 0 ? autoHR.toFixed(2) : "";
+    html += '<tr>'
+      + '<td>'+(i+1)+'</td>'
+      + '<td><input type="text" class="mm-desc" placeholder="Material description" value="'+((ex.desc||"").replace(/"/g,"&quot;"))+'"></td>'
+      + '<td><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="'+(ex.qty||"")+'"></td>'
+      + '<td><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="'+(ex.price||"")+'"></td>'
+      + '<td><input type="number" class="mm-haul" placeholder="'+(haulPh||"auto")+'" min="0" step="0.01" value="'+(ex.haul||"")+'"></td>'
+      + '<td><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="'+(ex.env!==undefined&&ex.env!=""?ex.env:"10")+'"></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function getMMData() {
+  const rows = [];
+  const tbody = document.getElementById("mmTbody");
+  if(!tbody) return rows;
+  const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || 0);
+  tbody.querySelectorAll("tr").forEach(function(tr) {
+    const desc  = tr.querySelector(".mm-desc")  ? tr.querySelector(".mm-desc").value.trim()  : "";
+    const qty   = parseFloat(tr.querySelector(".mm-qty")   ? tr.querySelector(".mm-qty").value   : 0) || 0;
+    const price = parseFloat(tr.querySelector(".mm-price") ? tr.querySelector(".mm-price").value : 0) || 0;
+    const haulEl = tr.querySelector(".mm-haul");
+    const haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
+    const env   = parseFloat(tr.querySelector(".mm-env")   ? tr.querySelector(".mm-env").value   : 10) || 0;
+    if(qty > 0 || desc) rows.push({desc, qty, price, haul, env});
+  });
+  return rows;
 }
 
 function setDumpFeeType(type) {
@@ -2809,10 +2911,7 @@ function getDumpFeeLabel(eff) {
 function genBreakdownQuote() {
   calc();
   const grand = parseFloat(document.getElementById("tgrand").textContent.replace("$",""))||0;
-  const cc = grand*0.04;
-  const disp = pay==="cc" ? grand+cc : grand;
   const vd = s("vdays");
-  const numMat = parseInt((document.getElementById("brkMatCount")||{value:"3"}).value)||3;
 
   document.getElementById("bpqn").textContent=qnum;
   document.getElementById("bpdt").textContent=new Date(s("qdate")+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
@@ -2830,88 +2929,90 @@ function genBreakdownQuote() {
   document.getElementById("bpdur").textContent=s("duration")?"Duration: "+s("duration"):"";
 
   const txr = v("taxr")/100;
-  const mi1 = currentMiles||v("mi1");
-  const autoHR = getAutoHaulRate(mi1);
-
-  // Build brkSections using new div-based layout
-  // Convert rows (built with brkTR calls) into material sections
-  // We'll rebuild as a series of .brk-mat-section divs
+  const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || 0);
   let sectionsHtml = "";
+  let grandTotal = 0;
 
-  function brkMatSection(title, lines) {
-    let html = `<div class="brk-mat-section"><div class="brk-mat-hdr">${title}</div>`;
-    lines.forEach(function(ln) {
-      html += `<div class="brk-line"><span>${ln[0]}</span><span>${ln[1]}</span></div>`;
+  function brkLine(label, amount) {
+    return '<div class="brk-line"><span>'+label+'</span><span>'+fmt(amount)+'</span></div>';
+  }
+
+  const mmRows = getMMData().filter(function(r){ return r.qty > 0; });
+
+  if(mmRows.length > 0) {
+    // Multi-material mode
+    mmRows.forEach(function(row, idx) {
+      const matCost = row.qty * row.price;
+      const tax = matCost * txr;
+      const haul = row.haul * row.qty;
+      const efTax = row.env * txr;
+      const rowTotal = matCost + tax + haul + row.env + efTax;
+      grandTotal += rowTotal;
+      let sec = '<div class="brk-mat-section">';
+      sec += '<div class="brk-mat-hdr">MATERIAL '+(idx+1)+(row.desc?' — '+row.desc:'')+'</div>';
+      sec += brkLine(row.qty+' ton'+(row.qty!==1?'s':'')+' @ '+fmt(row.price)+'/ton', matCost);
+      if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
+      sec += brkLine('Haul ('+row.qty+'t @ '+fmt(row.haul)+'/ton)', haul);
+      sec += brkLine('Environmental Fee', row.env);
+      if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
+      sec += '</div>';
+      sectionsHtml += sec;
     });
-    html += "</div>";
-    return html;
-  }
-
-  const txr2 = v("taxr")/100;
-  const mi1b = currentMiles||v("mi1");
-  const autoHRb = getAutoHaulRate(mi1b);
-
-  if(qt==="std"||qt==="split") {
-    const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHRb,ef1=v("ef1");
-    const effQ1=minTons(q1), mat1=q1*p1, tax1=mat1*txr2, efTax1=ef1*txr2, haul1=hr1*effQ1;
-    const zonePrem=applyZonePremium(haul1,effQ1);
-    const matName1=s("mat1")||"Rock/Aggregate";
-    let lines1=[];
-    lines1.push([q1+" tons @ "+fmt(p1)+"/ton", fmt(mat1)]);
-    if(tax1>0) lines1.push(["Sales Tax ("+v("taxr")+"%)",""+fmt(tax1)]);
-    lines1.push(["Haul ("+effQ1+"t @ "+fmt(hr1)+"/ton)",fmt(haul1)]);
-    if(zonePrem>0) lines1.push(["Zone Premium: "+activeZone.name,fmt(zonePrem)]);
-    lines1.push(["Environmental Fee",fmt(ef1)]);
-    if(efTax1>0) lines1.push(["Env Fee Tax",fmt(efTax1)]);
-    sectionsHtml+=brkMatSection("MATERIAL 1 — "+matName1, lines1);
-    if(qt==="split") {
-      const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-      const mat2=q2*p2,tax2=mat2*txr2,efTax2=ef2*txr2;
-      const matName2=s("mat2")||"2nd Material";
-      let lines2=[];
-      lines2.push([q2+" tons @ "+fmt(p2)+"/ton",fmt(mat2)]);
-      if(tax2>0) lines2.push(["Sales Tax ("+v("taxr")+"%)",""+fmt(tax2)]);
-      lines2.push(["Split Load Fee",fmt(slf)]);
-      lines2.push(["Environmental Fee",fmt(ef2)]);
-      if(efTax2>0) lines2.push(["Env Fee Tax",fmt(efTax2)]);
-      sectionsHtml+=brkMatSection("MATERIAL 2 — "+matName2, lines2);
+  } else {
+    // Fallback: single qt-based section
+    const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
+    if(qt==="std"||qt==="split") {
+      const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
+      const mat1=q1*p1, tax1=mat1*txr, haul1=hr1*q1, efTax1=ef1*txr;
+      grandTotal += mat1+tax1+haul1+ef1+efTax1;
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+'</div>';
+      sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
+      if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
+      sec+=brkLine('Haul ('+q1+'t @ '+fmt(hr1)+'/ton)',haul1);
+      sec+=brkLine('Environmental Fee',ef1);
+      if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
+      sec+='</div>';
+      sectionsHtml+=sec;
+      if(qt==="split"){
+        const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+        const mat2=q2*p2,tax2=mat2*txr,efTax2=ef2*txr;
+        grandTotal+=mat2+tax2+slf+ef2+efTax2;
+        let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(s("mat2")?' — '+s("mat2"):'')+'</div>';
+        sec2+=brkLine(q2+' tons @ '+fmt(p2)+'/ton',mat2);
+        if(tax2>0) sec2+=brkLine('Sales Tax ('+v("taxr")+'%)',tax2);
+        sec2+=brkLine('Split Load Fee',slf);
+        sec2+=brkLine('Environmental Fee',ef2);
+        if(efTax2>0) sec2+=brkLine('Env Fee Tax',efTax2);
+        sec2+='</div>';
+        sectionsHtml+=sec2;
+      }
+    } else if(qt==="haul") {
+      const tons=v("htons"),rate=v("hhr")||autoHR,haul=rate*tons;
+      grandTotal+=haul;
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">HAUL RATE'+(s("hmat")?' — '+s("hmat"):'')+'</div>';
+      sec+=brkLine(tons+' tons @ '+fmt(rate)+'/ton',haul);
+      sec+='</div>';
+      sectionsHtml+=sec;
+    } else if(qt==="demo") {
+      const dtxr=v("dtaxr")/100,tons=v("dtons"),ef=v("def_"),mu=v("dmu");
+      const hr=v("dhr")||autoHR,haul=(hr+mu)*tons,dumpTotal=getDumpFeeTotal(tons),efTax=ef*dtxr;
+      grandTotal+=haul+dumpTotal+ef+efTax;
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT'+(s("dmat")?' — '+s("dmat"):'')+'</div>';
+      sec+=brkLine('Hauling ('+tons+'t @ '+fmt(hr+mu)+'/ton)',haul);
+      sec+=brkLine(getDumpFeeLabel(tons),dumpTotal);
+      sec+=brkLine('Environmental Fee',ef);
+      if(efTax>0) sec+=brkLine('Env Fee Tax ('+v("dtaxr")+'%)',efTax);
+      sec+='</div>';
+      sectionsHtml+=sec;
     }
-  } else if(qt==="haul") {
-    const tons=v("htons"),mi=currentMiles||v("hmi"),rate=v("hhr")||getAutoHaulRate(mi);
-    const eff=minTons(tons), haul=rate*eff, zp=applyZonePremium(haul,eff);
-    const matName=s("hmat")||"Material";
-    let linesH=[];
-    linesH.push([eff+" tons @ "+fmt(rate)+"/ton",fmt(haul)]);
-    if(zp>0) linesH.push(["Zone Premium: "+activeZone.name,fmt(zp)]);
-    sectionsHtml+=brkMatSection("HAUL RATE — "+matName, linesH);
-  } else if(qt==="freight") {
-    const tons=v("ftons"),mi=currentMiles||v("fmi"),rate=v("ffr")||getAutoHaulRate(mi),fuel=v("ffs");
-    const eff=minTons(tons), freight=(rate+fuel)*eff, zp=applyZonePremium(freight,eff);
-    const matName=s("fmat")||"Material";
-    let linesF=[];
-    linesF.push([eff+" tons @ "+fmt(rate+(fuel>0?fuel:0))+"/ton",fmt(freight)]);
-    if(fuel>0) linesF.push(["Fuel Surcharge/ton",fmt(fuel*eff)]);
-    if(zp>0) linesF.push(["Zone Premium: "+activeZone.name,fmt(zp)]);
-    sectionsHtml+=brkMatSection("FREIGHT RATE — "+matName, linesF);
-  } else if(qt==="demo") {
-    const dtxr=v("dtaxr")/100,tons=v("dtons"),mi=currentMiles||v("dmi"),ef=v("def_"),mu=v("dmu");
-    const hr=v("dhr")||getAutoHaulRate(mi), eff=minTons(tons);
-    const haul=(hr+mu)*eff, dumpTotal=getDumpFeeTotal(eff), efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
-    const matName=s("dmat")||"Material";
-    const dumpLbl=getDumpFeeLabel(eff);
-    let linesD=[];
-    linesD.push(["Hauling ("+eff+"t @ "+fmt(hr+mu)+"/ton)",fmt(haul)]);
-    if(zp>0) linesD.push(["Zone Premium: "+activeZone.name,fmt(zp)]);
-    linesD.push([dumpLbl,fmt(dumpTotal)]);
-    linesD.push(["Environmental Fee",fmt(ef)]);
-    if(efTax>0) linesD.push(["Env Fee Tax ("+v("dtaxr")+"%)",""+fmt(efTax)]);
-    sectionsHtml+=brkMatSection("DEMO / EXPORT — "+matName, linesD);
   }
+
+  const cc = grandTotal * 0.04;
 
   document.getElementById("brkSections").innerHTML = sectionsHtml;
-  document.getElementById("brkSubAmt").textContent = fmt(grand);
-  document.getElementById("bpgtotalCash").textContent = pay==="cc"?fmt(grand):fmt(grand);
-  document.getElementById("bpgtotalCC").textContent = fmt(grand*1.04);
+  document.getElementById("brkSubAmt").textContent = fmt(grandTotal);
+  document.getElementById("bpgtotalCash").textContent = fmt(grandTotal);
+  document.getElementById("bpgtotalCC").textContent = fmt(grandTotal * 1.04);
   // Sync page 2 date/quote fields
   const bpdt2el=document.getElementById("bpdt2"); if(bpdt2el) bpdt2el.textContent=document.getElementById("bpdt").textContent;
   const bpqn2el=document.getElementById("bpqn2"); if(bpqn2el) bpqn2el.textContent=document.getElementById("bpqn").textContent;
