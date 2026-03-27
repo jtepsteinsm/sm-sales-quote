@@ -1402,7 +1402,19 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:4px;">Job Site Miles (shared)</div>
         <input type="number" id="mmMiles" placeholder="Auto from job site" min="0" step="0.1" oninput="calcMM()" style="width:100%;padding:7px 10px;font-size:13px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:#fff;">
       </div>
-      <div style="font-size:10px;color:#4a7cc7;flex:2;">Select a plant per row — haul rate auto-fills from that plant to your job site. Tax rate is shared from the location lookup above.</div>
+      <div style="flex:1;min-width:140px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:4px;">⛽ Fuel / COL Surcharge</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--sand);cursor:pointer;">
+            <input type="checkbox" id="mmScOn" onchange="calcMM()" style="width:auto;margin:0;"> Enable
+          </label>
+          <select id="mmScType" onchange="calcMM()" style="font-size:11px;padding:4px 6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);">
+            <option value="pct">% of haul</option>
+            <option value="flat">$/ton flat</option>
+          </select>
+          <input type="number" id="mmScAmt" placeholder="0" min="0" step="0.01" oninput="calcMM()" style="width:60px;padding:5px 6px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);">
+        </div>
+      </div>
       <button onclick="autoFillHaul()" style="padding:8px 14px;background:linear-gradient(135deg,var(--acc),#0099cc);color:var(--dk);border:none;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">&#9889; AUTO HAUL RATE</button>
     </div>
     <div style="overflow-x:auto;">
@@ -1883,18 +1895,22 @@ function getZoneMult() {
 
 function getAccessMod() {
   let mod = 0;
-  if(document.getElementById("accCanyon")  && document.getElementById("accCanyon").checked)   mod += 0.10;
-  if(document.getElementById("accTight")   && document.getElementById("accTight").checked)    mod += 0.05;
-  if(document.getElementById("accComm")    && document.getElementById("accComm").checked)     mod -= 0.05;
-  if(document.getElementById("accRepeat")  && document.getElementById("accRepeat").checked)   mod -= 0.05;
-  if(document.getElementById("accRush")    && document.getElementById("accRush").checked)     mod += 0.10;
+  const access  = (document.getElementById("q_access")  || {}).value || "easy";
+  const jobtype = (document.getElementById("q_jobtype") || {}).value || "standard";
+  // Access modifiers
+  if(access === "canyon")   mod += 0.10;
+  if(access === "tight")    mod += 0.05;
+  if(access === "commercial") mod -= 0.05;
+  if(access === "no_far")   mod += 0.10;
+  // Job type modifiers
+  if(jobtype === "repeat")  mod -= 0.05;
+  if(jobtype === "rush")    mod += 0.10;
   return mod;
 }
 
 function getTransferFee() {
-  const cantReach = document.getElementById("accNoTransfer") && document.getElementById("accNoTransfer").checked;
-  const farStaging = document.getElementById("accFarStaging") && document.getElementById("accFarStaging").checked;
-  return (cantReach && farStaging) ? 1.75 : 0;
+  const access = (document.getElementById("q_access") || {}).value || "easy";
+  return (access === "no_far") ? 1.75 : 0;
 }
 
 function calcHaulRate(miles) {
@@ -2161,7 +2177,7 @@ function calc() {
     const q1=v("qty1"), p1=v("pr1"), ef1=v("ef1");
     const mi1 = currentMiles || v("mi1");
     const autoHR = getAutoHaulRate(mi1);
-    const hr1 = v("hr1") || autoHR; // use override if entered, else formula
+    const hr1 = applySurcharge(v("hr1") || autoHR, "1"); // use override if entered, else formula
     // Auto-fill haul rate field if blank
     if(!v("hr1") && autoHR > 0) {
       const hrEl = document.getElementById("hr1");
@@ -2203,7 +2219,7 @@ function calc() {
   } else if(qt==="haul") {
     const tons=v("htons"), mi=currentMiles||v("hmi");
     const autoHR = getAutoHaulRate(mi);
-    const rate = v("hhr") || autoHR;
+    const rate = applySurcharge(v("hhr") || autoHR, "h");
     if(!v("hhr") && autoHR>0) {
       const el=document.getElementById("hhr");
       if(el && !el.value) el.placeholder=fmt(autoHR)+" (auto)";
@@ -3085,6 +3101,15 @@ function renderMMRows() {
   });
 }
 
+function getMmFuelSurcharge(baseHaul) {
+  var onEl = document.getElementById("mmScOn");
+  if(!onEl || !onEl.checked) return 0;
+  var type = (document.getElementById("mmScType")||{}).value || "pct";
+  var amt  = parseFloat((document.getElementById("mmScAmt")||{}).value) || 0;
+  if(amt <= 0) return 0;
+  return type === "pct" ? baseHaul * (amt / 100) : amt;
+}
+
 function calcMM() {
   if(qStyle !== "breakdown") return;
   var txr = v("taxr") / 100;
@@ -3096,12 +3121,13 @@ function calcMM() {
       var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
       var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
       var haulEl = tr.querySelector(".mm-haul");
-      var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
+      var baseHaul = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
       var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
       var mat   = qty * price;
       var tax   = mat * txr;
       var efTax = env * txr;
-      grand += mat + tax + (haul * qty) + env + efTax;
+      var sc    = getMmFuelSurcharge(baseHaul);
+      grand += mat + tax + ((baseHaul + sc) * qty) + env + efTax;
     });
   }
   var cc = grand * 0.04;
@@ -3282,7 +3308,9 @@ function genBreakdownQuote() {
     mmRows.forEach(function(row, idx) {
       const matCost = row.qty * row.price;
       const tax = matCost * txr;
-      const haul = row.haul * row.qty;
+      const sc = getMmFuelSurcharge(row.haul);
+      const effectiveHaul = row.haul + sc;
+      const haul = effectiveHaul * row.qty;
       const efTax = row.env * txr;
       const rowTotal = matCost + tax + haul + row.env + efTax;
       grandTotal += rowTotal;
@@ -3290,7 +3318,8 @@ function genBreakdownQuote() {
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+'</div>';
       sec += brkLine(row.qty+' ton'+(row.qty!==1?'s':'')+' @ '+fmt(row.price)+'/ton', matCost);
       if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
-      sec += brkLine('Haul ('+row.qty+'t @ '+fmt(row.haul)+'/ton)', haul);
+      sec += brkLine('Haul ('+row.qty+'t @ '+fmt(row.haul)+'/ton)', row.haul * row.qty);
+      if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * row.qty);
       sec += brkLine('Environmental Fee', row.env);
       if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
       sec += '</div>';
