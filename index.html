@@ -2902,6 +2902,7 @@ function calcMM() {
   document.getElementById("tpt").textContent    = "$0.00/ton";
 }
 
+// autoFillHaul: fills every mm-haul input with the calculated rate on button click
 function autoFillHaul() {
   var autoHR = getAutoHaulRate(currentMiles || 0);
   if(autoHR <= 0) {
