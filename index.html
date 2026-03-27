@@ -260,7 +260,10 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="field"><label>Project Name</label><input type="text" id="projname"></div>
         <div class="field">
           <label>Delivery / Job Site Address</label>
-          <input type="text" id="location" placeholder="Start typing job site...">
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="location" placeholder="Start typing job site..." style="flex:1;">
+            <button onclick="calcMilesManual()" style="padding:7px 10px;background:linear-gradient(135deg,var(--acc),#0099cc);color:var(--dk);border:none;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;">&#128205; CALC MILES</button>
+          </div>
           <div class="txst" id="txst"></div>
         </div>
       </div>
@@ -3447,6 +3450,49 @@ function mapsLoadError() {
   document.querySelectorAll(".ms").forEach(el => {
     el.textContent = "⚠ Maps unavailable — enter miles manually";
     el.style.color = "#c8a020";
+  });
+}
+
+// ── MANUAL MILES CALCULATION ──────────────────────────────────────────────────
+// Geocodes whatever is typed in the job site field without needing autocomplete
+function calcMilesManual() {
+  const addr = document.getElementById("location").value.trim();
+  if(!addr) { alert("Please type a job site address first."); return; }
+
+  const txst = document.getElementById("txst");
+  if(txst) { txst.textContent = "⟳ Geocoding address..."; txst.style.color = "#4a7cc7"; }
+
+  if(typeof google === "undefined" || !google.maps) {
+    if(txst) { txst.textContent = "⚠ Maps unavailable — enter miles manually"; txst.style.color = "#c8a020"; }
+    return;
+  }
+
+  const gc = new google.maps.Geocoder();
+  gc.geocode({ address: addr, componentRestrictions: { country: "us" } }, function(results, status) {
+    if(status !== "OK" || !results[0]) {
+      if(txst) { txst.textContent = "⚠ Address not found — try being more specific"; txst.style.color = "#c03030"; }
+      return;
+    }
+    const place = results[0];
+    locPid = place.place_id;
+    locLat = place.geometry.location.lat();
+    locLng = place.geometry.location.lng();
+
+    // Update the input with formatted address
+    document.getElementById("location").value = place.formatted_address;
+
+    // Extract county for tax lookup
+    let county = "";
+    if(place.address_components) {
+      place.address_components.forEach(c => {
+        if(c.types.includes("administrative_area_level_2")) county = c.long_name;
+      });
+    }
+    fetchTax(locLat, locLng, county);
+    autoAssignZone(place.address_components, locLat, locLng);
+
+    if(txst) { txst.textContent = "✓ Address found — calculating miles..."; txst.style.color = "#2a8a4a"; }
+    tryMiles();
   });
 }
 </script>
