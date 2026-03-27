@@ -1968,6 +1968,12 @@ function minTons(actual) {
   if(!cap) return actual;
   return Math.ceil(actual / cap) * cap;
 }
+// Number of truck loads (ROUNDUP(qty/cap,0)) — used for per-load env fee
+function numLoads(qty) {
+  if(qty <= 0) return 0;
+  const cap = (truck && TRUCK_RATES[truck] && TRUCK_RATES[truck].cap) ? TRUCK_RATES[truck].cap : 25;
+  return Math.ceil(qty / cap);
+}
 
 // ── ZONE CHECK ────────────────────────────────────────────────────────────────
 function pointInPolygon(lat, lng, polygon) {
@@ -2198,12 +2204,14 @@ function calc() {
       if(hrEl && !hrEl.value) hrEl.placeholder = fmt(autoHR) + " (auto)";
     }
     const effQ1 = minTons(q1);
+    const loads1 = numLoads(q1);
     const mat1 = q1 * p1;
     const tax1 = mat1 * txr;
-    const efTax1 = ef1 * txr;
+    const efTotal1 = loads1 * ef1;          // per-load env fee x loads
+    const efTax1 = efTotal1 * txr;
     const haul1 = hr1 * effQ1;
     zonePrem = applyZonePremium(haul1, effQ1);
-    const sub1 = mat1 + tax1 + haul1 + zonePrem + ef1 + efTax1;
+    const sub1 = mat1 + tax1 + haul1 + zonePrem + efTotal1 + efTax1;
     if(effQ1 > q1 && q1 > 0) { showMin=true; minVal=haul1; }
 
     sumH += hdr("MATERIAL 1");
@@ -2211,7 +2219,7 @@ function calc() {
     if(tax1>0) sumH += tr2("Sales Tax ("+v("taxr")+"%)",""+fmt(tax1));
     sumH += tr2("Haul ("+effQ1+"t @ "+fmt(hr1)+"/ton)", fmt(haul1));
     if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
-    sumH += tr2("Env Fee", fmt(ef1));
+    sumH += tr2("Env Fee ("+loads1+" load"+(loads1!==1?"s":"")+" x "+fmt(ef1)+")", fmt(efTotal1));
     if(efTax1>0) sumH += tr2("Env Fee Tax", fmt(efTax1));
     grand += sub1;
     if(q1>0) perTon = sub1 / q1;
@@ -2219,13 +2227,14 @@ function calc() {
 
     if(qt==="split") {
       const q2=v("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
-      const mat2=q2*p2, tax2=mat2*txr, efTax2=ef2*txr;
-      const sub2 = mat2+tax2+slf+ef2+efTax2;
+      const loads2 = numLoads(q2);
+      const mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
+      const sub2 = mat2+tax2+slf+efTotal2+efTax2;
       sumH += '<hr class="div">' + hdr("MATERIAL 2");
       sumH += tr2("Material", fmt(mat2));
       if(tax2>0) sumH += tr2("Sales Tax", fmt(tax2));
       sumH += tr2("Split Load Fee", fmt(slf));
-      sumH += tr2("Env Fee", fmt(ef2));
+      sumH += tr2("Env Fee ("+loads2+" load"+(loads2!==1?"s":"")+" x "+fmt(ef2)+")", fmt(efTotal2));
       if(efTax2>0) sumH += tr2("Env Fee Tax", fmt(efTax2));
       grand += sub2;
     }
@@ -2285,16 +2294,18 @@ function calc() {
       if(el && !el.value) el.placeholder=fmt(autoHR)+" (auto)";
     }
     const eff = minTons(tons);
+    const demoLoads = numLoads(tons);
     const haul = (hr+mu)*eff;
     const dump = (typeof getDumpFeeTotal === 'function') ? getDumpFeeTotal(eff) : df*eff;
-    const efTax = ef*dtxr;
+    const efTotal = demoLoads * ef;
+    const efTax = efTotal * dtxr;
     zonePrem = applyZonePremium(haul, eff);
-    const sub = haul+dump+ef+efTax+zonePrem;
+    const sub = haul+dump+efTotal+efTax+zonePrem;
     if(eff>tons && tons>0) { showMin=true; minVal=haul; }
     sumH += hdr("DEMO / EXPORT");
     sumH += tr2("Haul", fmt(haul));
     sumH += tr2((typeof getDumpFeeLabel === 'function') ? getDumpFeeLabel(eff) : "Dump Fee", fmt(dump));
-    sumH += tr2("Env Fee", fmt(ef));
+    sumH += tr2("Env Fee ("+demoLoads+" load"+(demoLoads!==1?"s":"")+" x "+fmt(ef)+")", fmt(efTotal));
     if(efTax>0) sumH += tr2("Env Fee Tax ("+v("dtaxr")+"%)",""+fmt(efTax));
     if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
     grand = sub; perTon = eff>0 ? sub/eff : 0;
@@ -2791,47 +2802,48 @@ function genQuote() {
 
   if(qt==="std"||qt==="split") {
     const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
-    const effQ1=minTons(q1), mat1=q1*p1, tax1=mat1*txr, efTax1=ef1*txr, haul1=hr1*effQ1;
+    const effQ1=minTons(q1), loads1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr;
+    const efTotal1=loads1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1;
     const zonePrem=applyZonePremium(haul1,effQ1);
     const matName1=s("mat1")||"Rock/Aggregate";
-    const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+ef1+(efTax1>0?efTax1:0);
-    // Row 1: per-ton rates
+    const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+efTotal1+(efTax1>0?efTax1:0);
+    // Row 1: per-ton/per-load rates
     stdRows+=rateRow(
       matName1,
       fmt(p1)+"/ton",
       txr>0 ? fmt(p1*txr)+"/ton" : "&mdash;",
       fmt(hr1)+"/ton",
-      ef1>0 ? fmt(ef1)+" flat" : "&mdash;"
+      ef1>0 ? fmt(ef1)+"/load" : "&mdash;"
     );
     // Row 2: extended totals
     stdRows+=totRow(
       q1+" TON"+(effQ1>q1?" (min "+effQ1+"t)":""),
-      "",
+      loads1>0 ? loads1+" load"+(loads1!==1?"s":"") : "",
       fmt(mat1),
       tax1>0 ? fmt(tax1) : "&mdash;",
       fmt(haul1+(zonePrem>0?zonePrem:0)),
-      ef1>0 ? fmt(ef1+(efTax1>0?efTax1:0)) : "&mdash;",
+      ef1>0 ? fmt(efTotal1+(efTax1>0?efTax1:0)) : "&mdash;",
       fmt(line1Total)
     );
     if(qt==="split") {
       const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-      const mat2=q2*p2,tax2=mat2*txr,efTax2=ef2*txr;
+      const loads2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       const matName2=s("mat2")||"2nd Material";
-      const line2Total=mat2+tax2+slf+ef2+(efTax2>0?efTax2:0);
+      const line2Total=mat2+tax2+slf+efTotal2+(efTax2>0?efTax2:0);
       stdRows+=rateRow(
         matName2+" (Split)",
         fmt(p2)+"/ton",
         txr>0 ? fmt(p2*txr)+"/ton" : "&mdash;",
         fmt(slf/(q2||1))+"/ton",
-        ef2>0 ? fmt(ef2)+" flat" : "&mdash;"
+        ef2>0 ? fmt(ef2)+"/load" : "&mdash;"
       );
       stdRows+=totRow(
         q2+" TON",
-        "",
+        loads2>0 ? loads2+" load"+(loads2!==1?"s":"") : "",
         fmt(mat2),
         tax2>0 ? fmt(tax2) : "&mdash;",
         fmt(slf),
-        ef2>0 ? fmt(ef2+(efTax2>0?efTax2:0)) : "&mdash;",
+        ef2>0 ? fmt(efTotal2+(efTax2>0?efTax2:0)) : "&mdash;",
         fmt(line2Total)
       );
     }
@@ -2869,10 +2881,10 @@ function genQuote() {
     const haul=(hr+mu)*eff, dumpTotal=(typeof getDumpFeeTotal==="function")?getDumpFeeTotal(eff):df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
     const matName=s("dmat")||"Material";
     const dumpLabel=(typeof getDumpFeeLabel==="function")?getDumpFeeLabel(eff):"Dump Fee";
-    stdRows+=rateRow("Hauling — "+matName, "&mdash;", "&mdash;", fmt(hr+mu)+"/ton", "&mdash;");
-    stdRows+=totRow(eff+" TON"+(eff>tons&&tons>0?" (min "+eff+"t)":""), "", "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), "&mdash;", fmt(haul+(zp>0?zp:0)));
+    const demoLoads=numLoads(tons), efTotalD=demoLoads*ef, efTaxD=efTotalD*dtxr;
+    stdRows+=rateRow("Hauling — "+matName, "&mdash;", "&mdash;", fmt(hr+mu)+"/ton", ef>0?fmt(ef)+"/load":"&mdash;");
+    stdRows+=totRow(eff+" TON"+(eff>tons&&tons>0?" (min "+eff+"t)":""), demoLoads>0?demoLoads+" load"+(demoLoads!==1?"s":""):"", "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), ef>0?fmt(efTotalD+(efTaxD>0?efTaxD:0)):"&mdash;", fmt(haul+(zp>0?zp:0)+efTotalD+(efTaxD>0?efTaxD:0)));
     stdRows+=totRow("", dumpLabel, fmt(dumpTotal), "&mdash;", "&mdash;", "&mdash;", fmt(dumpTotal));
-    stdRows+=totRow("", "Environmental Fee", "&mdash;", efTax>0?fmt(efTax):"&mdash;", "&mdash;", fmt(ef), fmt(ef+(efTax>0?efTax:0)));
   }
 
   document.getElementById("stdTableBody").innerHTML=stdRows;
@@ -3382,8 +3394,10 @@ function genBreakdownQuote() {
       const sc = getMmFuelSurcharge(row.haul);
       const effectiveHaul = row.haul + sc;
       const haul = effectiveHaul * row.qty;
-      const efTax = row.env * txr;
-      const rowTotal = matCost + tax + haul + row.env + efTax;
+      const mmLoads = numLoads(row.qty);
+      const efTotal = mmLoads * row.env;
+      const efTax = efTotal * txr;
+      const rowTotal = matCost + tax + haul + efTotal + efTax;
       grandTotal += rowTotal;
       let sec = '<div class="brk-mat-section">';
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+'</div>';
@@ -3391,7 +3405,7 @@ function genBreakdownQuote() {
       if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
       sec += brkLine('Haul ('+row.qty+'t @ '+fmt(row.haul)+'/ton)', row.haul * row.qty);
       if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * row.qty);
-      sec += brkLine('Environmental Fee', row.env);
+      sec += brkLine('Environmental Fee (' + mmLoads + ' load' + (mmLoads!==1?'s':'') + ' x ' + fmt(row.env) + ')', efTotal);
       if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
       sec += '</div>';
       sectionsHtml += sec;
@@ -3401,25 +3415,25 @@ function genBreakdownQuote() {
     const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
     if(qt==="std"||qt==="split") {
       const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
-      const mat1=q1*p1, tax1=mat1*txr, haul1=hr1*q1, efTax1=ef1*txr;
-      grandTotal += mat1+tax1+haul1+ef1+efTax1;
+      const fl1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*q1;
+      grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
       let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+'</div>';
       sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
       if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
       sec+=brkLine('Haul ('+q1+'t @ '+fmt(hr1)+'/ton)',haul1);
-      sec+=brkLine('Environmental Fee',ef1);
+      sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
       if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
       sec+='</div>';
       sectionsHtml+=sec;
       if(qt==="split"){
         const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-        const mat2=q2*p2,tax2=mat2*txr,efTax2=ef2*txr;
-        grandTotal+=mat2+tax2+slf+ef2+efTax2;
+        const fl2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
+        grandTotal+=mat2+tax2+slf+efTotal2+efTax2;
         let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(s("mat2")?' — '+s("mat2"):'')+'</div>';
         sec2+=brkLine(q2+' tons @ '+fmt(p2)+'/ton',mat2);
         if(tax2>0) sec2+=brkLine('Sales Tax ('+v("taxr")+'%)',tax2);
         sec2+=brkLine('Split Load Fee',slf);
-        sec2+=brkLine('Environmental Fee',ef2);
+        sec2+=brkLine('Environmental Fee ('+fl2+' load'+(fl2!==1?'s':'')+' x '+fmt(ef2)+')',efTotal2);
         if(efTax2>0) sec2+=brkLine('Env Fee Tax',efTax2);
         sec2+='</div>';
         sectionsHtml+=sec2;
@@ -3433,12 +3447,13 @@ function genBreakdownQuote() {
       sectionsHtml+=sec;
     } else if(qt==="demo") {
       const dtxr=v("dtaxr")/100,tons=v("dtons"),ef=v("def_"),mu=v("dmu");
-      const hr=v("dhr")||autoHR,haul=(hr+mu)*tons,dumpTotal=getDumpFeeTotal(tons),efTax=ef*dtxr;
-      grandTotal+=haul+dumpTotal+ef+efTax;
+      const dfl=numLoads(tons), hr=v("dhr")||autoHR, haul=(hr+mu)*tons, dumpTotal=getDumpFeeTotal(tons);
+      const efTotalD=dfl*ef, efTax=efTotalD*dtxr;
+      grandTotal+=haul+dumpTotal+efTotalD+efTax;
       let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT'+(s("dmat")?' — '+s("dmat"):'')+'</div>';
       sec+=brkLine('Hauling ('+tons+'t @ '+fmt(hr+mu)+'/ton)',haul);
       sec+=brkLine(getDumpFeeLabel(tons),dumpTotal);
-      sec+=brkLine('Environmental Fee',ef);
+      sec+=brkLine('Environmental Fee ('+dfl+' load'+(dfl!==1?'s':'')+' x '+fmt(ef)+')',efTotalD);
       if(efTax>0) sec+=brkLine('Env Fee Tax ('+v("dtaxr")+'%)',efTax);
       sec+='</div>';
       sectionsHtml+=sec;
