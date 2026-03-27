@@ -1397,8 +1397,12 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- MULTI-MATERIAL INPUT (Breakdown mode) -->
   <div class="card gap gone" id="mmSec">
     <div class="ct">Materials &amp; Pricing</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:11px;color:#4a7cc7;">Enter each material. Tax rate is shared from the job site above.</div>
+    <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:160px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:4px;">Job Site Miles (shared)</div>
+        <input type="number" id="mmMiles" placeholder="Auto from job site" min="0" step="0.1" oninput="calcMM()" style="width:100%;padding:7px 10px;font-size:13px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:#fff;">
+      </div>
+      <div style="font-size:10px;color:#4a7cc7;flex:2;">Select a plant per row — haul rate auto-fills from that plant to your job site. Tax rate is shared from the location lookup above.</div>
       <button onclick="autoFillHaul()" style="padding:8px 14px;background:linear-gradient(135deg,var(--acc),#0099cc);color:var(--dk);border:none;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">&#9889; AUTO HAUL RATE</button>
     </div>
     <div style="overflow-x:auto;">
@@ -1406,7 +1410,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <thead>
           <tr style="background:#1a3a6b;color:#fff;">
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;width:28px;">#</th>
-            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:180px;">Material Description</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Plant</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Material</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Qty (tons)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Price ($/ton)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Haul ($/ton)</th>
@@ -2839,6 +2844,189 @@ function setQStyle(style) {
 }
 
 // ── MULTI-MATERIAL ROWS ───────────────────────────────────────────────────────
+var MM_PLANT_OPTS = `<option value="">— Select plant —</option><option value="38050 75th Street East, Palmdale, CA" data-name="75th Street Quarry and Recycling">75th Street Quarry and Recycling</option>
+<option value="11230 Roscoe Blvd, Sun Valley, CA 91352" data-name="AMH Recycling">AMH Recycling</option>
+<option value="9005 Bradley Ave, Sun Valley, CA 91352" data-name="Arcosa (Crushed Concrete / Aggregates)">Arcosa (Crushed Concrete / Aggregates)</option>
+<option value="507 E Ave L 12, Lancaster, CA 93535" data-name="Arrow Construction Company">Arrow Construction Company</option>
+<option value="30th St W, Rosamond, CA 93560" data-name="Big Iron Concrete and Asphalt Disposal">Big Iron Concrete and Asphalt Disposal</option>
+<option value="11462 Penrose St., Sun Valley, CA 91352" data-name="Blue Diamond Materials">Blue Diamond Materials</option>
+<option value="36011 Soapmine Rd, Barstow, CA 92311" data-name="Brubaker-Mann Inc">Brubaker-Mann Inc</option>
+<option value="12087 Lopez Canyon Rd, Sylmar, CA 91342" data-name="C&M Topsoil (Sylmar)">C&M Topsoil (Sylmar)</option>
+<option value="18400 Falchion Rd, Apple Valley, CA 92307" data-name="CalPortland (Apple Valley)">CalPortland (Apple Valley)</option>
+<option value="3500 Grimes Canyon Road, Fillmore, CA 93021" data-name="CalPortland (Fillmore)">CalPortland (Fillmore)</option>
+<option value="5091 Rickenbacker Rd, Bell, CA 90201" data-name="Cemex (Bell Terminal)">Cemex (Bell Terminal)</option>
+<option value="13475 N Friant Rd, Friant, CA 93626" data-name="Cemex (Friant)">Cemex (Friant)</option>
+<option value="9035 Roseland Ave, Moorpark, CA 93021" data-name="Cemex (Moorpark)">Cemex (Moorpark)</option>
+<option value="24724 Quarry Rd, Apple Valley, CA 92307" data-name="Cemex (White Mountain)">Cemex (White Mountain)</option>
+<option value="13114 E Avenue T, Palmdale, CA 93543" data-name="Coast Aggregates (Palmdale)">Coast Aggregates (Palmdale)</option>
+<option value="22925 Coltrane Avenue, Newhall, CA 91321" data-name="Foothill Soils (Coltrane Yard)">Foothill Soils (Coltrane Yard)</option>
+<option value="21780 Temescal Canyon Road, Corona, CA 92883" data-name="FST Sand & Gravel">FST Sand & Gravel</option>
+<option value="5810 Bennett Road, Simi Valley, CA 93062" data-name="Gillibrand Industrial Sands (Simi Valley)">Gillibrand Industrial Sands (Simi Valley)</option>
+<option value="34809 155th Street East, Llano, CA 93544" data-name="Granite Construction (Big Rock)">Granite Construction (Big Rock)</option>
+<option value="25485 Iverson Road, Gonzales, CA 93926" data-name="Granite Construction (Handley Ranch)">Granite Construction (Handley Ranch)</option>
+<option value="999 Mission Rock Road, Santa Paula, CA 93060" data-name="Granite Construction (Santa Paula)">Granite Construction (Santa Paula)</option>
+<option value="6500 E Avenue T, Littlerock, CA 93552" data-name="Hi-Grade Materials (Littlerock)">Hi-Grade Materials (Littlerock)</option>
+<option value="8701 Meridian Road, Lucerne Valley, CA 92356" data-name="Hi-Grade Materials (Lucerne)">Hi-Grade Materials (Lucerne)</option>
+<option value="2 Prison Road, Jean, NV 89019" data-name="Las Vegas Rock">Las Vegas Rock</option>
+<option value="19494 River Rock Road, Corona, CA 91718" data-name="Martin Marietta (Eagle Valley / Corona)">Martin Marietta (Eagle Valley / Corona)</option>
+<option value="13550 Live Oak Avenue, Irwindale, CA 91706" data-name="Martin Marietta (Irwindale)">Martin Marietta (Irwindale)</option>
+<option value="10618 Mojave-Tropico Road, Mojave, CA 93501" data-name="MRC Rock (Mojave)">MRC Rock (Mojave)</option>
+<option value="15558 Maricopa Hwy, Ojai, CA 93023" data-name="MRC Rock (Ojai)">MRC Rock (Ojai)</option>
+<option value="2006 N Campus Ave, Upland, CA 91786" data-name="MRC Rock (Upland)">MRC Rock (Upland)</option>
+<option value="1565 Ventura St, Fillmore, CA 93015" data-name="MRC Rock & Sand">MRC Rock & Sand</option>
+<option value="1501 W Pier D St, Long Beach, CA 90802" data-name="Orca Sand & Gravel (Port of Long Beach)">Orca Sand & Gravel (Port of Long Beach)</option>
+<option value="1000 Pancho Road, Camarillo, CA 93012" data-name="Pacific Rock (Camarillo)">Pacific Rock (Camarillo)</option>
+<option value="82700 Trona Road, Trona, CA 93592" data-name="Panamint Valley Limestone">Panamint Valley Limestone</option>
+<option value="1224 East Santa Clara Street, Santa Paula, CA 93060" data-name="Santa Paula Materials">Santa Paula Materials</option>
+<option value="6565 Meridian Ave, Lucerne Valley, CA 92356" data-name="SMI">SMI</option>
+<option value="1000 Cinder Rd, Little Lake, CA 93542" data-name="Twin Mountain Rock Venture">Twin Mountain Rock Venture</option>
+<option value="1245 East Arrow Highway, Irwindale, CA 91706" data-name="United Rock Products">United Rock Products</option>
+<option value="" data-name="Vaughan Source">Vaughan Source</option>
+<option value="1709 Sherborn St, Corona, CA 92879" data-name="Vulcan Materials (Corona)">Vulcan Materials (Corona)</option>
+<option value="5050 N. Irwindale Avenue, Irwindale, CA 91702" data-name="Vulcan Materials (Durbin)">Vulcan Materials (Durbin)</option>
+<option value="6851 E Avenue T, Palmdale, CA 93552" data-name="Vulcan Materials (Palmdale)">Vulcan Materials (Palmdale)</option>
+<option value="16001 E Foothill Blvd, Irwindale, CA 91702" data-name="Vulcan Materials (Reliance)">Vulcan Materials (Reliance)</option>
+<option value="2400 W Highland Ave, San Bernardino, CA 92407" data-name="Vulcan Materials (San Bernardino)">Vulcan Materials (San Bernardino)</option>
+<option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
+<option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option>`;
+var MM_MAT_OPTS = `<option value="">— Select material —</option><option value="1" Gravel">1" Gravel</option>
+<option value="1" Crushed Rock">1" Crushed Rock</option>
+<option value="1" Del Rio">1" Del Rio</option>
+<option value="1" Black Del Rio">1" Black Del Rio</option>
+<option value="1" - 2" White Rock">1" - 2" White Rock</option>
+<option value="1 1/2" Gravel">1 1/2" Gravel</option>
+<option value="1 1/2" Crushed Rock">1 1/2" Crushed Rock</option>
+<option value="1 1/2" California Gold Rock">1 1/2" California Gold Rock</option>
+<option value="1 1/2" Crushed Aggregate Base">1 1/2" Crushed Aggregate Base</option>
+<option value="1 1/2" Del Rio">1 1/2" Del Rio</option>
+<option value="1 1/2" Gold Rock">1 1/2" Gold Rock</option>
+<option value="1 1/2" Gravel">1 1/2" Gravel</option>
+<option value="1 1/2" Noiyos/Yosem">1 1/2" Noiyos/Yosem</option>
+<option value="1 1/2" Open Graded Aggregate">1 1/2" Open Graded Aggregate</option>
+<option value="1 1/2" Red Rock">1 1/2" Red Rock</option>
+<option value="1 1/2" - 3" Arizona River Rock">1 1/2" - 3" Arizona River Rock</option>
+<option value="1/2" Crushed Rock">1/2" Crushed Rock</option>
+<option value="1/2" Washed Crushed Rock">1/2" Washed Crushed Rock</option>
+<option value="1/2" - 3/4" Arizona River Rock">1/2" - 3/4" Arizona River Rock</option>
+<option value="1 Ton Rip Rap">1 Ton Rip Rap</option>
+<option value="1/2 Ton Rip Rap">1/2 Ton Rip Rap</option>
+<option value="1/4 Ton Rip Rap">1/4 Ton Rip Rap</option>
+<option value="2" - 4" Cobble">2" - 4" Cobble</option>
+<option value="2" - 4" Crushed Rock">2" - 4" Crushed Rock</option>
+<option value="2" - 4" Gold Rock">2" - 4" Gold Rock</option>
+<option value="2" - 4" Noiyos/Yosem">2" - 4" Noiyos/Yosem</option>
+<option value="2" - 4" Red Rock">2" - 4" Red Rock</option>
+<option value="2" - 4" Tropico">2" - 4" Tropico</option>
+<option value="2" - 5" Cobble">2" - 5" Cobble</option>
+<option value="3" Minus Crushed Rock">3" Minus Crushed Rock</option>
+<option value="3" - 6" Arizona River Rock">3" - 6" Arizona River Rock</option>
+<option value="3" - 6" Crushed Rock">3" - 6" Crushed Rock</option>
+<option value="3/4" 50-50 Mix (C-Mix)">3/4" 50-50 Mix (C-Mix)</option>
+<option value="3/4" Bark Brown">3/4" Bark Brown</option>
+<option value="3/4" Black Lava">3/4" Black Lava</option>
+<option value="3/4" California Gold Rock">3/4" California Gold Rock</option>
+<option value="3/4" Crushed Rock">3/4" Crushed Rock</option>
+<option value="3/4" Eagle Mountain (3/8" Crushed)">3/4" Eagle Mountain (3/8" Crushed)</option>
+<option value="3/4" Gold Rock">3/4" Gold Rock</option>
+<option value="3/4" Handley Gold">3/4" Handley Gold</option>
+<option value="3/4" Noiyos/Yosem">3/4" Noiyos/Yosem</option>
+<option value="3/4" Palm Springs Gold">3/4" Palm Springs Gold</option>
+<option value="3/4" Rainbow Rock">3/4" Rainbow Rock</option>
+<option value="3/4" Red Lava">3/4" Red Lava</option>
+<option value="3/4" Red Rock">3/4" Red Rock</option>
+<option value="3/4" Washed Crushed Rock">3/4" Washed Crushed Rock</option>
+<option value="3/4" White Rock">3/4" White Rock</option>
+<option value="3/4" Wine Red">3/4" Wine Red</option>
+<option value="3/4" - 1 1/2" Arizona River Rock">3/4" - 1 1/2" Arizona River Rock</option>
+<option value="3/8" 50-50 Mix (C-Mix)">3/8" 50-50 Mix (C-Mix)</option>
+<option value="3/8" Arizona River Rock">3/8" Arizona River Rock</option>
+<option value="3/8" Black Del Rio">3/8" Black Del Rio</option>
+<option value="3/8" California Gold Rock">3/8" California Gold Rock</option>
+<option value="3/8" Crushed Rock">3/8" Crushed Rock</option>
+<option value="3/8" Eagle Mountain (3/8" Crushed)">3/8" Eagle Mountain (3/8" Crushed)</option>
+<option value="3/8" Gold Rock">3/8" Gold Rock</option>
+<option value="3/8" Gravel (Pea Gravel)">3/8" Gravel (Pea Gravel)</option>
+<option value="3/8" Handley Gold">3/8" Handley Gold</option>
+<option value="3/8" Noiyos/Yosem">3/8" Noiyos/Yosem</option>
+<option value="3/8" Red Rock">3/8" Red Rock</option>
+<option value="3/8" Washed Crushed Rock">3/8" Washed Crushed Rock</option>
+<option value="3/8" White Rock">3/8" White Rock</option>
+<option value="4" - 8" Cobble">4" - 8" Cobble</option>
+<option value="4" - 8" Gold Rock">4" - 8" Gold Rock</option>
+<option value="4" - 8" Noiyos/Yosem">4" - 8" Noiyos/Yosem</option>
+<option value="4" - 8" Red Rock">4" - 8" Red Rock</option>
+<option value="6" - 8" Cobble">6" - 8" Cobble</option>
+<option value="8" - 18" Rip Rap">8" - 18" Rip Rap</option>
+<option value="18/30 White Sand">18/30 White Sand</option>
+<option value="50/50 Planter Mix">50/50 Planter Mix</option>
+<option value="70/30 Planter Mix">70/30 Planter Mix</option>
+<option value="#30 Sand">#30 Sand</option>
+<option value="#30 Silver Sand">#30 Silver Sand</option>
+<option value="#57 Rock">#57 Rock</option>
+<option value="Angel Mix">Angel Mix</option>
+<option value="Arema #4">Arema #4</option>
+<option value="Arema #4a">Arema #4a</option>
+<option value="Arema #5">Arema #5</option>
+<option value="Asphalt (customers must specify mix)">Asphalt (customers must specify mix)</option>
+<option value="Asphalt Grindings">Asphalt Grindings</option>
+<option value="Birdseye">Birdseye</option>
+<option value="Brown Shredded Mulch">Brown Shredded Mulch</option>
+<option value="California Gold DG">California Gold DG</option>
+<option value="California Stabilized Gold DG">California Stabilized Gold DG</option>
+<option value="Class I Rip Rap">Class I Rip Rap</option>
+<option value="Class II Base/CMB (Recycled)">Class II Base/CMB (Recycled)</option>
+<option value="Class II Natural Base">Class II Natural Base</option>
+<option value="Class II Permeable Base">Class II Permeable Base</option>
+<option value="Class II Rip Rap">Class II Rip Rap</option>
+<option value="Class III Rip Rap">Class III Rip Rap</option>
+<option value="Class IV Rip Rap">Class IV Rip Rap</option>
+<option value="Class V Rip Rap">Class V Rip Rap</option>
+<option value="CMB">CMB</option>
+<option value="Cobble">Cobble</option>
+<option value="Cold Mix">Cold Mix</option>
+<option value="Compost">Compost</option>
+<option value="Concrete - Washout">Concrete - Washout</option>
+<option value="Cone Fines">Cone Fines</option>
+<option value="Crushed Aggregate Base (CAB)">Crushed Aggregate Base (CAB)</option>
+<option value="Cyclone Sand">Cyclone Sand</option>
+<option value="Decomposed Granite">Decomposed Granite</option>
+<option value="DG">DG</option>
+<option value="Dry Plaster Sand (DPS)">Dry Plaster Sand (DPS)</option>
+<option value="Facing Class Rip Rap">Facing Class Rip Rap</option>
+<option value="Fill Dirt">Fill Dirt</option>
+<option value="Fill Sand">Fill Sand</option>
+<option value="Fine Arena Sand (Equifina)">Fine Arena Sand (Equifina)</option>
+<option value="G20 Sand">G20 Sand</option>
+<option value="Gas Sand">Gas Sand</option>
+<option value="Gold DG">Gold DG</option>
+<option value="Gorilla Hair">Gorilla Hair</option>
+<option value="Grey DG (Type II Rock Dust)">Grey DG (Type II Rock Dust)</option>
+<option value="Light Class Rip Rap">Light Class Rip Rap</option>
+<option value="Medium Bark Nuggets">Medium Bark Nuggets</option>
+<option value="Mojave Gold DG">Mojave Gold DG</option>
+<option value="Montecito Rock">Montecito Rock</option>
+<option value="Mulch">Mulch</option>
+<option value="Pink DG">Pink DG</option>
+<option value="Processed Misc. Base (PMB)">Processed Misc. Base (PMB)</option>
+<option value="Red Brick Fines">Red Brick Fines</option>
+<option value="Red DG">Red DG</option>
+<option value="Rock Dust">Rock Dust</option>
+<option value="Sandy Loam Topsoil">Sandy Loam Topsoil</option>
+<option value="Sespi Cobble">Sespi Cobble</option>
+<option value="Shoulder Backing">Shoulder Backing</option>
+<option value="Stabilized Decomposed Granite">Stabilized Decomposed Granite</option>
+<option value="Stabilized Gold DG">Stabilized Gold DG</option>
+<option value="Stabilized Red DG">Stabilized Red DG</option>
+<option value="Stabilized Wine Red DG">Stabilized Wine Red DG</option>
+<option value="Topsoil">Topsoil</option>
+<option value="Walk-On-Bark">Walk-On-Bark</option>
+<option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
+<option value="Washed Plaster Sand">Washed Plaster Sand</option>
+<option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
+<option value="Wine Red DG">Wine Red DG</option>`;
+function buildPlantOptions() { return MM_PLANT_OPTS; }
+function buildMatOptions()  { return MM_MAT_OPTS; }
+
 function renderMMRows() {
   var countEl = document.getElementById("brkMatCount");
   var n = countEl ? (parseInt(countEl.value) || 3) : 3;
@@ -2849,7 +3037,8 @@ function renderMMRows() {
   var existing = [];
   tbody.querySelectorAll("tr").forEach(function(tr) {
     existing.push({
-      desc:  tr.querySelector(".mm-desc")  ? tr.querySelector(".mm-desc").value  : "",
+      plant: tr.querySelector(".mm-plant") ? tr.querySelector(".mm-plant").value : "",
+      mat:   tr.querySelector(".mm-mat")   ? tr.querySelector(".mm-mat").value   : "",
       qty:   tr.querySelector(".mm-qty")   ? tr.querySelector(".mm-qty").value   : "",
       price: tr.querySelector(".mm-price") ? tr.querySelector(".mm-price").value : "",
       haul:  tr.querySelector(".mm-haul")  ? tr.querySelector(".mm-haul").value  : "",
@@ -2857,24 +3046,43 @@ function renderMMRows() {
     });
   });
 
+  var plantOpts = buildPlantOptions();
+  var matOpts   = buildMatOptions();
+  var inStyle   = "width:100%;padding:5px 6px;font-size:11px;background:#fff;border:1.5px solid #b0c8e8;border-radius:4px;color:#111;";
+
   var html = "";
   for(var i = 0; i < n; i++) {
     var ex = existing[i] || {};
-    var descVal  = (ex.desc  || "").replace(/"/g, "&quot;");
     var qtyVal   = ex.qty   || "";
     var priceVal = ex.price || "";
     var haulVal  = ex.haul  || "";
     var envVal   = (ex.env !== undefined && ex.env !== "") ? ex.env : "10";
-    html += '<tr>'
-      + '<td style="text-align:center;color:var(--sand);font-weight:700;font-size:11px;padding:4px 6px;">' + (i+1) + '</td>'
-      + '<td style="padding:4px;"><input type="text" class="mm-desc" placeholder="Material description" value="' + descVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);"></td>'
-      + '<td style="padding:4px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
-      + '<td style="padding:4px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
-      + '<td style="padding:4px;"><input type="number" class="mm-haul" placeholder="click Auto" min="0" step="0.01" value="' + haulVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
-      + '<td style="padding:4px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
+
+    // Build plant select with preserved value
+    var pSel = '<select class="mm-plant" onchange="onMMPlant(this,' + i + ')" style="' + inStyle + '">' + plantOpts + '</select>';
+
+    // Build mat select with preserved value
+    var mSel = '<select class="mm-mat" onchange="calcMM()" style="' + inStyle + '">' + matOpts + '</select>';
+
+    html += '<tr style="border-bottom:1px solid #dce8f5;">'
+      + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
+      + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
+      + '<td style="padding:4px 3px;min-width:160px;">' + mSel + '</td>'
+      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-haul" placeholder="auto" min="0" step="0.01" value="' + haulVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '</tr>';
   }
   tbody.innerHTML = html;
+
+  // Restore selected values for selects AFTER innerHTML is set
+  var rows2 = tbody.querySelectorAll("tr");
+  rows2.forEach(function(tr, i) {
+    var ex2 = existing[i] || {};
+    if(ex2.plant) { var ps = tr.querySelector(".mm-plant"); if(ps) ps.value = ex2.plant; }
+    if(ex2.mat)   { var ms = tr.querySelector(".mm-mat");   if(ms) ms.value = ex2.mat; }
+  });
 }
 
 function calcMM() {
@@ -2918,51 +3126,94 @@ function autoFillHaul() {
   });
   calcMM();
 }
+function onMMPlant(selectEl, rowIndex) {
+  var addr = selectEl.value;
+  if(!addr) return;
+  var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
+  var haulEl = row ? row.querySelector(".mm-haul") : null;
+  if(!haulEl) return;
+
+  // If no job site yet, just return
+  if(!locLat && !locLng && !locPid) return;
+
+  // Use Google Maps Distance Matrix if available
+  if(typeof google !== "undefined" && google.maps) {
+    var dest = locPid ? {placeId: locPid} : {lat: locLat, lng: locLng};
+    var svc = new google.maps.DistanceMatrixService();
+    svc.getDistanceMatrix({
+      origins: [addr],
+      destinations: [dest],
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.IMPERIAL,
+      avoidTolls: true
+    }, function(resp, st) {
+      if(st === "OK" && resp.rows[0].elements[0].status === "OK") {
+        var miles = resp.rows[0].elements[0].distance.value / 1609.344;
+        var rate = getAutoHaulRate(miles);
+        if(rate > 0) {
+          haulEl.value = rate.toFixed(2);
+          haulEl.style.borderColor = "#2a8a4a";
+          calcMM();
+        }
+      }
+    });
+  } else {
+    // No Maps — just fill with current global rate if available
+    var autoHR = getAutoHaulRate(currentMiles || 0);
+    if(autoHR > 0) { haulEl.value = autoHR.toFixed(2); calcMM(); }
+  }
+}
+
 
 // applyAutoHaul: works for ALL quote types — fills the right haul rate field
 function applyAutoHaul() {
-  var autoHR = getAutoHaulRate(currentMiles || 0);
+  var miles = currentMiles
+    || parseFloat((document.getElementById("mmMiles")||{}).value)
+    || v("mi1") || v("hmi") || v("dmi") || v("fmi") || 0;
+  var autoHR = getAutoHaulRate(miles);
   if(autoHR <= 0) {
-    alert("No job site selected yet \u2014 enter the job site address first so miles can be calculated.");
+    alert("Miles not calculated yet. Select a job site address OR enter miles manually in the Miles field.");
     return;
   }
-  var rate = autoHR.toFixed(2);
   if(qStyle === "breakdown") {
-    // Fill all mm-haul rows
     var tbody = document.getElementById("mmTbody");
     if(tbody) {
       tbody.querySelectorAll(".mm-haul").forEach(function(el) {
-        el.value = rate;
-        el.style.borderColor = "rgba(0,191,255,.6)";
+        el.value = autoHR.toFixed(2);
+        el.style.borderColor = "#2a8a4a";
       });
       calcMM();
     }
   } else {
-    // Fill the haul rate field for the active quote type
     var fieldMap = {std:"hr1", split:"hr1", haul:"hhr", freight:"ffr", demo:"dhr"};
     var fieldId = fieldMap[qt] || "hr1";
     var el = document.getElementById(fieldId);
-    if(el) {
-      el.value = rate;
-      el.style.borderColor = "rgba(0,191,255,.6)";
-    }
+    if(el) { el.value = autoHR.toFixed(2); el.style.borderColor = "#2a8a4a"; }
     calc();
   }
 }
 
 function getMMData() {
-  const rows = [];
-  const tbody = document.getElementById("mmTbody");
+  var rows = [];
+  var tbody = document.getElementById("mmTbody");
   if(!tbody) return rows;
-  const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || 0);
+  var miles = currentMiles
+    || parseFloat((document.getElementById("mmMiles")||{}).value)
+    || v("mi1") || v("hmi") || v("dmi") || 0;
+  var autoHR = getAutoHaulRate(miles);
   tbody.querySelectorAll("tr").forEach(function(tr) {
-    const desc  = tr.querySelector(".mm-desc")  ? tr.querySelector(".mm-desc").value.trim()  : "";
-    const qty   = parseFloat(tr.querySelector(".mm-qty")   ? tr.querySelector(".mm-qty").value   : 0) || 0;
-    const price = parseFloat(tr.querySelector(".mm-price") ? tr.querySelector(".mm-price").value : 0) || 0;
-    const haulEl = tr.querySelector(".mm-haul");
-    const haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
-    const env   = parseFloat(tr.querySelector(".mm-env")   ? tr.querySelector(".mm-env").value   : 10) || 0;
-    if(qty > 0 || desc) rows.push({desc, qty, price, haul, env});
+    var matEl   = tr.querySelector(".mm-mat");
+    var plantEl = tr.querySelector(".mm-plant");
+    var desc    = matEl   ? matEl.value.trim()   : "";
+    var plant   = plantEl ? (plantEl.options[plantEl.selectedIndex] ? plantEl.options[plantEl.selectedIndex].text : "") : "";
+    if(plant === "\u2014 Select plant \u2014") plant = "";
+    if(desc === "\u2014 Select material \u2014") desc = "";
+    var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
+    var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
+    var haulEl = tr.querySelector(".mm-haul");
+    var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
+    var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
+    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, price: price, haul: haul, env: env});
   });
   return rows;
 }
@@ -3036,7 +3287,7 @@ function genBreakdownQuote() {
       const rowTotal = matCost + tax + haul + row.env + efTax;
       grandTotal += rowTotal;
       let sec = '<div class="brk-mat-section">';
-      sec += '<div class="brk-mat-hdr">MATERIAL '+(idx+1)+(row.desc?' — '+row.desc:'')+'</div>';
+      sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+'</div>';
       sec += brkLine(row.qty+' ton'+(row.qty!==1?'s':'')+' @ '+fmt(row.price)+'/ton', matCost);
       if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
       sec += brkLine('Haul ('+row.qty+'t @ '+fmt(row.haul)+'/ton)', haul);
