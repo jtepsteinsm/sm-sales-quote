@@ -1457,6 +1457,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <select id="brkMatCount" onchange="renderMMRows()" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
       </div>
       <button class="btn btnp" onclick="genQuote()">▶ GENERATE QUOTE</button>
+      <button class="btn btns" onclick="applyAutoHaul()" style="background:rgba(0,191,255,.12);border-color:var(--acc);color:var(--acc);">⚡ AUTO HAUL RATE</button>
       <button class="btn btns" onclick="printQ()">⎙ PRINT / SAVE PDF</button>
       <button class="btn btns" onclick="copyEmail()">✉ COPY EMAIL</button>
       <button class="btn btng" onclick="clearAll()">✕ CLEAR FORM</button>
@@ -2902,7 +2903,7 @@ function calcMM() {
   document.getElementById("tpt").textContent    = "$0.00/ton";
 }
 
-// autoFillHaul: fills every mm-haul input with the calculated rate on button click
+// autoFillHaul: fills every mm-haul input (breakdown mode)
 function autoFillHaul() {
   var autoHR = getAutoHaulRate(currentMiles || 0);
   if(autoHR <= 0) {
@@ -2916,6 +2917,37 @@ function autoFillHaul() {
     el.style.borderColor = "rgba(0,191,255,.6)";
   });
   calcMM();
+}
+
+// applyAutoHaul: works for ALL quote types — fills the right haul rate field
+function applyAutoHaul() {
+  var autoHR = getAutoHaulRate(currentMiles || 0);
+  if(autoHR <= 0) {
+    alert("No job site selected yet \u2014 enter the job site address first so miles can be calculated.");
+    return;
+  }
+  var rate = autoHR.toFixed(2);
+  if(qStyle === "breakdown") {
+    // Fill all mm-haul rows
+    var tbody = document.getElementById("mmTbody");
+    if(tbody) {
+      tbody.querySelectorAll(".mm-haul").forEach(function(el) {
+        el.value = rate;
+        el.style.borderColor = "rgba(0,191,255,.6)";
+      });
+      calcMM();
+    }
+  } else {
+    // Fill the haul rate field for the active quote type
+    var fieldMap = {std:"hr1", split:"hr1", haul:"hhr", freight:"ffr", demo:"dhr"};
+    var fieldId = fieldMap[qt] || "hr1";
+    var el = document.getElementById(fieldId);
+    if(el) {
+      el.value = rate;
+      el.style.borderColor = "rgba(0,191,255,.6)";
+    }
+    calc();
+  }
 }
 
 function getMMData() {
