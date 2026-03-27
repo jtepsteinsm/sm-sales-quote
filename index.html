@@ -2836,7 +2836,7 @@ function genQuote() {
   let stdRows = "";
 
   if(qt==="std"||qt==="split") {
-    const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
+    const q1=v("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
     const effQ1=minTons(q1), loads1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr;
     const efTotal1=loads1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1;
     const zonePrem=applyZonePremium(haul1,effQ1);
@@ -2883,7 +2883,7 @@ function genQuote() {
       );
     }
   } else if(qt==="haul") {
-    const tons=v("htons"),mi=currentMiles||v("hmi"),rate=v("hhr")||getAutoHaulRate(mi);
+    const tons=v("htons"),mi=currentMiles||v("hmi"),rate=applySurcharge(v("hhr")||getAutoHaulRate(mi),"h");
     const eff=minTons(tons), haul=rate*eff, zp=applyZonePremium(haul,eff);
     const matName=s("hmat")||"Material";
     stdRows+=rateRow("Haul Rate — "+matName, "&mdash;", "&mdash;", fmt(rate)+"/ton", "&mdash;");
@@ -2898,7 +2898,7 @@ function genQuote() {
       fmt(haul+(zp>0?zp:0))
     );
   } else if(qt==="freight") {
-    const tons=v("ftons"),mi=currentMiles||v("fmi"),rate=v("ffr")||getAutoHaulRate(mi),fuel=v("ffs");
+    const tons=v("ftons"),mi=currentMiles||v("fmi"),rate=applySurcharge(v("ffr")||getAutoHaulRate(mi),"f"),fuel=v("ffs");
     const eff=minTons(tons), freight=(rate+fuel)*eff, zp=applyZonePremium(freight,eff);
     const matName=s("fmat")||"Material";
     stdRows+=rateRow("Freight — "+matName, "&mdash;", "&mdash;", fmt(rate+(fuel>0?fuel:0))+"/ton", "&mdash;");
@@ -2914,7 +2914,7 @@ function genQuote() {
     );
   } else if(qt==="demo") {
     const dtxr=v("dtaxr")/100, tons=v("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
-    const hr=v("dhr")||getAutoHaulRate(mi), eff=minTons(tons);
+    const hr=applySurcharge(v("dhr")||getAutoHaulRate(mi),"d"), eff=minTons(tons);
     const haul=(hr+mu)*eff, dumpTotal=(typeof getDumpFeeTotal==="function")?getDumpFeeTotal(eff):df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
     const matName=s("dmat")||"Material";
     const dumpLabel=(typeof getDumpFeeLabel==="function")?getDumpFeeLabel(eff):"Dump Fee";
@@ -3451,7 +3451,7 @@ function genBreakdownQuote() {
     // Fallback: single qt-based section
     const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
     if(qt==="std"||qt==="split") {
-      const q1=v("qty1"),p1=v("pr1"),hr1=v("hr1")||autoHR,ef1=v("ef1");
+      const q1=v("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
       const fl1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*q1;
       grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
       let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+'</div>';
