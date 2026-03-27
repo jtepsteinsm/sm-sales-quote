@@ -131,6 +131,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 .q-tbl td:nth-child(2){text-align:left;}
 .q-tbl tr:nth-child(even){background:#f6f9fd;}
 .q-tbl tr:last-child td{border-bottom:2px solid #1a3a6b;}
+.q-tbl tr.rate-row td{font-style:italic;color:#555;font-size:9.5px;background:#f8fafd;}
 /* Quarry note */
 .q-qnote{font-size:9px;color:#555;padding:5px 8px;background:#f8f9fb;border-left:3px solid #b0c4de;margin-bottom:8px;line-height:1.4;}
 /* Totals */
@@ -1963,7 +1964,9 @@ function getAutoHaulRate(miles) {
 
 function minTons(actual) {
   if(!truck || actual <= 0) return actual;
-  return Math.max(actual, TRUCK_MIN[truck] || 0);
+  const cap = (TRUCK_RATES[truck] && TRUCK_RATES[truck].cap) ? TRUCK_RATES[truck].cap : (TRUCK_MIN[truck] || 0);
+  if(!cap) return actual;
+  return Math.ceil(actual / cap) * cap;
 }
 
 // ── ZONE CHECK ────────────────────────────────────────────────────────────────
@@ -2776,8 +2779,13 @@ function genQuote() {
   const autoHR = getAutoHaulRate(mi1);
 
   // Build table rows for standard quote template
-  function stdRow(um, commodity, material, tax, freight, envFee, unitPrice) {
-    return `<tr><td>${um}</td><td>${commodity}</td><td>${material}</td><td>${tax}</td><td>${freight}</td><td>${envFee}</td><td>${unitPrice}</td></tr>`;
+  // rateRow = italic header row showing per-ton rates
+  // totRow  = bold totals row showing extended amounts
+  function rateRow(commodity, matPerTon, taxPerTon, haulPerTon, envPerTon) {
+    return `<tr class="rate-row"><td>1 TON</td><td>${commodity}</td><td>${matPerTon}</td><td>${taxPerTon}</td><td>${haulPerTon}</td><td>${envPerTon}</td><td>&mdash;</td></tr>`;
+  }
+  function totRow(um, commodity, material, tax, freight, envFee, lineTotal) {
+    return `<tr><td>${um}</td><td>${commodity}</td><td>${material}</td><td>${tax}</td><td>${freight}</td><td>${envFee}</td><td>${lineTotal}</td></tr>`;
   }
   let stdRows = "";
 
@@ -2786,33 +2794,85 @@ function genQuote() {
     const effQ1=minTons(q1), mat1=q1*p1, tax1=mat1*txr, efTax1=ef1*txr, haul1=hr1*effQ1;
     const zonePrem=applyZonePremium(haul1,effQ1);
     const matName1=s("mat1")||"Rock/Aggregate";
-    const envTotal1=ef1+(efTax1>0?efTax1:0)+(zonePrem>0?0:0);
-    stdRows+=stdRow(q1+" TON", matName1, fmt(mat1), tax1>0?fmt(tax1):"&mdash;", fmt(haul1+(zonePrem>0?zonePrem:0)), fmt(ef1+(efTax1>0?efTax1:0)), fmt(p1)+"/ton");
+    const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+ef1+(efTax1>0?efTax1:0);
+    // Row 1: per-ton rates
+    stdRows+=rateRow(
+      matName1,
+      fmt(p1)+"/ton",
+      txr>0 ? fmt(p1*txr)+"/ton" : "&mdash;",
+      fmt(hr1)+"/ton",
+      ef1>0 ? fmt(ef1)+" flat" : "&mdash;"
+    );
+    // Row 2: extended totals
+    stdRows+=totRow(
+      q1+" TON"+(effQ1>q1?" (min "+effQ1+"t)":""),
+      "",
+      fmt(mat1),
+      tax1>0 ? fmt(tax1) : "&mdash;",
+      fmt(haul1+(zonePrem>0?zonePrem:0)),
+      ef1>0 ? fmt(ef1+(efTax1>0?efTax1:0)) : "&mdash;",
+      fmt(line1Total)
+    );
     if(qt==="split") {
       const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
       const mat2=q2*p2,tax2=mat2*txr,efTax2=ef2*txr;
       const matName2=s("mat2")||"2nd Material";
-      stdRows+=stdRow(q2+" TON", matName2+" (Split)", fmt(mat2), tax2>0?fmt(tax2):"&mdash;", fmt(slf), fmt(ef2+(efTax2>0?efTax2:0)), fmt(p2)+"/ton");
+      const line2Total=mat2+tax2+slf+ef2+(efTax2>0?efTax2:0);
+      stdRows+=rateRow(
+        matName2+" (Split)",
+        fmt(p2)+"/ton",
+        txr>0 ? fmt(p2*txr)+"/ton" : "&mdash;",
+        fmt(slf/(q2||1))+"/ton",
+        ef2>0 ? fmt(ef2)+" flat" : "&mdash;"
+      );
+      stdRows+=totRow(
+        q2+" TON",
+        "",
+        fmt(mat2),
+        tax2>0 ? fmt(tax2) : "&mdash;",
+        fmt(slf),
+        ef2>0 ? fmt(ef2+(efTax2>0?efTax2:0)) : "&mdash;",
+        fmt(line2Total)
+      );
     }
   } else if(qt==="haul") {
     const tons=v("htons"),mi=currentMiles||v("hmi"),rate=v("hhr")||getAutoHaulRate(mi);
     const eff=minTons(tons), haul=rate*eff, zp=applyZonePremium(haul,eff);
     const matName=s("hmat")||"Material";
-    stdRows+=stdRow(eff+" TON", "Haul Rate — "+matName, "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), "&mdash;", fmt(rate)+"/ton");
+    stdRows+=rateRow("Haul Rate — "+matName, "&mdash;", "&mdash;", fmt(rate)+"/ton", "&mdash;");
+    stdRows+=totRow(
+      eff+" TON"+(eff>tons&&tons>0?" (min "+eff+"t)":""),
+      "",
+      "&mdash;",
+      "&mdash;",
+      fmt(haul+(zp>0?zp:0)),
+      "&mdash;",
+      fmt(haul+(zp>0?zp:0))
+    );
   } else if(qt==="freight") {
     const tons=v("ftons"),mi=currentMiles||v("fmi"),rate=v("ffr")||getAutoHaulRate(mi),fuel=v("ffs");
     const eff=minTons(tons), freight=(rate+fuel)*eff, zp=applyZonePremium(freight,eff);
     const matName=s("fmat")||"Material";
-    stdRows+=stdRow(eff+" TON", "Freight — "+matName, "&mdash;", "&mdash;", fmt(freight+(zp>0?zp:0)), "&mdash;", fmt(rate+(fuel>0?fuel:0))+"/ton");
+    stdRows+=rateRow("Freight — "+matName, "&mdash;", "&mdash;", fmt(rate+(fuel>0?fuel:0))+"/ton", "&mdash;");
+    stdRows+=totRow(
+      eff+" TON"+(eff>tons&&tons>0?" (min "+eff+"t)":""),
+      "",
+      "&mdash;",
+      "&mdash;",
+      fmt(freight+(zp>0?zp:0)),
+      "&mdash;",
+      fmt(freight+(zp>0?zp:0))
+    );
   } else if(qt==="demo") {
     const dtxr=v("dtaxr")/100, tons=v("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
     const hr=v("dhr")||getAutoHaulRate(mi), eff=minTons(tons);
     const haul=(hr+mu)*eff, dumpTotal=(typeof getDumpFeeTotal==="function")?getDumpFeeTotal(eff):df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
     const matName=s("dmat")||"Material";
     const dumpLabel=(typeof getDumpFeeLabel==="function")?getDumpFeeLabel(eff):"Dump Fee";
-    stdRows+=stdRow(eff+" TON", "Hauling — "+matName, "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), "&mdash;", fmt(hr+mu)+"/ton");
-    stdRows+=stdRow("", dumpLabel, fmt(dumpTotal), "&mdash;", "&mdash;", "&mdash;", "&mdash;");
-    stdRows+=stdRow("", "Environmental Fee", "&mdash;", efTax>0?fmt(efTax):"&mdash;", "&mdash;", fmt(ef), "&mdash;");
+    stdRows+=rateRow("Hauling — "+matName, "&mdash;", "&mdash;", fmt(hr+mu)+"/ton", "&mdash;");
+    stdRows+=totRow(eff+" TON"+(eff>tons&&tons>0?" (min "+eff+"t)":""), "", "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), "&mdash;", fmt(haul+(zp>0?zp:0)));
+    stdRows+=totRow("", dumpLabel, fmt(dumpTotal), "&mdash;", "&mdash;", "&mdash;", fmt(dumpTotal));
+    stdRows+=totRow("", "Environmental Fee", "&mdash;", efTax>0?fmt(efTax):"&mdash;", "&mdash;", fmt(ef), fmt(ef+(efTax>0?efTax:0)));
   }
 
   document.getElementById("stdTableBody").innerHTML=stdRows;
