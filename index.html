@@ -198,15 +198,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 .pac-container{z-index:99999!important;font-family:'DM Sans',sans-serif;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
 /* ── MULTI-MATERIAL INPUT ──────────────────────────────────────────────────── */
 #mmSec{margin-top:16px;}
-.mm-table{width:100%;border-collapse:collapse;font-size:12px;}
-.mm-table thead tr{background:#1a3a6b;color:#fff;}
-.mm-table th{padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
-.mm-table th:nth-child(2){text-align:left;}
-.mm-table td{padding:4px 4px;vertical-align:middle;border-bottom:1px solid rgba(0,191,255,.1);}
-.mm-table td:first-child{text-align:center;color:var(--sand);font-size:11px;font-weight:700;width:24px;}
-.mm-table input{padding:6px 7px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);width:100%;}
-.mm-table input:focus{border-color:var(--acc);outline:none;}
-.mm-table input::placeholder{color:rgba(122,179,240,.4);font-size:11px;}
 .mm-row-hidden{display:none;}
 </style>
 </head>
@@ -1406,23 +1397,27 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- MULTI-MATERIAL INPUT (Breakdown mode) -->
   <div class="card gap gone" id="mmSec">
     <div class="ct">Materials &amp; Pricing</div>
-    <div style="font-size:10px;color:#4a7cc7;margin-bottom:10px;">Enter each material below. Haul rate auto-fills from the job site miles — override per row if needed. Tax rate is shared from the job site lookup above.</div>
-    <table class="mm-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th style="text-align:left;min-width:180px;">Material Description</th>
-          <th style="min-width:70px;">Qty (tons)</th>
-          <th style="min-width:80px;">$/ton Price</th>
-          <th style="min-width:80px;">Haul ($/ton)</th>
-          <th style="min-width:70px;">Env Fee ($)</th>
-        </tr>
-      </thead>
-      <tbody id="mmTbody">
-        <!-- rows injected by JS -->
-      </tbody>
-    </table>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:11px;color:#4a7cc7;">Enter each material. Tax rate is shared from the job site above.</div>
+      <button onclick="autoFillHaul()" style="padding:8px 14px;background:linear-gradient(135deg,var(--acc),#0099cc);color:var(--dk);border:none;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">&#9889; AUTO HAUL RATE</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px;">
+        <thead>
+          <tr style="background:#1a3a6b;color:#fff;">
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;width:28px;">#</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:180px;">Material Description</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Qty (tons)</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Price ($/ton)</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Haul ($/ton)</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Env Fee ($)</th>
+          </tr>
+        </thead>
+        <tbody id="mmTbody"></tbody>
+      </table>
+    </div>
   </div>
+
 
   <!-- TOTALS + ACTIONS -->
   <div class="g2 gap">
@@ -2809,58 +2804,117 @@ function setQStyle(style) {
   document.getElementById("qsStd").classList.toggle("on", style==="standard");
   document.getElementById("qsBrk").classList.toggle("on", style==="breakdown");
   document.getElementById("brkMatCountWrap").style.display = style==="breakdown" ? "block" : "none";
-  // Show/hide multi-material section vs normal panels
-  const mmSec = document.getElementById("mmSec");
-  const matSec = document.getElementById("matSec");
-  const mat2Sec = document.getElementById("mat2Sec");
-  const haulSec = document.getElementById("haulSec");
-  const demoSec = document.getElementById("demoSec");
-  const truckSec = document.getElementById("truckSec");
+
+  var mmSec   = document.getElementById("mmSec");
+  var matSec  = document.getElementById("matSec");
+  var mat2Sec = document.getElementById("mat2Sec");
+  var haulSec = document.getElementById("haulSec");
+  var demoSec = document.getElementById("demoSec");
+  var truckSec= document.getElementById("truckSec");
+
   if(style === "breakdown") {
-    if(mmSec) mmSec.classList.remove("gone");
-    if(matSec) matSec.classList.add("gone");
+    if(mmSec)   { mmSec.classList.remove("gone"); mmSec.style.display=""; }
+    if(matSec)  matSec.classList.add("gone");
     if(mat2Sec) mat2Sec.classList.add("gone");
     if(haulSec) haulSec.classList.add("gone");
     if(demoSec) demoSec.classList.add("gone");
+    if(truckSec)truckSec.classList.add("gone");
     renderMMRows();
   } else {
-    if(mmSec) mmSec.classList.add("gone");
-    // Restore visibility based on current qt
-    setQt(qt);
+    if(mmSec)   { mmSec.classList.add("gone"); mmSec.style.display="none"; }
+    // Restore panels based on current qt
+    var panels = {
+      matSec:  ["std","split"].includes(qt),
+      mat2Sec: qt==="split",
+      haulSec: qt==="haul",
+      demoSec: qt==="demo"
+    };
+    if(matSec)   matSec.classList.toggle("gone",  !panels.matSec);
+    if(mat2Sec)  mat2Sec.classList.toggle("gone", !panels.mat2Sec);
+    if(haulSec)  haulSec.classList.toggle("gone", !panels.haulSec);
+    if(demoSec)  demoSec.classList.toggle("gone", !panels.demoSec);
+    if(truckSec) truckSec.classList.remove("gone");
   }
 }
 
 // ── MULTI-MATERIAL ROWS ───────────────────────────────────────────────────────
 function renderMMRows() {
-  const n = parseInt((document.getElementById("brkMatCount")||{}).value) || 3;
-  const tbody = document.getElementById("mmTbody");
+  var countEl = document.getElementById("brkMatCount");
+  var n = countEl ? (parseInt(countEl.value) || 3) : 3;
+  var tbody = document.getElementById("mmTbody");
   if(!tbody) return;
+
   // Preserve existing values
-  const existing = [];
+  var existing = [];
   tbody.querySelectorAll("tr").forEach(function(tr) {
     existing.push({
-      desc: tr.querySelector(".mm-desc") ? tr.querySelector(".mm-desc").value : "",
-      qty:  tr.querySelector(".mm-qty")  ? tr.querySelector(".mm-qty").value  : "",
-      price:tr.querySelector(".mm-price")? tr.querySelector(".mm-price").value: "",
-      haul: tr.querySelector(".mm-haul") ? tr.querySelector(".mm-haul").value : "",
-      env:  tr.querySelector(".mm-env")  ? tr.querySelector(".mm-env").value  : "10"
+      desc:  tr.querySelector(".mm-desc")  ? tr.querySelector(".mm-desc").value  : "",
+      qty:   tr.querySelector(".mm-qty")   ? tr.querySelector(".mm-qty").value   : "",
+      price: tr.querySelector(".mm-price") ? tr.querySelector(".mm-price").value : "",
+      haul:  tr.querySelector(".mm-haul")  ? tr.querySelector(".mm-haul").value  : "",
+      env:   tr.querySelector(".mm-env")   ? tr.querySelector(".mm-env").value   : "10"
     });
   });
-  const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || v("fmi"));
-  let html = "";
-  for(let i = 0; i < n; i++) {
-    const ex = existing[i] || {};
-    const haulPh = autoHR > 0 ? autoHR.toFixed(2) : "";
+
+  var html = "";
+  for(var i = 0; i < n; i++) {
+    var ex = existing[i] || {};
+    var descVal  = (ex.desc  || "").replace(/"/g, "&quot;");
+    var qtyVal   = ex.qty   || "";
+    var priceVal = ex.price || "";
+    var haulVal  = ex.haul  || "";
+    var envVal   = (ex.env !== undefined && ex.env !== "") ? ex.env : "10";
     html += '<tr>'
-      + '<td>'+(i+1)+'</td>'
-      + '<td><input type="text" class="mm-desc" placeholder="Material description" value="'+((ex.desc||"").replace(/"/g,"&quot;"))+'"></td>'
-      + '<td><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="'+(ex.qty||"")+'"></td>'
-      + '<td><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="'+(ex.price||"")+'"></td>'
-      + '<td><input type="number" class="mm-haul" placeholder="'+(haulPh||"auto")+'" min="0" step="0.01" value="'+(ex.haul||"")+'"></td>'
-      + '<td><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="'+(ex.env!==undefined&&ex.env!=""?ex.env:"10")+'"></td>'
+      + '<td style="text-align:center;color:var(--sand);font-weight:700;font-size:11px;padding:4px 6px;">' + (i+1) + '</td>'
+      + '<td style="padding:4px;"><input type="text" class="mm-desc" placeholder="Material description" value="' + descVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);"></td>'
+      + '<td style="padding:4px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
+      + '<td style="padding:4px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
+      + '<td style="padding:4px;"><input type="number" class="mm-haul" placeholder="click Auto" min="0" step="0.01" value="' + haulVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
+      + '<td style="padding:4px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" style="width:100%;padding:6px 8px;font-size:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(0,191,255,.2);border-radius:4px;color:var(--dust);" oninput="calcMM()"></td>'
       + '</tr>';
   }
   tbody.innerHTML = html;
+}
+
+function calcMM() {
+  if(qStyle !== "breakdown") return;
+  var txr = v("taxr") / 100;
+  var grand = 0;
+  var tbody = document.getElementById("mmTbody");
+  if(tbody) {
+    var autoHR = getAutoHaulRate(currentMiles || 0);
+    tbody.querySelectorAll("tr").forEach(function(tr) {
+      var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
+      var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
+      var haulEl = tr.querySelector(".mm-haul");
+      var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
+      var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
+      var mat   = qty * price;
+      var tax   = mat * txr;
+      var efTax = env * txr;
+      grand += mat + tax + (haul * qty) + env + efTax;
+    });
+  }
+  var cc = grand * 0.04;
+  document.getElementById("tgrand").textContent = fmt(grand);
+  document.getElementById("tcc").textContent    = fmt(cc);
+  document.getElementById("tcct").textContent   = fmt(grand + cc);
+  document.getElementById("tpt").textContent    = "$0.00/ton";
+}
+
+function autoFillHaul() {
+  var autoHR = getAutoHaulRate(currentMiles || 0);
+  if(autoHR <= 0) {
+    alert("No job site selected yet \u2014 enter the job site address first so miles can be calculated.");
+    return;
+  }
+  var tbody = document.getElementById("mmTbody");
+  if(!tbody) return;
+  tbody.querySelectorAll(".mm-haul").forEach(function(el) {
+    el.value = autoHR.toFixed(2);
+    el.style.borderColor = "rgba(0,191,255,.6)";
+  });
+  calcMM();
 }
 
 function getMMData() {
