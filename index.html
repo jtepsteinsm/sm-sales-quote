@@ -124,11 +124,11 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 .q-tbl thead tr{background:#1a3a6b;color:#fff;}
 .q-tbl th{padding:6px 8px;font-weight:700;letter-spacing:.5px;font-size:9px;text-transform:uppercase;}
 .q-tbl th:first-child,.q-tbl td:first-child{text-align:center;width:70px;}
-.q-tbl th:not(:first-child):not(:nth-child(2)){text-align:right;width:80px;}
-.q-tbl th:nth-child(2){text-align:left;}
+.q-tbl th:not(:first-child):not(:nth-child(2)){text-align:right;width:72px;}
+.q-tbl th:nth-child(2){text-align:left;min-width:160px;}
 .q-tbl td{padding:7px 8px;border-bottom:1px solid #dce8f5;}
 .q-tbl td:not(:first-child):not(:nth-child(2)){text-align:right;font-family:'DM Mono',monospace;}
-.q-tbl td:nth-child(2){text-align:left;}
+.q-tbl td:nth-child(2){text-align:left;min-width:160px;white-space:normal;word-break:break-word;}
 .q-tbl tr:nth-child(even){background:#f6f9fd;}
 .q-tbl tr:last-child td{border-bottom:2px solid #1a3a6b;}
 .q-tbl tr.rate-row td{font-style:italic;color:#555;font-size:9.5px;background:#f8fafd;}
@@ -2848,16 +2848,16 @@ function genQuote() {
       fmt(p1)+"/ton",
       txr>0 ? fmt(p1*txr)+"/ton" : "&mdash;",
       fmt(hr1)+"/ton",
-      ef1>0 ? fmt(ef1)+"/load" : "&mdash;"
+      ef1>0 ? fmt(ef1)+"/load"+(txr>0?" +tax":"") : "&mdash;"
     );
     // Row 2: extended totals
     stdRows+=totRow(
       q1+" TON"+(loads1>0?" / "+loads1+" load"+(loads1!==1?"s":""):"")+(effQ1>q1?" (min "+effQ1+"t)":""),
       "",
       fmt(mat1),
-      tax1>0 ? fmt(tax1) : "&mdash;",
+      (tax1+efTax1)>0 ? fmt(tax1+efTax1) : "&mdash;",
       fmt(haul1+(zonePrem>0?zonePrem:0)),
-      ef1>0 ? fmt(efTotal1+(efTax1>0?efTax1:0)) : "&mdash;",
+      ef1>0 ? fmt(efTotal1) : "&mdash;",
       fmt(line1Total)
     );
     if(qt==="split") {
@@ -2870,15 +2870,15 @@ function genQuote() {
         fmt(p2)+"/ton",
         txr>0 ? fmt(p2*txr)+"/ton" : "&mdash;",
         fmt(slf/(q2||1))+"/ton",
-        ef2>0 ? fmt(ef2)+"/load" : "&mdash;"
+        ef2>0 ? fmt(ef2)+"/load"+(txr>0?" +tax":"") : "&mdash;"
       );
       stdRows+=totRow(
         q2+" TON"+(loads2>0?" / "+loads2+" load"+(loads2!==1?"s":""):""),
         "",
         fmt(mat2),
-        tax2>0 ? fmt(tax2) : "&mdash;",
+        (tax2+efTax2)>0 ? fmt(tax2+efTax2) : "&mdash;",
         fmt(slf),
-        ef2>0 ? fmt(efTotal2+(efTax2>0?efTax2:0)) : "&mdash;",
+        ef2>0 ? fmt(efTotal2) : "&mdash;",
         fmt(line2Total)
       );
     }
@@ -2919,8 +2919,8 @@ function genQuote() {
     const matName=s("dmat")||"Material";
     const dumpLabel=(typeof getDumpFeeLabel==="function")?getDumpFeeLabel(eff):"Dump Fee";
     const demoLoads=numLoads(tons), efTotalD=demoLoads*ef, efTaxD=efTotalD*dtxr;
-    stdRows+=rateRow("Hauling — "+matName, "&mdash;", "&mdash;", fmt(hr+mu)+"/ton", ef>0?fmt(ef)+"/load":"&mdash;");
-    stdRows+=totRow(eff+" TON"+(demoLoads>0?" / "+demoLoads+" load"+(demoLoads!==1?"s":""):"")+(eff>tons&&tons>0?" (min "+eff+"t)":""), "", "&mdash;", "&mdash;", fmt(haul+(zp>0?zp:0)), ef>0?fmt(efTotalD+(efTaxD>0?efTaxD:0)):"&mdash;", fmt(haul+(zp>0?zp:0)+efTotalD+(efTaxD>0?efTaxD:0)));
+    stdRows+=rateRow("Hauling — "+matName, "&mdash;", "&mdash;", fmt(hr+mu)+"/ton", ef>0?fmt(ef)+"/load"+(dtxr>0?" +tax":""):"&mdash;");
+    stdRows+=totRow(eff+" TON"+(demoLoads>0?" / "+demoLoads+" load"+(demoLoads!==1?"s":""):"")+(eff>tons&&tons>0?" (min "+eff+"t)":""), "", "&mdash;", efTaxD>0?fmt(efTaxD):"&mdash;", fmt(haul+(zp>0?zp:0)), ef>0?fmt(efTotalD):"&mdash;", fmt(haul+(zp>0?zp:0)+efTotalD+(efTaxD>0?efTaxD:0)));
     stdRows+=totRow("", dumpLabel, fmt(dumpTotal), "&mdash;", "&mdash;", "&mdash;", fmt(dumpTotal));
   }
 
