@@ -1586,7 +1586,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       <tbody id="stdTableBody"></tbody>
     </table>
     <!-- Quarry note -->
-    <div class="q-qnote">Quarry location &mdash; 38050 75th Street East, Palmdale, CA &nbsp;&bull;&nbsp; Quarry accepts clean* AC and PCC. &nbsp; <em>* Clean means no Dirt, Grass, Leaves, Trash, or any other foreign material of any kind.</em></div>
+    <div class="q-qnote" id="stdQuarryNote">Quarry location &mdash; 38050 75th Street East, Palmdale, CA &nbsp;&bull;&nbsp; Quarry accepts clean* AC and PCC. &nbsp; <em>* Clean means no Dirt, Grass, Leaves, Trash, or any other foreign material of any kind.</em></div>
     <!-- Totals -->
     <div class="q-totbox" id="stdTotBox">
       <div id="ptotd"></div>
@@ -1824,6 +1824,13 @@ const GKEY = "AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0";
 const TRUCK_RATES = { s10:{rate:135,cap:17}, tf:{rate:155,cap:25}, bd:{rate:140,cap:25}, ed:{rate:145,cap:22} };
 const TRUCK_LABELS = { s10:"Super 10", tf:"Transfer", bd:"Bottom Dump", ed:"End Dump" };
 const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
+const PLANT_CODES = {
+  "38050 75th Street East, Palmdale, CA":       "75Q",
+  "19494 River Rock Road, Corona, CA 91718":    "MM-CO",
+  "13550 Live Oak Avenue, Irwindale, CA 91706": "IMM",
+  "6500 E Avenue T, Littlerock, CA 93552":      "LHG",
+  "8701 Meridian Road, Lucerne Valley, CA 92356":"LHG-LV",
+};
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
@@ -2389,6 +2396,28 @@ function hdr(t) { return `<div style="font-size:9px;letter-spacing:2px;text-tran
 function tr2(l,v2) { return `<div class="tr"><span class="tl">${l}</span><span class="tv">${v2}</span></div>`; }
 function pl(l,v2)  { return `<div class="pl"><span>${l}</span><span>${v2}</span></div>`; }
 function truckLabel() { return truck ? TRUCK_LABELS[truck]+" (min "+TRUCK_MIN[truck]+"t)" : ""; }
+function getPlantCode(addr) { return (addr && PLANT_CODES[addr]) || ""; }
+function getPlantSelId() {
+  const m={std:"ps1",split:"ps1",haul:"hps",freight:"fps"};
+  return m[qt]||"ps1";
+}
+function getPlantName(selId) {
+  const sel=document.getElementById(selId);
+  if(!sel||!sel.value) return "";
+  const opt=sel.options[sel.selectedIndex];
+  return opt?(opt.getAttribute("data-name")||opt.text||""):"";
+}
+function getPlantAddr(selId) {
+  const sel=document.getElementById(selId);
+  return sel?sel.value:"";
+}
+function plantDisplay(selId) {
+  const addr=getPlantAddr(selId);
+  const name=getPlantName(selId);
+  const code=getPlantCode(addr);
+  if(!name&&!addr) return "";
+  return (name||(addr))+( code?" ["+code+"]":"");
+}
 
 function calcTons(n) {
   const sf=v("sqft"+n), d=v("dep"+n);
@@ -2949,6 +2978,20 @@ function genQuote() {
   }
 
   document.getElementById("stdTableBody").innerHTML=stdRows;
+  // Update quarry note with active plant
+  const _qnEl=document.getElementById("stdQuarryNote");
+  if(_qnEl) {
+    const _pSelId=getPlantSelId();
+    const _pAddr=getPlantAddr(_pSelId);
+    const _pName=getPlantName(_pSelId);
+    const _pCode=getPlantCode(_pAddr);
+    const _codeStr=_pCode?' <strong>['+_pCode+']</strong>':'';
+    if(_pAddr==="38050 75th Street East, Palmdale, CA"||!_pAddr) {
+      _qnEl.innerHTML='Quarry location &mdash; 75th Street Quarry and Recycling'+_codeStr+' &nbsp;&bull;&nbsp; 38050 75th Street East, Palmdale, CA &nbsp;&bull;&nbsp; Quarry accepts clean* AC and PCC. &nbsp;<em>* Clean means no Dirt, Grass, Leaves, Trash, or any other foreign material of any kind.</em>';
+    } else {
+      _qnEl.innerHTML='Pick-up plant &mdash; '+(_pName||_pAddr)+_codeStr+(_pAddr&&_pName?' &nbsp;&bull;&nbsp; '+_pAddr:'');
+    }
+  }
   let totHtml = '';
   if(totalEfTax > 0) totHtml += `<div class="q-trow" style="font-size:10.5px;color:#555;"><span>Env Fee Tax</span><span>${fmt(totalEfTax)}</span></div>`;
   totHtml += `<div class="q-trow"><span>Subtotal</span><span>${fmt(grand)}</span></div>`;
@@ -3393,6 +3436,9 @@ function getMMData() {
     var desc    = matEl ? (matEl.value.trim()==='__custom__' ? (matTxtEl?matTxtEl.value.trim():"") : matEl.value.trim()) : "";
     var plant   = plantEl ? (plantEl.options[plantEl.selectedIndex] ? plantEl.options[plantEl.selectedIndex].text : "") : "";
     if(plant === "\u2014 Select plant \u2014") plant = "";
+    var plantAddr = plantEl ? plantEl.value : "";
+    var pCode = getPlantCode(plantAddr);
+    if(pCode) plant = plant + (plant?' ':'') + '['+pCode+']';
     if(desc === "\u2014 Select material \u2014") desc = "";
     var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
     var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
@@ -3495,7 +3541,8 @@ function genBreakdownQuote() {
       const q1=v("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
       const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
       grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+'</div>';
+      const _pd1=plantDisplay('ps1');
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+''+(_pd1?' <span style="font-size:9px;font-weight:400;opacity:.8;">('+_pd1+')</span>':'')+'</div>';
       sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
       if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
       sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
@@ -3519,7 +3566,8 @@ function genBreakdownQuote() {
     } else if(qt==="haul") {
       const tons=v("htons"),rate=v("hhr")||autoHR,haul=rate*tons;
       grandTotal+=haul;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">HAUL RATE'+(s("hmat")?' — '+s("hmat"):'')+'</div>';
+      const _pdH=plantDisplay('hps');
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">HAUL RATE'+(s("hmat")?' — '+s("hmat"):'')+''+(_pdH?' <span style="font-size:9px;font-weight:400;opacity:.8;">('+_pdH+')</span>':'')+'</div>';
       sec+=brkLine(tons+' tons @ '+fmt(rate)+'/ton',haul);
       sec+='</div>';
       sectionsHtml+=sec;
