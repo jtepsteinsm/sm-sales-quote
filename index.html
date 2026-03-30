@@ -433,7 +433,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa1" placeholder="Address for auto-miles"></div>
-        <div class="field"><label>Material</label><select id="mat1"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="mat1" onchange="onMatChange(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -567,7 +567,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option></select></div>
+        <div class="field" id="mat1_custom" style="display:none;"><label>Custom material name</label><input type="text" id="mat1_txt" placeholder="Type material name" autocomplete="off"></div>
         <div class="fr2">
           <div class="field"><label>Quantity (tons)</label><input type="number" id="qty1" placeholder="0" min="0" step="0.5"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr1" placeholder="0.00" min="0" step="0.01"></div>
@@ -669,7 +670,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa2" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="mat2"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="mat2" onchange="onMatChange(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -803,7 +804,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option></select></div>
+        <div class="field" id="mat2_custom" style="display:none;"><label>Custom material name</label><input type="text" id="mat2_txt" placeholder="Type material name" autocomplete="off"></div>
         <div class="fr2">
           <div class="field"><label>Quantity (tons)</label><input type="number" id="qty2" placeholder="0" min="0" step="0.5"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr2" placeholder="0.00" min="0" step="0.01"></div>
@@ -874,7 +876,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="hpa" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="hmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="hmat" onchange="onMatChange(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1008,7 +1010,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option></select></div>
+        <div class="field" id="hmat_custom" style="display:none;"><label>Custom material name</label><input type="text" id="hmat_txt" placeholder="Type material name" autocomplete="off"></div>
         <div class="field"><label>Estimated Tons</label><input type="number" id="htons" placeholder="0" min="0" step="0.5"></div>
       </div>
       <div>
@@ -1086,7 +1089,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="fpa" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="fmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="fmat" onchange="onMatChange(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1220,7 +1223,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option></select></div>
+        <div class="field" id="fmat_custom" style="display:none;"><label>Custom material name</label><input type="text" id="fmat_txt" placeholder="Type material name" autocomplete="off"></div>
         <div class="field"><label>Estimated Tons</label><input type="number" id="ftons" placeholder="0" min="0" step="0.5"></div>
       </div>
       <div>
@@ -1256,7 +1260,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       <div>
         <div class="field"><label>Demo / Export Site</label><input type="text" id="dsite" placeholder="Site address"></div>
         <div class="field"><label>Disposal / Receiving Site</label><input type="text" id="ddisp" placeholder="Disposal address"></div>
-        <div class="field"><label>Material</label><select id="dmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="dmat" onchange="onMatChange(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1390,7 +1394,8 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option></select></div>
+        <div class="field" id="dmat_custom" style="display:none;"><label>Custom material name</label><input type="text" id="dmat_txt" placeholder="Type material name" autocomplete="off"></div>
         <div class="field"><label>Estimated Tons</label><input type="number" id="dtons" placeholder="0" min="0" step="0.5"></div>
       </div>
       <div>
@@ -1898,7 +1903,22 @@ function setPay(p) {
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function v(id) { const e=document.getElementById(id); return e?parseFloat(e.value)||0:0; }
-function s(id) { const e=document.getElementById(id); return e?e.value||"":""; }
+function s(id) {
+  const e=document.getElementById(id);
+  if(!e) return "";
+  if(e.tagName==='SELECT' && e.value==='__custom__'){const c=document.getElementById(id+'_txt');return c?c.value.trim():"";}
+  return e.value||"";
+}
+function onMatChange(sel) {
+  const wrap=document.getElementById(sel.id+'_custom');
+  if(wrap) wrap.style.display=sel.value==='__custom__'?'':'none';
+}
+function onMMMatChange(sel) {
+  const row=sel.closest('tr');
+  if(!row) return;
+  const wrap=row.querySelector('.mm-mat-wrap');
+  if(wrap) wrap.style.display=sel.value==='__custom__'?'':'none';
+}
 function fmt(n) { return "$"+(parseFloat(n)||0).toFixed(2); }
 function fmtR(n) { return (parseFloat(n)||0).toFixed(2); }
 
@@ -3165,7 +3185,7 @@ var MM_MAT_OPTS = `<option value="">— Select material —</option><option valu
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option>`;
+<option value="Wine Red DG">Wine Red DG</option><option value="__custom__">✏ Other — enter below</option>`;
 function buildPlantOptions() { return MM_PLANT_OPTS; }
 function buildMatOptions()  { return MM_MAT_OPTS; }
 
@@ -3180,7 +3200,7 @@ function renderMMRows() {
   tbody.querySelectorAll("tr").forEach(function(tr) {
     existing.push({
       plant: tr.querySelector(".mm-plant") ? tr.querySelector(".mm-plant").value : "",
-      mat:   tr.querySelector(".mm-mat")   ? tr.querySelector(".mm-mat").value   : "",
+      mat:   (function(sel,txt){if(!sel)return"";return sel.value==='__custom__'?(txt?txt.value.trim():""):sel.value;})(tr.querySelector(".mm-mat"),tr.querySelector(".mm-mat-txt")),
       qty:   tr.querySelector(".mm-qty")   ? tr.querySelector(".mm-qty").value   : "",
       price: tr.querySelector(".mm-price") ? tr.querySelector(".mm-price").value : "",
       haul:  tr.querySelector(".mm-haul")  ? tr.querySelector(".mm-haul").value  : "",
@@ -3204,7 +3224,8 @@ function renderMMRows() {
     var pSel = '<select class="mm-plant" onchange="onMMPlant(this,' + i + ')" style="' + inStyle + '">' + plantOpts + '</select>';
 
     // Build mat select with preserved value
-    var mSel = '<select class="mm-mat" onchange="calcMM()" style="' + inStyle + '">' + matOpts + '</select>';
+    var mSel = '<select class="mm-mat" onchange="onMMMatChange(this);calcMM()" style="' + inStyle + '">' + matOpts + '</select>'
+             + '<div class="mm-mat-wrap" style="display:none;margin-top:4px;"><input type="text" class="mm-mat-txt" placeholder="Type material name" oninput="calcMM()" autocomplete="off" style="' + inStyle + '"></div>';
 
     html += '<tr style="border-bottom:1px solid #dce8f5;">'
       + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
@@ -3223,7 +3244,19 @@ function renderMMRows() {
   rows2.forEach(function(tr, i) {
     var ex2 = existing[i] || {};
     if(ex2.plant) { var ps = tr.querySelector(".mm-plant"); if(ps) ps.value = ex2.plant; }
-    if(ex2.mat)   { var ms = tr.querySelector(".mm-mat");   if(ms) ms.value = ex2.mat; }
+    if(ex2.mat) {
+      var ms = tr.querySelector(".mm-mat");
+      if(ms) {
+        ms.value = ex2.mat;
+        if(ms.value !== ex2.mat) {
+          ms.value = '__custom__';
+          var mtxt = tr.querySelector('.mm-mat-txt');
+          var mwrap = tr.querySelector('.mm-mat-wrap');
+          if(mtxt) mtxt.value = ex2.mat;
+          if(mwrap) mwrap.style.display = '';
+        }
+      }
+    }
   });
 }
 
@@ -3355,8 +3388,9 @@ function getMMData() {
   var autoHR = getAutoHaulRate(miles);
   tbody.querySelectorAll("tr").forEach(function(tr) {
     var matEl   = tr.querySelector(".mm-mat");
+    var matTxtEl= tr.querySelector(".mm-mat-txt");
     var plantEl = tr.querySelector(".mm-plant");
-    var desc    = matEl   ? matEl.value.trim()   : "";
+    var desc    = matEl ? (matEl.value.trim()==='__custom__' ? (matTxtEl?matTxtEl.value.trim():"") : matEl.value.trim()) : "";
     var plant   = plantEl ? (plantEl.options[plantEl.selectedIndex] ? plantEl.options[plantEl.selectedIndex].text : "") : "";
     if(plant === "\u2014 Select plant \u2014") plant = "";
     if(desc === "\u2014 Select material \u2014") desc = "";
