@@ -235,6 +235,11 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 /* ── MULTI-MATERIAL INPUT ──────────────────────────────────────────────────── */
 #mmSec{margin-top:16px;}
 .mm-row-hidden{display:none;}
+.unit-tog{display:inline-flex;border-radius:4px;overflow:hidden;border:1.5px solid #b0c8e8;flex-shrink:0;vertical-align:middle;margin-left:6px;}
+.unit-tog button{background:#f0f6ff;border:none;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;color:#4a7cc7;line-height:1;transition:background .12s,color .12s;}
+.unit-tog button.unit-on{background:#4a7cc7;color:#fff;}
+.mat-custom-wrap{margin-top:5px;display:none;}
+.mat-custom-wrap input{width:100%;padding:7px 10px;border:1.5px solid #4a7cc7;border-radius:6px;font-size:13px;color:#111;background:#f8faff;box-sizing:border-box;}
 </style>
 </head>
 <body>
@@ -433,7 +438,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa1" placeholder="Address for auto-miles"></div>
-        <div class="field"><label>Material</label><select id="mat1"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="mat1" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -567,9 +572,10 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
+        <div id="mat1CustomWrap" class="mat-custom-wrap"><input type="text" id="mat1Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
-          <div class="field"><label>Quantity (tons)</label><input type="number" id="qty1" placeholder="0" min="0" step="0.5"></div>
+          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty1BtnT" class="unit-on" onclick="setQtyUnit('qty1','tons')">TONS</button><button id="qty1BtnC" onclick="setQtyUnit('qty1','cy')">CY</button></span></label><input type="number" id="qty1" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr1" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
@@ -669,7 +675,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa2" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="mat2"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="mat2" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -803,9 +809,10 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
+        <div id="mat2CustomWrap" class="mat-custom-wrap"><input type="text" id="mat2Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
-          <div class="field"><label>Quantity (tons)</label><input type="number" id="qty2" placeholder="0" min="0" step="0.5"></div>
+          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty2BtnT" class="unit-on" onclick="setQtyUnit('qty2','tons')">TONS</button><button id="qty2BtnC" onclick="setQtyUnit('qty2','cy')">CY</button></span></label><input type="number" id="qty2" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr2" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
@@ -874,7 +881,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="hpa" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="hmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="hmat" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1008,8 +1015,9 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
-        <div class="field"><label>Estimated Tons</label><input type="number" id="htons" placeholder="0" min="0" step="0.5"></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
+        <div id="hmatCustomWrap" class="mat-custom-wrap"><input type="text" id="hmatCustom" placeholder="Type material name..." oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="htonsBtnT" class="unit-on" onclick="setQtyUnit('htons','tons')">TONS</button><button id="htonsBtnC" onclick="setQtyUnit('htons','cy')">CY</button></span></label><input type="number" id="htons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1086,7 +1094,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="fpa" placeholder="Plant address"></div>
-        <div class="field"><label>Material</label><select id="fmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="fmat" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1220,8 +1228,9 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
-        <div class="field"><label>Estimated Tons</label><input type="number" id="ftons" placeholder="0" min="0" step="0.5"></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
+        <div id="fmatCustomWrap" class="mat-custom-wrap"><input type="text" id="fmatCustom" placeholder="Type material name..." oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="ftonsBtnT" class="unit-on" onclick="setQtyUnit('ftons','tons')">TONS</button><button id="ftonsBtnC" onclick="setQtyUnit('ftons','cy')">CY</button></span></label><input type="number" id="ftons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1256,7 +1265,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       <div>
         <div class="field"><label>Demo / Export Site</label><input type="text" id="dsite" placeholder="Site address"></div>
         <div class="field"><label>Disposal / Receiving Site</label><input type="text" id="ddisp" placeholder="Disposal address"></div>
-        <div class="field"><label>Material</label><select id="dmat"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
+        <div class="field"><label>Material</label><select id="dmat" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
 <option value="1&quot; Black Del Rio">1" Black Del Rio</option>
@@ -1390,8 +1399,9 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option></select></div>
-        <div class="field"><label>Estimated Tons</label><input type="number" id="dtons" placeholder="0" min="0" step="0.5"></div>
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
+        <div id="dmatCustomWrap" class="mat-custom-wrap"><input type="text" id="dmatCustom" placeholder="Type material name..." oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="dtonsBtnT" class="unit-on" onclick="setQtyUnit('dtons','tons')">TONS</button><button id="dtonsBtnC" onclick="setQtyUnit('dtons','cy')">CY</button></span></label><input type="number" id="dtons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1822,6 +1832,56 @@ const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
+
+// -- PLANT SHORTCODES --
+const PLANT_CODES = {
+  "75th Street Quarry and Recycling": "75SQ",
+  "AMH Recycling": "AMH",
+  "Arcosa (Crushed Concrete / Aggregates)": "SAV",
+  "Arrow Construction Company": "ACC",
+  "Big Iron Concrete and Asphalt Disposal": "BIG",
+  "Blue Diamond Materials": "BDM",
+  "Brubaker-Mann Inc": "BMI",
+  "C&M Topsoil (Sylmar)": "CMT",
+  "CalPortland (Apple Valley)": "CPAV",
+  "CalPortland (Fillmore)": "CFP",
+  "Cemex (Bell Terminal)": "CBT",
+  "Cemex (Friant)": "CFR",
+  "Cemex (Moorpark)": "CMK",
+  "Cemex (White Mountain)": "CWM",
+  "Coast Aggregates (Palmdale)": "CAP",
+  "Foothill Soils (Coltrane Yard)": "FSC",
+  "FST Sand & Gravel": "FST",
+  "Gillibrand Industrial Sands (Simi Valley)": "GIS",
+  "Granite Construction (Big Rock)": "GBR",
+  "Granite Construction (Handley Ranch)": "GHR",
+  "Granite Construction (Santa Paula)": "GSP",
+  "Hi-Grade Materials (Littlerock)": "HGL",
+  "Hi-Grade Materials (Lucerne)": "HGU",
+  "Las Vegas Rock": "LVR",
+  "Martin Marietta (Eagle Valley / Corona)": "MCM",
+  "Martin Marietta (Irwindale)": "MMI",
+  "MRC Rock (Mojave)": "MRM",
+  "MRC Rock (Ojai)": "MRO",
+  "MRC Rock (Upland)": "MRU",
+  "MRC Rock & Sand": "MRS",
+  "Orca Sand & Gravel (Port of Long Beach)": "OSG",
+  "Pacific Rock (Camarillo)": "PRC",
+  "Panamint Valley Limestone": "PVL",
+  "Santa Paula Materials": "SPM",
+  "SMI": "SMI",
+  "Twin Mountain Rock Venture": "TMR",
+  "United Rock Products": "URP",
+  "Vaughan Source": "VS",
+  "Vulcan Materials (Corona)": "VMC",
+  "Vulcan Materials (Durbin)": "VMD",
+  "Vulcan Materials (Palmdale)": "VMP",
+  "Vulcan Materials (Reliance)": "VMR",
+  "Vulcan Materials (San Bernardino)": "VMSB",
+  "Vulcan Materials (Saticoy)": "VMS",
+  "Wayne J Sand & Gravel": "WJS"
+};
+
 let plantPid=null, locPid=null, locLat=null, locLng=null, plantLat=null, plantLng=null;
 let milesTimer=null;
 let currentMiles=0;
@@ -2224,12 +2284,55 @@ function clearSurchargeBadge(suffix) {
   if(badge) badge.textContent = "";
 }
 
+// -- QUANTITY UNIT TOGGLE --
+var qtyUnits = {qty1:'tons', qty2:'tons', htons:'tons', ftons:'tons', dtons:'tons'};
+var CY_TO_TONS = 25/17;  // 17 CY = 25 tons
+
+function setQtyUnit(id, unit) {
+  qtyUnits[id] = unit;
+  var tBtn = document.getElementById(id+'BtnT');
+  var cBtn = document.getElementById(id+'BtnC');
+  if(tBtn) tBtn.classList.toggle('unit-on', unit==='tons');
+  if(cBtn) cBtn.classList.toggle('unit-on', unit==='cy');
+  calc();
+}
+
+function qtyToTons(id) {
+  var val = parseFloat((document.getElementById(id)||{}).value) || 0;
+  return qtyUnits[id] === 'cy' ? parseFloat((val * CY_TO_TONS).toFixed(4)) : val;
+}
+
+// -- CUSTOM MATERIAL WRITE-IN --
+function onMatSelect(sel) {
+  var wrapId = sel.id + 'CustomWrap';
+  var wrap = document.getElementById(wrapId);
+  if(wrap) wrap.style.display = sel.value === '__other__' ? 'block' : 'none';
+  calc();
+}
+
+function getMatName(id) {
+  var sel = document.getElementById(id);
+  if(!sel) return '';
+  if(sel.value === '__other__') {
+    var c = document.getElementById(id + 'Custom');
+    return c ? c.value.trim() : '';
+  }
+  return sel.value || '';
+}
+
+function onMMMatSelect(sel) {
+  var cell = sel.parentNode;
+  var wrap = cell ? cell.querySelector('.mm-mat-custom-wrap') : null;
+  if(wrap) wrap.style.display = sel.value === '__other__' ? 'block' : 'none';
+  calcMM();
+}
+
 function calc() {
   let grand=0, sumH="", perTon=0, showMin=false, minVal=0, zonePrem=0;
   const txr = v("taxr") / 100;
 
   if(qt==="std" || qt==="split") {
-    const q1=v("qty1"), p1=v("pr1"), ef1=v("ef1");
+    const q1=qtyToTons("qty1"), p1=v("pr1"), ef1=v("ef1");
     const mi1 = currentMiles || v("mi1");
     const autoHR = getAutoHaulRate(mi1);
     const hr1 = applySurcharge(v("hr1") || autoHR, "1"); // use override if entered, else formula
@@ -2261,7 +2364,7 @@ function calc() {
     updateFormulaBox(mi1);
 
     if(qt==="split") {
-      const q2=v("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
+      const q2=qtyToTons("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
       const loads2 = numLoads(q2);
       const mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       const sub2 = mat2+tax2+slf+efTotal2+efTax2;
@@ -2275,7 +2378,7 @@ function calc() {
     }
 
   } else if(qt==="haul") {
-    const tons=v("htons"), mi=currentMiles||v("hmi");
+    const tons=qtyToTons("htons"), mi=currentMiles||v("hmi");
     const autoHR = getAutoHaulRate(mi);
     const rate = applySurcharge(v("hhr") || autoHR, "h");
     if(!v("hhr") && autoHR>0) {
@@ -2297,7 +2400,7 @@ function calc() {
     updateFormulaBox(mi);
 
   } else if(qt==="freight") {
-    const tons=v("ftons"), mi=currentMiles||v("fmi"), fuel=v("ffs");
+    const tons=qtyToTons("ftons"), mi=currentMiles||v("fmi"), fuel=v("ffs");
     const autoHR = getAutoHaulRate(mi);
     const rate = v("ffr") || autoHR;
     if(!v("ffr") && autoHR>0) {
@@ -2321,7 +2424,7 @@ function calc() {
 
   } else if(qt==="demo") {
     const dtxr = v("dtaxr")/100;
-    const tons=v("dtons"), mi=currentMiles||v("dmi"), df=v("ddf"), ef=v("def_"), mu=v("dmu");
+    const tons=qtyToTons("dtons"), mi=currentMiles||v("dmi"), df=v("ddf"), ef=v("def_"), mu=v("dmu");
     const autoHR = getAutoHaulRate(mi);
     const hr = applySurcharge(v("dhr") || autoHR, "d");
     if(!v("dhr") && autoHR>0) {
@@ -2837,12 +2940,12 @@ function genQuote() {
   let totalEfTax = 0;
 
   if(qt==="std"||qt==="split") {
-    const q1=v("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
+    const q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
     const effQ1=minTons(q1), loads1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr;
     const efTotal1=loads1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1;
     totalEfTax += efTax1;
     const zonePrem=applyZonePremium(haul1,effQ1);
-    const matName1=s("mat1")||"Rock/Aggregate";
+    const matName1=getMatName("mat1")||"Rock/Aggregate";
     const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+efTotal1+(efTax1>0?efTax1:0);
     // Row 1: per-ton/per-load rates
     stdRows+=rateRow(
@@ -2863,10 +2966,10 @@ function genQuote() {
       fmt(line1Total)
     );
     if(qt==="split") {
-      const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+      const q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
       const loads2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       totalEfTax += efTax2;
-      const matName2=s("mat2")||"2nd Material";
+      const matName2=getMatName("mat2")||"2nd Material";
       const line2Total=mat2+tax2+slf+efTotal2+(efTax2>0?efTax2:0);
       stdRows+=rateRow(
         matName2+" (Split)",
@@ -2886,9 +2989,9 @@ function genQuote() {
       );
     }
   } else if(qt==="haul") {
-    const tons=v("htons"),mi=currentMiles||v("hmi"),rate=applySurcharge(v("hhr")||getAutoHaulRate(mi),"h");
+    const tons=qtyToTons("htons"),mi=currentMiles||v("hmi"),rate=applySurcharge(v("hhr")||getAutoHaulRate(mi),"h");
     const eff=minTons(tons), haul=rate*eff, zp=applyZonePremium(haul,eff);
-    const matName=s("hmat")||"Material";
+    const matName=getMatName("hmat")||"Material";
     stdRows+=rateRow("Haul Rate — "+matName, "&mdash;", "&mdash;", fmt(rate)+"/ton", "&mdash;");
     const hLoads=numLoads(tons);
     stdRows+=totRow(
@@ -2901,9 +3004,9 @@ function genQuote() {
       fmt(haul+(zp>0?zp:0))
     );
   } else if(qt==="freight") {
-    const tons=v("ftons"),mi=currentMiles||v("fmi"),rate=applySurcharge(v("ffr")||getAutoHaulRate(mi),"f"),fuel=v("ffs");
+    const tons=qtyToTons("ftons"),mi=currentMiles||v("fmi"),rate=applySurcharge(v("ffr")||getAutoHaulRate(mi),"f"),fuel=v("ffs");
     const eff=minTons(tons), freight=(rate+fuel)*eff, zp=applyZonePremium(freight,eff);
-    const matName=s("fmat")||"Material";
+    const matName=getMatName("fmat")||"Material";
     stdRows+=rateRow("Freight — "+matName, "&mdash;", "&mdash;", fmt(rate+(fuel>0?fuel:0))+"/ton", "&mdash;");
     const frLoads=numLoads(tons);
     stdRows+=totRow(
@@ -2916,10 +3019,10 @@ function genQuote() {
       fmt(freight+(zp>0?zp:0))
     );
   } else if(qt==="demo") {
-    const dtxr=v("dtaxr")/100, tons=v("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
+    const dtxr=v("dtaxr")/100, tons=qtyToTons("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
     const hr=applySurcharge(v("dhr")||getAutoHaulRate(mi),"d"), eff=minTons(tons);
     const haul=(hr+mu)*eff, dumpTotal=(typeof getDumpFeeTotal==="function")?getDumpFeeTotal(eff):df*eff, efTax=ef*dtxr, zp=applyZonePremium(haul,eff);
-    const matName=s("dmat")||"Material";
+    const matName=getMatName("dmat")||"Material";
     const dumpLabel=(typeof getDumpFeeLabel==="function")?getDumpFeeLabel(eff):"Dump Fee";
     const demoLoads=numLoads(tons), efTotalD=demoLoads*ef, efTaxD=efTotalD*dtxr;
     totalEfTax += efTaxD;
@@ -3165,7 +3268,7 @@ var MM_MAT_OPTS = `<option value="">— Select material —</option><option valu
 <option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
 <option value="Washed Plaster Sand">Washed Plaster Sand</option>
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option>`;
+<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option>`;
 function buildPlantOptions() { return MM_PLANT_OPTS; }
 function buildMatOptions()  { return MM_MAT_OPTS; }
 
@@ -3204,7 +3307,8 @@ function renderMMRows() {
     var pSel = '<select class="mm-plant" onchange="onMMPlant(this,' + i + ')" style="' + inStyle + '">' + plantOpts + '</select>';
 
     // Build mat select with preserved value
-    var mSel = '<select class="mm-mat" onchange="calcMM()" style="' + inStyle + '">' + matOpts + '</select>';
+    var mmCustomStyle = 'width:100%;margin-top:3px;padding:5px 6px;font-size:11px;background:#f8faff;border:1.5px solid #4a7cc7;border-radius:4px;color:#111;display:none;box-sizing:border-box;';
+    var mSel = '<select class="mm-mat" onchange="onMMMatSelect(this)" style="' + inStyle + '">' + matOpts + '</select><div class="mm-mat-custom-wrap"><input type="text" class="mm-mat-custom" placeholder="Type material name..." style="' + mmCustomStyle + '" oninput="calcMM()"></div>';
 
     html += '<tr style="border-bottom:1px solid #dce8f5;">'
       + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
@@ -3356,10 +3460,18 @@ function getMMData() {
   tbody.querySelectorAll("tr").forEach(function(tr) {
     var matEl   = tr.querySelector(".mm-mat");
     var plantEl = tr.querySelector(".mm-plant");
-    var desc    = matEl   ? matEl.value.trim()   : "";
-    var plant   = plantEl ? (plantEl.options[plantEl.selectedIndex] ? plantEl.options[plantEl.selectedIndex].text : "") : "";
-    if(plant === "\u2014 Select plant \u2014") plant = "";
-    if(desc === "\u2014 Select material \u2014") desc = "";
+    var matVal  = matEl   ? matEl.value.trim()   : "";
+    var desc;
+    if(matVal === "__other__") {
+      var customMatEl = matEl ? matEl.parentNode.querySelector(".mm-mat-custom") : null;
+      desc = customMatEl ? customMatEl.value.trim() : "";
+    } else {
+      desc = (matVal === "— Select material —") ? "" : matVal;
+    }
+    var plantText = plantEl ? (plantEl.options[plantEl.selectedIndex] ? plantEl.options[plantEl.selectedIndex].text : "") : "";
+    if(plantText === "\u2014 Select plant \u2014") plantText = "";
+    var plant = (plantText && PLANT_CODES[plantText]) ? PLANT_CODES[plantText] : plantText;
+    // desc handled above (supports __other__ custom write-in)
     var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
     var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
     var haulEl = tr.querySelector(".mm-haul");
@@ -3458,10 +3570,10 @@ function genBreakdownQuote() {
     // Fallback: single qt-based section
     const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
     if(qt==="std"||qt==="split") {
-      const q1=v("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
+      const q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
       const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
       grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(s("mat1")?' — '+s("mat1"):'')+'</div>';
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
       sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
       if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
       sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
@@ -3470,10 +3582,10 @@ function genBreakdownQuote() {
       sec+='</div>';
       sectionsHtml+=sec;
       if(qt==="split"){
-        const q2=v("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+        const q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
         const fl2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
         grandTotal+=mat2+tax2+slf+efTotal2+efTax2;
-        let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(s("mat2")?' — '+s("mat2"):'')+'</div>';
+        let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(getMatName('mat2')?' — '+getMatName('mat2'):'')+'</div>';
         sec2+=brkLine(q2+' tons @ '+fmt(p2)+'/ton',mat2);
         if(tax2>0) sec2+=brkLine('Sales Tax ('+v("taxr")+'%)',tax2);
         sec2+=brkLine('Split Load Fee',slf);
@@ -3483,18 +3595,18 @@ function genBreakdownQuote() {
         sectionsHtml+=sec2;
       }
     } else if(qt==="haul") {
-      const tons=v("htons"),rate=v("hhr")||autoHR,haul=rate*tons;
+      const tons=qtyToTons("htons"),rate=v("hhr")||autoHR,haul=rate*tons;
       grandTotal+=haul;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">HAUL RATE'+(s("hmat")?' — '+s("hmat"):'')+'</div>';
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">HAUL RATE'+(getMatName('hmat')?' — '+getMatName('hmat'):'')+'</div>';
       sec+=brkLine(tons+' tons @ '+fmt(rate)+'/ton',haul);
       sec+='</div>';
       sectionsHtml+=sec;
     } else if(qt==="demo") {
-      const dtxr=v("dtaxr")/100,tons=v("dtons"),ef=v("def_"),mu=v("dmu");
+      const dtxr=v("dtaxr")/100,tons=qtyToTons("dtons"),ef=v("def_"),mu=v("dmu");
       const dfl=numLoads(tons), hr=v("dhr")||autoHR, haul=(hr+mu)*tons, dumpTotal=getDumpFeeTotal(tons);
       const efTotalD=dfl*ef, efTax=efTotalD*dtxr;
       grandTotal+=haul+dumpTotal+efTotalD+efTax;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT'+(s("dmat")?' — '+s("dmat"):'')+'</div>';
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT'+(getMatName('dmat')?' — '+getMatName('dmat'):'')+'</div>';
       sec+=brkLine('Hauling ('+tons+'t @ '+fmt(hr+mu)+'/ton)',haul);
       sec+=brkLine(getDumpFeeLabel(tons),dumpTotal);
       sec+=brkLine('Environmental Fee ('+dfl+' load'+(dfl!==1?'s':'')+' x '+fmt(ef)+')',efTotalD);
