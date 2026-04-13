@@ -2069,9 +2069,8 @@ function getAutoHaulRate(miles) {
 }
 
 function minTons(actual) {
-  if(!truck || actual <= 0) return actual;
-  const cap = (TRUCK_RATES[truck] && TRUCK_RATES[truck].cap) ? TRUCK_RATES[truck].cap : (TRUCK_MIN[truck] || 0);
-  if(!cap) return actual;
+  if(actual <= 0) return actual;
+  const cap = (truck && TRUCK_RATES[truck] && TRUCK_RATES[truck].cap) ? TRUCK_RATES[truck].cap : 25;
   return Math.ceil(actual / cap) * cap;
 }
 // Number of truck loads (ROUNDUP(qty/cap,0)) — used for per-load env fee
