@@ -3435,7 +3435,8 @@ function calcMM() {
       var tax   = mat * txr;
       var efTax = env * txr;
       var sc    = getMmFuelSurcharge(baseHaul);
-      grand += mat + tax + ((baseHaul + sc) * qty) + env + efTax;
+      var effQty = minTons(qty);
+      grand += mat + tax + ((baseHaul + sc) * effQty) + env + efTax;
     });
   }
   var cc = grand * 0.04;
