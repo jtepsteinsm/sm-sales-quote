@@ -3396,7 +3396,7 @@ function renderMMRows() {
     var pSel = '<select class="mm-plant" onchange="onMMPlantSelect(this,' + i + ')" style="' + inStyle + '">' + plantOpts + '</select>'
       + '<div class="mm-plant-custom-wrap" style="display:none">'
       + '<input type="text" class="mm-plant-custom-name" placeholder="Plant name..." style="' + pCustS + '" oninput="calcMM()">'
-      + '<input type="text" class="mm-plant-custom-addr" placeholder="Plant address (for haul calc)..." style="' + pCustS + 'margin-top:2px;" oninput="calcMM()">'
+      + '<input type="text" class="mm-plant-custom-addr" placeholder="Plant address (for haul calc)..." style="' + pCustS + 'margin-top:2px;" oninput="onMMCustomAddr(this,' + i + ')">'
       + '</div>';
 
     // Build mat select with preserved value
@@ -3534,6 +3534,39 @@ function onMMPlant(selectEl, rowIndex) {
   }
 }
 
+var _mmCustomAddrTimers = {};
+function onMMCustomAddr(el, rowIndex) {
+  calcMM();
+  clearTimeout(_mmCustomAddrTimers[rowIndex]);
+  var addr = el.value.trim();
+  if(addr.length < 6) return;  // wait for a real address
+  _mmCustomAddrTimers[rowIndex] = setTimeout(function() {
+    if(!locLat && !locLng && !locPid) return;
+    if(typeof google === "undefined" || !google.maps) return;
+    var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
+    var haulEl = row ? row.querySelector(".mm-haul") : null;
+    if(!haulEl) return;
+    var dest = locPid ? {placeId: locPid} : {lat: locLat, lng: locLng};
+    var svc = new google.maps.DistanceMatrixService();
+    svc.getDistanceMatrix({
+      origins: [addr],
+      destinations: [dest],
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.IMPERIAL,
+      avoidTolls: true
+    }, function(resp, st) {
+      if(st === "OK" && resp.rows[0].elements[0].status === "OK") {
+        var miles = resp.rows[0].elements[0].distance.value / 1609.344;
+        var rate = getAutoHaulRate(miles);
+        if(rate > 0) {
+          haulEl.value = rate.toFixed(2);
+          haulEl.style.borderColor = "#2a8a4a";
+          calcMM();
+        }
+      }
+    });
+  }, 800);  // 800ms debounce after user stops typing
+}
 
 // applyAutoHaul: works for ALL quote types — fills the right haul rate field
 function applyAutoHaul() {
