@@ -1486,6 +1486,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Haul ($/ton)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Env Fee ($)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:100px;">Truck</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:70px;">Min/Load</th>
           </tr>
         </thead>
         <tbody id="mmTbody"></tbody>
@@ -2076,6 +2077,18 @@ function minTonsForTruck(actual, truckType) {
 }
 function minTons(actual) {
   return minTonsForTruck(actual, truck);
+}
+// Returns the default per-load minimum for a given unit + truck type
+function getDefaultMinPerLoad(unit, truckType) {
+  if(unit === 'cy')    return 17;
+  if(unit === 'scoop') return 34;
+  // tons — use truck cap
+  return (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
+}
+// Apply a per-load minimum to a quantity (any unit)
+function applyMinPerLoad(qty, minPerLoad) {
+  if(qty <= 0 || !(minPerLoad > 0)) return qty;
+  return Math.ceil(qty / minPerLoad) * minPerLoad;
 }
 // Number of truck loads (ROUNDUP(qty/cap,0)) — used for per-load env fee
 function numLoads(qty) {
@@ -3364,8 +3377,9 @@ function renderMMRows() {
       haul:  tr.querySelector(".mm-haul")  ? tr.querySelector(".mm-haul").value  : "",
       env:   tr.querySelector(".mm-env")   ? tr.querySelector(".mm-env").value   : "10",
       matC: tr.querySelector(".mm-mat-custom") ? tr.querySelector(".mm-mat-custom").value : "",
-      truck: tr.querySelector(".mm-truck") ? tr.querySelector(".mm-truck").value : "",
-      unit: tr.querySelector(".mm-unit") ? tr.querySelector(".mm-unit").value : "tons"
+      truck:   tr.querySelector(".mm-truck")   ? tr.querySelector(".mm-truck").value   : "",
+      unit:    tr.querySelector(".mm-unit")    ? tr.querySelector(".mm-unit").value    : "tons",
+      minload: tr.querySelector(".mm-minload") ? tr.querySelector(".mm-minload").value : ""
     });
   });
 
@@ -3384,7 +3398,9 @@ function renderMMRows() {
     var unitOpts = '<option value="tons"'  + (unitVal==="tons" ?" selected":"") + '>Tons</option>'
       + '<option value="cy"'   + (unitVal==="cy"   ?" selected":"") + '>CY</option>'
       + '<option value="scoop"'+ (unitVal==="scoop"?" selected":"") + '>Scoop</option>';
-    var truckVal = ex.truck || "";
+    var truckVal   = ex.truck || "";
+    var minLoadDef = getDefaultMinPerLoad(unitVal, truckVal);
+    var minLoadVal = (ex.minload !== undefined && ex.minload !== "") ? ex.minload : minLoadDef;
     var truckOpts = '<option value="">— Truck —</option>'
       + '<option value="s10"' + (truckVal==="s10"?" selected":"") + '>Super 10 (17t)</option>'
       + '<option value="tf"'  + (truckVal==="tf" ?" selected":"") + '>Transfer (25t)</option>'
@@ -3407,11 +3423,12 @@ function renderMMRows() {
       + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + mSel + '</td>'
-      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + 'margin-bottom:3px;"><select class="mm-unit" onchange="calcMM()" style="' + inStyle + 'font-size:10px;padding:3px 4px;">' + unitOpts + '</select></td>'
+      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + 'margin-bottom:3px;"><select class="mm-unit" onchange="onMMUnitChange(this,' + i + ')" style="' + inStyle + 'font-size:10px;padding:3px 4px;">' + unitOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-haul" placeholder="auto" min="0" step="0.01" value="' + haulVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
-      + '<td style="padding:4px 3px;width:100px;"><select class="mm-truck" onchange="calcMM()" style="' + inStyle + '">' + truckOpts + '</select></td>'
+      + '<td style="padding:4px 3px;width:100px;"><select class="mm-truck" onchange="onMMTruckChange(this,' + i + ')" style="' + inStyle + '">' + truckOpts + '</select></td>'
+      + '<td style="padding:4px 3px;width:70px;"><input type="number" class="mm-minload" placeholder="' + minLoadDef + '" min="1" step="1" value="' + minLoadVal + '" oninput="calcMM()" title="Min per load — auto-filled, manually overridable" style="' + inStyle + '"></td>'
       + '</tr>';
   }
   tbody.innerHTML = html;
@@ -3456,15 +3473,17 @@ function calcMM() {
       var haulEl = tr.querySelector(".mm-haul");
       var baseHaul = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
       var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
-      var rowTruck = (tr.querySelector(".mm-truck")||{}).value || "";
-      var rowUnit  = (tr.querySelector(".mm-unit") ||{}).value || "tons";
-      var tons  = unitToTons(qty, rowUnit);
+      var rowTruck  = (tr.querySelector(".mm-truck")  ||{}).value || "";
+      var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
+      var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
+      var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
+      var effQtyUnit = applyMinPerLoad(qty, rowMin);          // effective qty in row's unit
+      var effTons    = unitToTons(effQtyUnit, rowUnit);       // convert to tons for haul
       var mat   = qty * price;
       var tax   = mat * txr;
       var efTax = env * txr;
       var sc    = getMmFuelSurcharge(baseHaul);
-      var effQty = minTonsForTruck(tons, rowTruck);
-      grand += mat + tax + ((baseHaul + sc) * effQty) + env + efTax;
+      grand += mat + tax + ((baseHaul + sc) * effTons) + env + efTax;
     });
   }
   var cc = grand * 0.04;
@@ -3568,6 +3587,28 @@ function onMMCustomAddr(el, rowIndex) {
   }, 800);  // 800ms debounce after user stops typing
 }
 
+function _mmSetMinLoad(rowIndex, unit, truckType) {
+  var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
+  if(!row) return;
+  var ml = row.querySelector(".mm-minload");
+  if(!ml) return;
+  ml.value = getDefaultMinPerLoad(unit, truckType);
+  ml.placeholder = ml.value;
+}
+function onMMUnitChange(sel, rowIndex) {
+  var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
+  var truckEl = row ? row.querySelector(".mm-truck") : null;
+  _mmSetMinLoad(rowIndex, sel.value, truckEl ? truckEl.value : "");
+  calcMM();
+}
+function onMMTruckChange(sel, rowIndex) {
+  var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
+  var unitEl = row ? row.querySelector(".mm-unit") : null;
+  var unit = unitEl ? unitEl.value : "tons";
+  if(unit === "tons") _mmSetMinLoad(rowIndex, unit, sel.value);
+  calcMM();
+}
+
 // applyAutoHaul: works for ALL quote types — fills the right haul rate field
 function applyAutoHaul() {
   var miles = currentMiles
@@ -3628,9 +3669,11 @@ function getMMData() {
     var haulEl = tr.querySelector(".mm-haul");
     var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
     var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
-    var rowTruck = (tr.querySelector(".mm-truck")||{}).value || "";
-    var rowUnit  = (tr.querySelector(".mm-unit") ||{}).value || "tons";
-    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, unit: rowUnit, price: price, haul: haul, env: env, truck: rowTruck});
+    var rowTruck  = (tr.querySelector(".mm-truck")  ||{}).value || "";
+    var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
+    var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
+    var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
+    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, unit: rowUnit, price: price, haul: haul, env: env, truck: rowTruck, minload: rowMin});
   });
   return rows;
 }
@@ -3700,15 +3743,15 @@ function genBreakdownQuote() {
       const rowUnit  = row.unit || "tons";
       const unitLabel = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoop' : 'ton';
       const unitLabelPlural = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoops' : 'tons';
-      const tons = unitToTons(row.qty, rowUnit);
+      const rowMin   = row.minload > 0 ? row.minload : getDefaultMinPerLoad(rowUnit, row.truck);
+      const effQtyUnit = applyMinPerLoad(row.qty, rowMin);    // effective qty in row's unit
+      const effTons    = unitToTons(effQtyUnit, rowUnit);     // tons for haul calc
+      const mmLoads    = Math.ceil(row.qty > 0 ? row.qty / rowMin : 0);
       const matCost = row.qty * row.price;
       const tax = matCost * txr;
       const sc = getMmFuelSurcharge(row.haul);
       const effectiveHaul = row.haul + sc;
-      const effQtyMM = minTonsForTruck(tons, row.truck);
-      const haul = effectiveHaul * effQtyMM;
-      const mmCap = (row.truck && TRUCK_RATES[row.truck] && TRUCK_RATES[row.truck].cap) ? TRUCK_RATES[row.truck].cap : 25;
-      const mmLoads = Math.ceil(tons > 0 ? tons / mmCap : 0);
+      const haul = effectiveHaul * effTons;
       const efTotal = mmLoads * row.env;
       const efTax = efTotal * txr;
       const rowTotal = matCost + tax + haul + efTotal + efTax;
@@ -3718,8 +3761,9 @@ function genBreakdownQuote() {
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+(mmTruckLabel?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">| '+mmTruckLabel+'</span>':'')+'</div>';
       sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/'+unitLabel, matCost);
       if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
-      sec += brkLine('Haul ('+effQtyMM+'t @ '+fmt(row.haul)+'/ton)'+(effQtyMM>tons?' (min '+effQtyMM+'t)':''), row.haul * effQtyMM);
-      if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * effQtyMM);
+      const haulMinNote = effQtyUnit > row.qty ? ' (min '+effQtyUnit+' '+unitLabelPlural+')' : '';
+      sec += brkLine('Haul ('+effQtyUnit+' '+unitLabelPlural+' \u2192 '+effTons.toFixed(2)+'t @ '+fmt(row.haul)+'/ton)'+haulMinNote, row.haul * effTons);
+      if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * effTons);
       sec += brkLine('Environmental Fee (' + mmLoads + ' load' + (mmLoads!==1?'s':'') + ' x ' + fmt(row.env) + ')', efTotal);
       if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
       sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material '+(idx+1)+' Subtotal</span><span>'+fmt(rowTotal)+'</span></div>';
