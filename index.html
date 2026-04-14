@@ -576,7 +576,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
         <div id="mat1CustomWrap" class="mat-custom-wrap"><input type="text" id="mat1Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
-          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty1BtnT" class="unit-on" onclick="setQtyUnit('qty1','tons')">TONS</button><button id="qty1BtnC" onclick="setQtyUnit('qty1','cy')">CY</button></span></label><input type="number" id="qty1" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty1BtnT" class="unit-on" onclick="setQtyUnit('qty1','tons')">TONS</button><button id="qty1BtnC" onclick="setQtyUnit('qty1','cy')">CY</button><button id="qty1BtnS" onclick="setQtyUnit('qty1','scoop')">SCOOP</button></span></label><input type="number" id="qty1" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr1" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
@@ -819,7 +819,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
         <div id="mat2CustomWrap" class="mat-custom-wrap"><input type="text" id="mat2Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
-          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty2BtnT" class="unit-on" onclick="setQtyUnit('qty2','tons')">TONS</button><button id="qty2BtnC" onclick="setQtyUnit('qty2','cy')">CY</button></span></label><input type="number" id="qty2" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+          <div class="field"><label>Quantity<span class="unit-tog"><button id="qty2BtnT" class="unit-on" onclick="setQtyUnit('qty2','tons')">TONS</button><button id="qty2BtnC" onclick="setQtyUnit('qty2','cy')">CY</button><button id="qty2BtnS" onclick="setQtyUnit('qty2','scoop')">SCOOP</button></span></label><input type="number" id="qty2" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
           <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr2" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
@@ -1024,7 +1024,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
 <option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
         <div id="hmatCustomWrap" class="mat-custom-wrap"><input type="text" id="hmatCustom" placeholder="Type material name..." oninput="calc()"></div>
-        <div class="field"><label>Quantity<span class="unit-tog"><button id="htonsBtnT" class="unit-on" onclick="setQtyUnit('htons','tons')">TONS</button><button id="htonsBtnC" onclick="setQtyUnit('htons','cy')">CY</button></span></label><input type="number" id="htons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="htonsBtnT" class="unit-on" onclick="setQtyUnit('htons','tons')">TONS</button><button id="htonsBtnC" onclick="setQtyUnit('htons','cy')">CY</button><button id="htonsBtnS" onclick="setQtyUnit('htons','scoop')">SCOOP</button></span></label><input type="number" id="htons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1237,7 +1237,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
 <option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
         <div id="fmatCustomWrap" class="mat-custom-wrap"><input type="text" id="fmatCustom" placeholder="Type material name..." oninput="calc()"></div>
-        <div class="field"><label>Quantity<span class="unit-tog"><button id="ftonsBtnT" class="unit-on" onclick="setQtyUnit('ftons','tons')">TONS</button><button id="ftonsBtnC" onclick="setQtyUnit('ftons','cy')">CY</button></span></label><input type="number" id="ftons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="ftonsBtnT" class="unit-on" onclick="setQtyUnit('ftons','tons')">TONS</button><button id="ftonsBtnC" onclick="setQtyUnit('ftons','cy')">CY</button><button id="ftonsBtnS" onclick="setQtyUnit('ftons','scoop')">SCOOP</button></span></label><input type="number" id="ftons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1408,7 +1408,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
 <option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
         <div id="dmatCustomWrap" class="mat-custom-wrap"><input type="text" id="dmatCustom" placeholder="Type material name..." oninput="calc()"></div>
-        <div class="field"><label>Quantity<span class="unit-tog"><button id="dtonsBtnT" class="unit-on" onclick="setQtyUnit('dtons','tons')">TONS</button><button id="dtonsBtnC" onclick="setQtyUnit('dtons','cy')">CY</button></span></label><input type="number" id="dtons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+        <div class="field"><label>Quantity<span class="unit-tog"><button id="dtonsBtnT" class="unit-on" onclick="setQtyUnit('dtons','tons')">TONS</button><button id="dtonsBtnC" onclick="setQtyUnit('dtons','cy')">CY</button><button id="dtonsBtnS" onclick="setQtyUnit('dtons','scoop')">SCOOP</button></span></label><input type="number" id="dtons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
       </div>
       <div>
         <div class="fr2">
@@ -1481,7 +1481,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;width:28px;">#</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Plant</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Material</th>
-            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Qty (tons)</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Qty / Unit</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Price ($/ton)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Haul ($/ton)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Env Fee ($)</th>
@@ -2300,20 +2300,29 @@ function clearSurchargeBadge(suffix) {
 
 // -- QUANTITY UNIT TOGGLE --
 var qtyUnits = {qty1:'tons', qty2:'tons', htons:'tons', ftons:'tons', dtons:'tons'};
-var CY_TO_TONS = 25/17;  // 17 CY = 25 tons
+var CY_TO_TONS    = 25/17;  // 17 CY = 25 tons
+var SCOOP_TO_TONS = 2;      // 1 scoop ≈ 2 tons (default)
+
+function unitToTons(val, unit) {
+  if(unit === 'cy')    return parseFloat((val * CY_TO_TONS).toFixed(4));
+  if(unit === 'scoop') return parseFloat((val * SCOOP_TO_TONS).toFixed(4));
+  return val;
+}
 
 function setQtyUnit(id, unit) {
   qtyUnits[id] = unit;
   var tBtn = document.getElementById(id+'BtnT');
   var cBtn = document.getElementById(id+'BtnC');
+  var sBtn = document.getElementById(id+'BtnS');
   if(tBtn) tBtn.classList.toggle('unit-on', unit==='tons');
   if(cBtn) cBtn.classList.toggle('unit-on', unit==='cy');
+  if(sBtn) sBtn.classList.toggle('unit-on', unit==='scoop');
   calc();
 }
 
 function qtyToTons(id) {
   var val = parseFloat((document.getElementById(id)||{}).value) || 0;
-  return qtyUnits[id] === 'cy' ? parseFloat((val * CY_TO_TONS).toFixed(4)) : val;
+  return unitToTons(val, qtyUnits[id]);
 }
 
 // -- CUSTOM MATERIAL WRITE-IN --
@@ -3355,7 +3364,8 @@ function renderMMRows() {
       haul:  tr.querySelector(".mm-haul")  ? tr.querySelector(".mm-haul").value  : "",
       env:   tr.querySelector(".mm-env")   ? tr.querySelector(".mm-env").value   : "10",
       matC: tr.querySelector(".mm-mat-custom") ? tr.querySelector(".mm-mat-custom").value : "",
-      truck: tr.querySelector(".mm-truck") ? tr.querySelector(".mm-truck").value : ""
+      truck: tr.querySelector(".mm-truck") ? tr.querySelector(".mm-truck").value : "",
+      unit: tr.querySelector(".mm-unit") ? tr.querySelector(".mm-unit").value : "tons"
     });
   });
 
@@ -3370,6 +3380,10 @@ function renderMMRows() {
     var priceVal = ex.price || "";
     var haulVal  = ex.haul  || "";
     var envVal   = (ex.env !== undefined && ex.env !== "") ? ex.env : "10";
+    var unitVal  = ex.unit  || "tons";
+    var unitOpts = '<option value="tons"'  + (unitVal==="tons" ?" selected":"") + '>Tons</option>'
+      + '<option value="cy"'   + (unitVal==="cy"   ?" selected":"") + '>CY</option>'
+      + '<option value="scoop"'+ (unitVal==="scoop"?" selected":"") + '>Scoop</option>';
     var truckVal = ex.truck || "";
     var truckOpts = '<option value="">— Truck —</option>'
       + '<option value="s10"' + (truckVal==="s10"?" selected":"") + '>Super 10 (17t)</option>'
@@ -3393,7 +3407,7 @@ function renderMMRows() {
       + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + mSel + '</td>'
-      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + 'margin-bottom:3px;"><select class="mm-unit" onchange="calcMM()" style="' + inStyle + 'font-size:10px;padding:3px 4px;">' + unitOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-haul" placeholder="auto" min="0" step="0.01" value="' + haulVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
@@ -3443,11 +3457,13 @@ function calcMM() {
       var baseHaul = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
       var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
       var rowTruck = (tr.querySelector(".mm-truck")||{}).value || "";
+      var rowUnit  = (tr.querySelector(".mm-unit") ||{}).value || "tons";
+      var tons  = unitToTons(qty, rowUnit);
       var mat   = qty * price;
       var tax   = mat * txr;
       var efTax = env * txr;
       var sc    = getMmFuelSurcharge(baseHaul);
-      var effQty = minTonsForTruck(qty, rowTruck);
+      var effQty = minTonsForTruck(tons, rowTruck);
       grand += mat + tax + ((baseHaul + sc) * effQty) + env + efTax;
     });
   }
@@ -3580,7 +3596,8 @@ function getMMData() {
     var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
     var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
     var rowTruck = (tr.querySelector(".mm-truck")||{}).value || "";
-    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, price: price, haul: haul, env: env, truck: rowTruck});
+    var rowUnit  = (tr.querySelector(".mm-unit") ||{}).value || "tons";
+    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, unit: rowUnit, price: price, haul: haul, env: env, truck: rowTruck});
   });
   return rows;
 }
@@ -3647,14 +3664,18 @@ function genBreakdownQuote() {
   if(mmRows.length > 0) {
     // Multi-material mode
     mmRows.forEach(function(row, idx) {
+      const rowUnit  = row.unit || "tons";
+      const unitLabel = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoop' : 'ton';
+      const unitLabelPlural = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoops' : 'tons';
+      const tons = unitToTons(row.qty, rowUnit);
       const matCost = row.qty * row.price;
       const tax = matCost * txr;
       const sc = getMmFuelSurcharge(row.haul);
       const effectiveHaul = row.haul + sc;
-      const effQtyMM = minTonsForTruck(row.qty, row.truck);
+      const effQtyMM = minTonsForTruck(tons, row.truck);
       const haul = effectiveHaul * effQtyMM;
       const mmCap = (row.truck && TRUCK_RATES[row.truck] && TRUCK_RATES[row.truck].cap) ? TRUCK_RATES[row.truck].cap : 25;
-      const mmLoads = Math.ceil(row.qty > 0 ? row.qty / mmCap : 0);
+      const mmLoads = Math.ceil(tons > 0 ? tons / mmCap : 0);
       const efTotal = mmLoads * row.env;
       const efTax = efTotal * txr;
       const rowTotal = matCost + tax + haul + efTotal + efTax;
@@ -3662,9 +3683,9 @@ function genBreakdownQuote() {
       let sec = '<div class="brk-mat-section">';
       const mmTruckLabel = row.truck ? (TRUCK_LABELS[row.truck] || row.truck) : "";
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+(mmTruckLabel?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">| '+mmTruckLabel+'</span>':'')+'</div>';
-      sec += brkLine(row.qty+' ton'+(row.qty!==1?'s':'')+' @ '+fmt(row.price)+'/ton', matCost);
+      sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/'+unitLabel, matCost);
       if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
-      sec += brkLine('Haul ('+effQtyMM+'t @ '+fmt(row.haul)+'/ton)'+(effQtyMM>row.qty?' (min '+effQtyMM+'t)':''), row.haul * effQtyMM);
+      sec += brkLine('Haul ('+effQtyMM+'t @ '+fmt(row.haul)+'/ton)'+(effQtyMM>tons?' (min '+effQtyMM+'t)':''), row.haul * effQtyMM);
       if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * effQtyMM);
       sec += brkLine('Environmental Fee (' + mmLoads + ' load' + (mmLoads!==1?'s':'') + ' x ' + fmt(row.env) + ')', efTotal);
       if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
