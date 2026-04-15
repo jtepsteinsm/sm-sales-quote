@@ -577,7 +577,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div id="mat1CustomWrap" class="mat-custom-wrap"><input type="text" id="mat1Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
           <div class="field"><label>Quantity<span class="unit-tog"><button id="qty1BtnT" class="unit-on" onclick="setQtyUnit('qty1','tons')">TONS</button><button id="qty1BtnC" onclick="setQtyUnit('qty1','cy')">CY</button><button id="qty1BtnS" onclick="setQtyUnit('qty1','scoop')">SCOOP</button></span></label><input type="number" id="qty1" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
-          <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr1" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="field"><label id="pr1Label">Price/Ton ($)</label><input type="number" id="pr1" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
       <div>
@@ -820,7 +820,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div id="mat2CustomWrap" class="mat-custom-wrap"><input type="text" id="mat2Custom" placeholder="Type material name..." oninput="calc()"></div>
         <div class="fr2">
           <div class="field"><label>Quantity<span class="unit-tog"><button id="qty2BtnT" class="unit-on" onclick="setQtyUnit('qty2','tons')">TONS</button><button id="qty2BtnC" onclick="setQtyUnit('qty2','cy')">CY</button><button id="qty2BtnS" onclick="setQtyUnit('qty2','scoop')">SCOOP</button></span></label><input type="number" id="qty2" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
-          <div class="field"><label>Price/Ton ($)</label><input type="number" id="pr2" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="field"><label id="pr2Label">Price/Ton ($)</label><input type="number" id="pr2" placeholder="0.00" min="0" step="0.01"></div>
         </div>
       </div>
       <div>
@@ -2330,6 +2330,12 @@ function setQtyUnit(id, unit) {
   if(tBtn) tBtn.classList.toggle('unit-on', unit==='tons');
   if(cBtn) cBtn.classList.toggle('unit-on', unit==='cy');
   if(sBtn) sBtn.classList.toggle('unit-on', unit==='scoop');
+  // Update the corresponding price label
+  var priceId = id === 'qty1' ? 'pr1' : id === 'qty2' ? 'pr2' : null;
+  if(priceId) {
+    var lbl = document.getElementById(priceId+'Label');
+    if(lbl) lbl.textContent = unit === 'cy' ? 'Price/CY ($)' : unit === 'scoop' ? 'Price/Scoop ($)' : 'Price/Ton ($)';
+  }
   calc();
 }
 
@@ -2368,7 +2374,7 @@ function calc() {
   const txr = v("taxr") / 100;
 
   if(qt==="std" || qt==="split") {
-    const q1=qtyToTons("qty1"), p1=v("pr1"), ef1=v("ef1");
+    const rawQ1=v("qty1"), q1=qtyToTons("qty1"), p1=v("pr1"), ef1=v("ef1");
     const mi1 = currentMiles || v("mi1");
     const autoHR = getAutoHaulRate(mi1);
     const hr1 = applySurcharge(v("hr1") || autoHR, "1"); // use override if entered, else formula
@@ -2379,7 +2385,7 @@ function calc() {
     }
     const effQ1 = minTons(q1);
     const loads1 = numLoads(q1);
-    const mat1 = q1 * p1;
+    const mat1 = rawQ1 * p1;
     const tax1 = mat1 * txr;
     const efTotal1 = loads1 * ef1;          // per-load env fee x loads
     const efTax1 = efTotal1 * txr;
@@ -2400,9 +2406,9 @@ function calc() {
     updateFormulaBox(mi1);
 
     if(qt==="split") {
-      const q2=qtyToTons("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
+      const rawQ2=v("qty2"), q2=qtyToTons("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
       const loads2 = numLoads(q2);
-      const mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
+      const mat2=rawQ2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       const sub2 = mat2+tax2+slf+efTotal2+efTax2;
       sumH += '<hr class="div">' + hdr("MATERIAL 2");
       sumH += tr2("Material", fmt(mat2));
@@ -3011,8 +3017,8 @@ function genQuote() {
       );
     });
   } else if(qt==="std"||qt==="split") {
-    const q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
-    const effQ1=minTons(q1), loads1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr;
+    const rawQ1=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
+    const effQ1=minTons(q1), loads1=numLoads(q1), mat1=rawQ1*p1, tax1=mat1*txr;
     const efTotal1=loads1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1;
     totalEfTax += efTax1;
     const zonePrem=applyZonePremium(haul1,effQ1);
@@ -3037,8 +3043,8 @@ function genQuote() {
       fmt(line1Total)
     );
     if(qt==="split") {
-      const q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-      const loads2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
+      const rawQ2=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+      const loads2=numLoads(q2), mat2=rawQ2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       totalEfTax += efTax2;
       const matName2=getMatName("mat2")||"2nd Material";
       const line2Total=mat2+tax2+slf+efTotal2+(efTax2>0?efTax2:0);
@@ -3774,8 +3780,8 @@ function genBreakdownQuote() {
     // Fallback: single qt-based section
     const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
     if(qt==="std"||qt==="split") {
-      const q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
-      const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=q1*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
+      const rawQ1b=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
+      const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=rawQ1b*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
       grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
       let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
       sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
@@ -3787,8 +3793,8 @@ function genBreakdownQuote() {
       sec+='</div>';
       sectionsHtml+=sec;
       if(qt==="split"){
-        const q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-        const fl2=numLoads(q2), mat2=q2*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
+        const rawQ2b=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
+        const fl2=numLoads(q2), mat2=rawQ2b*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
         grandTotal+=mat2+tax2+slf+efTotal2+efTax2;
         let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(getMatName('mat2')?' — '+getMatName('mat2'):'')+'</div>';
         sec2+=brkLine(q2+' tons @ '+fmt(p2)+'/ton',mat2);
