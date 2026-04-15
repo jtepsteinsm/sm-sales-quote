@@ -275,6 +275,13 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- CUSTOMER -->
   <div class="card">
     <div class="ct">Customer Information</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <select id="savedCustSel" onchange="loadSavedCustomer()" style="flex:1;min-width:180px;padding:7px 10px;font-size:13px;border:1.5px solid #b0c8e8;border-radius:6px;color:#111;background:#f8faff;">
+        <option value="">— Load saved customer —</option>
+      </select>
+      <button onclick="saveCustomer()" style="padding:7px 14px;font-size:12px;font-weight:700;background:#4a7cc7;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="Save current customer info">💾 Save Customer</button>
+      <button onclick="deleteSavedCustomer()" style="padding:7px 10px;font-size:13px;background:#f0f4ff;color:#c0392b;border:1.5px solid #e0c0c0;border-radius:6px;cursor:pointer;" title="Delete selected saved customer">🗑</button>
+    </div>
     <div class="g2">
       <div>
         <div class="field"><label>Customer / Company</label><input type="text" id="customer"></div>
@@ -1890,6 +1897,7 @@ window.onload = function() {
   document.getElementById("qid").textContent = "QUOTE #" + qnum;
   loadSettings();
   loadZones();
+  renderSavedCustSelect();
   document.addEventListener("input", function(e) {
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) calc();
   });
@@ -2895,6 +2903,63 @@ function renderZoneList() {
       <button class="zone-del" onclick="deleteZone(${z.id})">Delete</button>
     </div>
   `).join("");
+}
+
+// ── SAVED CUSTOMERS ──────────────────────────────────────────────────────────
+var CUST_KEY = "smSalesCustomers";
+var CUST_FIELDS = ["customer","contact","address","city","zip","phone","email","fax"];
+
+function getSavedCustomers() {
+  try { return JSON.parse(localStorage.getItem(CUST_KEY)||"[]"); } catch(e) { return []; }
+}
+function renderSavedCustSelect() {
+  var sel = document.getElementById("savedCustSel");
+  if(!sel) return;
+  var custs = getSavedCustomers();
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">— Load saved customer —</option>'
+    + custs.map(function(c,i){ return '<option value="'+i+'"'+(cur==i?' selected':'')+'>'+c.customer+(c.contact?' — '+c.contact:'')+'</option>'; }).join("");
+}
+function saveCustomer() {
+  var name = (document.getElementById("customer")||{}).value || "";
+  if(!name.trim()) { alert("Enter a customer name first."); return; }
+  var custs = getSavedCustomers();
+  var data = {};
+  CUST_FIELDS.forEach(function(f){ data[f] = (document.getElementById(f)||{}).value || ""; });
+  // Update existing if same name, otherwise add new
+  var idx = custs.findIndex(function(c){ return c.customer.toLowerCase()===name.trim().toLowerCase(); });
+  if(idx >= 0) {
+    if(!confirm("Update saved info for \""+name+"\"?")) return;
+    custs[idx] = data;
+  } else {
+    custs.push(data);
+    custs.sort(function(a,b){ return a.customer.localeCompare(b.customer); });
+  }
+  localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  renderSavedCustSelect();
+  // Select the just-saved customer
+  var sel = document.getElementById("savedCustSel");
+  if(sel) { var ni = custs.findIndex(function(c){ return c.customer.toLowerCase()===name.trim().toLowerCase(); }); if(ni>=0) sel.value=ni; }
+}
+function loadSavedCustomer() {
+  var sel = document.getElementById("savedCustSel");
+  if(!sel || sel.value==="") return;
+  var custs = getSavedCustomers();
+  var data = custs[parseInt(sel.value)];
+  if(!data) return;
+  CUST_FIELDS.forEach(function(f){ var el=document.getElementById(f); if(el) el.value=data[f]||""; });
+}
+function deleteSavedCustomer() {
+  var sel = document.getElementById("savedCustSel");
+  if(!sel || sel.value==="") { alert("Select a saved customer to delete."); return; }
+  var custs = getSavedCustomers();
+  var data = custs[parseInt(sel.value)];
+  if(!data) return;
+  if(!confirm("Delete saved customer \""+data.customer+"\"?")) return;
+  custs.splice(parseInt(sel.value), 1);
+  localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  sel.value = "";
+  renderSavedCustSelect();
 }
 
 function saveZones() { localStorage.setItem("smSalesZones", JSON.stringify(zones)); }
