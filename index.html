@@ -331,13 +331,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 
   <!-- TRUCK + RATE SETTINGS -->
   <div class="card gap" id="truckSec">
-    <div class="ct">Truck &amp; Delivery Details</div>
-    <div class="trucks">
-      <div class="tc" onclick="selTruck('s10')" id="tr_s10"><div class="ti">🚛</div><div class="tn">Super 10</div><div class="tt">17t min</div></div>
-      <div class="tc" onclick="selTruck('tf')" id="tr_tf"><div class="ti">🚚</div><div class="tn">Transfer</div><div class="tt">25t min</div></div>
-      <div class="tc" onclick="selTruck('bd')" id="tr_bd"><div class="ti">🔽</div><div class="tn">Bottom Dump</div><div class="tt">25t min</div></div>
-      <div class="tc" onclick="selTruck('ed')" id="tr_ed"><div class="ti">⬆️</div><div class="tn">End Dump</div><div class="tt">22t min</div></div>
-    </div>
+    <div class="ct">Delivery Details</div>
 
     <div class="g2">
       <div>
@@ -1531,11 +1525,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           <option value="30" selected>30 days</option><option value="60">60 days</option>
         </select>
       </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">QUOTE STYLE</div>
-        <div class="tog"><button class="tbtn on" id="qsStd" onclick="setQStyle('standard')">Standard</button><button class="tbtn" id="qsBrk" onclick="setQStyle('breakdown')">Breakdown</button></div>
-      </div>
-      <div id="brkMatCountWrap" style="display:none;margin-bottom:12px;">
+      <div id="brkMatCountWrap" style="margin-bottom:12px;">
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">MATERIALS TO SHOW</div>
         <select id="brkMatCount" onchange="renderMMRows()" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
       </div>
@@ -1898,6 +1888,7 @@ window.onload = function() {
   loadSettings();
   loadZones();
   renderSavedCustSelect();
+  setQStyle();
   document.addEventListener("input", function(e) {
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) calc();
   });
@@ -1927,10 +1918,8 @@ function showPage(id) {
 function setQt(t) {
   qt = t;
   document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","demo"][i]===t));
-  if(qStyle !== "standard") {
-    document.getElementById("matSec").classList.toggle("gone", !["std","split"].includes(t));
-    document.getElementById("mat2Sec").classList.toggle("gone", t!=="split");
-  }
+  document.getElementById("matSec").classList.add("gone");
+  document.getElementById("mat2Sec").classList.add("gone");
   document.getElementById("haulSec").classList.toggle("gone", t!=="haul");
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
   document.getElementById("truckSec").classList.toggle("gone", false);
@@ -3193,40 +3182,24 @@ document.getElementById("ppaylbl").textContent=pay==="cc"?"TOTAL (CREDIT CARD)":
 }
 
 // ── QUOTE STYLE ───────────────────────────────────────────────────────────────
-let qStyle = 'standard';
+let qStyle = 'breakdown';
 let dumpFeeType = 'ton';
 
-function setQStyle(style) {
-  qStyle = style;
-  document.getElementById("qsStd").classList.toggle("on", style==="standard");
-  document.getElementById("qsBrk").classList.toggle("on", style==="breakdown");
-  document.getElementById("brkMatCountWrap").style.display = "block";
-
+function setQStyle() {
+  qStyle = 'breakdown';
   var mmSec   = document.getElementById("mmSec");
   var matSec  = document.getElementById("matSec");
   var mat2Sec = document.getElementById("mat2Sec");
   var haulSec = document.getElementById("haulSec");
   var demoSec = document.getElementById("demoSec");
   var truckSec= document.getElementById("truckSec");
-
-  if(style === "breakdown") {
-    if(mmSec)   { mmSec.classList.remove("gone"); mmSec.style.display=""; }
-    if(matSec)  matSec.classList.add("gone");
-    if(mat2Sec) mat2Sec.classList.add("gone");
-    if(haulSec) haulSec.classList.add("gone");
-    if(demoSec) demoSec.classList.add("gone");
-    if(truckSec)truckSec.classList.remove("gone");
-    renderMMRows();
-  } else {
-    // Standard mode — mmSec handles materials (up to 9)
-    if(mmSec)   { mmSec.classList.remove("gone"); mmSec.style.display=""; }
-    if(matSec)  matSec.classList.add("gone");
-    if(mat2Sec) mat2Sec.classList.add("gone");
-    if(haulSec) haulSec.classList.toggle("gone", qt!=="haul");
-    if(demoSec) demoSec.classList.toggle("gone", qt!=="demo");
-    if(truckSec)truckSec.classList.remove("gone");
-    renderMMRows();
-  }
+  if(mmSec)   { mmSec.classList.remove("gone"); mmSec.style.display=""; }
+  if(matSec)  matSec.classList.add("gone");
+  if(mat2Sec) mat2Sec.classList.add("gone");
+  if(haulSec) haulSec.classList.add("gone");
+  if(demoSec) demoSec.classList.add("gone");
+  if(truckSec)truckSec.classList.remove("gone");
+  renderMMRows();
 }
 
 // ── MULTI-MATERIAL ROWS ───────────────────────────────────────────────────────
