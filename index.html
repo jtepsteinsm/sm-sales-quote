@@ -1268,186 +1268,64 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- DEMO -->
   <div class="card gap gone" id="demoSec">
     <div class="ct">Demo / Export Quote</div>
-    <div class="slf-note" style="color:#7ab3f0;border-color:rgba(122,179,240,.3);background:rgba(122,179,240,.08);">Includes dump fee + trucking. Environmental fee is taxed.</div>
+    <div class="slf-note" style="color:#7ab3f0;border-color:rgba(122,179,240,.3);background:rgba(122,179,240,.08);">Haul + dump fee + environmental fee. Tax applies to env fee only.</div>
+
+    <!-- Global demo settings -->
     <div class="g2">
       <div>
-        <div class="field"><label>Demo / Export Site</label><input type="text" id="dsite" placeholder="Site address"></div>
-        <div class="field"><label>Disposal / Receiving Site</label><input type="text" id="ddisp" placeholder="Disposal address"></div>
-        <div class="field"><label>Material</label><select id="dmat" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
-<option value="1&quot; Crushed Rock">1" Crushed Rock</option>
-<option value="1&quot; Del Rio">1" Del Rio</option>
-<option value="1&quot; Black Del Rio">1" Black Del Rio</option>
-<option value="1&quot; - 2&quot; White Rock">1" - 2" White Rock</option>
-<option value="1 1/2&quot; Gravel">1 1/2" Gravel</option>
-<option value="1 1/2&quot; Crushed Rock">1 1/2" Crushed Rock</option>
-<option value="1 1/2&quot; California Gold Rock">1 1/2" California Gold Rock</option>
-<option value="1 1/2&quot; Crushed Aggregate Base">1 1/2" Crushed Aggregate Base</option>
-<option value="1 1/2&quot; Del Rio">1 1/2" Del Rio</option>
-<option value="1 1/2&quot; Gold Rock">1 1/2" Gold Rock</option>
-<option value="1 1/2&quot; Gravel">1 1/2" Gravel</option>
-<option value="1 1/2&quot; Noiyos/Yosem">1 1/2" Noiyos/Yosem</option>
-<option value="1 1/2&quot; Open Graded Aggregate">1 1/2" Open Graded Aggregate</option>
-<option value="1 1/2&quot; Red Rock">1 1/2" Red Rock</option>
-<option value="1 1/2&quot; - 3&quot; Arizona River Rock">1 1/2" - 3" Arizona River Rock</option>
-<option value="1/2&quot; Crushed Rock">1/2" Crushed Rock</option>
-<option value="1/2&quot; Washed Crushed Rock">1/2" Washed Crushed Rock</option>
-<option value="1/2&quot; - 3/4&quot; Arizona River Rock">1/2" - 3/4" Arizona River Rock</option>
-<option value="1 Ton Rip Rap">1 Ton Rip Rap</option>
-<option value="1/2 Ton Rip Rap">1/2 Ton Rip Rap</option>
-<option value="1/4 Ton Rip Rap">1/4 Ton Rip Rap</option>
-<option value="2&quot; - 4&quot; Cobble">2" - 4" Cobble</option>
-<option value="2&quot; - 4&quot; Crushed Rock">2" - 4" Crushed Rock</option>
-<option value="2&quot; - 4&quot; Gold Rock">2" - 4" Gold Rock</option>
-<option value="2&quot; - 4&quot; Noiyos/Yosem">2" - 4" Noiyos/Yosem</option>
-<option value="2&quot; - 4&quot; Red Rock">2" - 4" Red Rock</option>
-<option value="2&quot; - 4&quot; Tropico">2" - 4" Tropico</option>
-<option value="2&quot; - 5&quot; Cobble">2" - 5" Cobble</option>
-<option value="3&quot; Minus Crushed Rock">3" Minus Crushed Rock</option>
-<option value="3&quot; - 6&quot; Arizona River Rock">3" - 6" Arizona River Rock</option>
-<option value="3&quot; - 6&quot; Crushed Rock">3" - 6" Crushed Rock</option>
-<option value="3/4&quot; 50-50 Mix (C-Mix)">3/4" 50-50 Mix (C-Mix)</option>
-<option value="3/4&quot; Bark Brown">3/4" Bark Brown</option>
-<option value="3/4&quot; Black Lava">3/4" Black Lava</option>
-<option value="3/4&quot; California Gold Rock">3/4" California Gold Rock</option>
-<option value="3/4&quot; Crushed Rock">3/4" Crushed Rock</option>
-<option value="3/4&quot; Eagle Mountain (3/8&quot; Crushed)">3/4" Eagle Mountain (3/8" Crushed)</option>
-<option value="3/4&quot; Gold Rock">3/4" Gold Rock</option>
-<option value="3/4&quot; Handley Gold">3/4" Handley Gold</option>
-<option value="3/4&quot; Noiyos/Yosem">3/4" Noiyos/Yosem</option>
-<option value="3/4&quot; Palm Springs Gold">3/4" Palm Springs Gold</option>
-<option value="3/4&quot; Rainbow Rock">3/4" Rainbow Rock</option>
-<option value="3/4&quot; Red Lava">3/4" Red Lava</option>
-<option value="3/4&quot; Red Rock">3/4" Red Rock</option>
-<option value="3/4&quot; Washed Crushed Rock">3/4" Washed Crushed Rock</option>
-<option value="3/4&quot; White Rock">3/4" White Rock</option>
-<option value="3/4&quot; Wine Red">3/4" Wine Red</option>
-<option value="3/4&quot; - 1 1/2&quot; Arizona River Rock">3/4" - 1 1/2" Arizona River Rock</option>
-<option value="3/8&quot; 50-50 Mix (C-Mix)">3/8" 50-50 Mix (C-Mix)</option>
-<option value="3/8&quot; Arizona River Rock">3/8" Arizona River Rock</option>
-<option value="3/8&quot; Black Del Rio">3/8" Black Del Rio</option>
-<option value="3/8&quot; California Gold Rock">3/8" California Gold Rock</option>
-<option value="3/8&quot; Crushed Rock">3/8" Crushed Rock</option>
-<option value="3/8&quot; Eagle Mountain (3/8&quot; Crushed)">3/8" Eagle Mountain (3/8" Crushed)</option>
-<option value="3/8&quot; Gold Rock">3/8" Gold Rock</option>
-<option value="3/8&quot; Gravel (Pea Gravel)">3/8" Gravel (Pea Gravel)</option>
-<option value="3/8&quot; Handley Gold">3/8" Handley Gold</option>
-<option value="3/8&quot; Noiyos/Yosem">3/8" Noiyos/Yosem</option>
-<option value="3/8&quot; Red Rock">3/8" Red Rock</option>
-<option value="3/8&quot; Washed Crushed Rock">3/8" Washed Crushed Rock</option>
-<option value="3/8&quot; White Rock">3/8" White Rock</option>
-<option value="4&quot; - 8&quot; Cobble">4" - 8" Cobble</option>
-<option value="4&quot; - 8&quot; Gold Rock">4" - 8" Gold Rock</option>
-<option value="4&quot; - 8&quot; Noiyos/Yosem">4" - 8" Noiyos/Yosem</option>
-<option value="4&quot; - 8&quot; Red Rock">4" - 8" Red Rock</option>
-<option value="6&quot; - 8&quot; Cobble">6" - 8" Cobble</option>
-<option value="8&quot; - 18&quot; Rip Rap">8" - 18" Rip Rap</option>
-<option value="18/30 White Sand">18/30 White Sand</option>
-<option value="50/50 Planter Mix">50/50 Planter Mix</option>
-<option value="70/30 Planter Mix">70/30 Planter Mix</option>
-<option value="#30 Sand">#30 Sand</option>
-<option value="#30 Silver Sand">#30 Silver Sand</option>
-<option value="#57 Rock">#57 Rock</option>
-<option value="Angel Mix">Angel Mix</option>
-<option value="Arema #4">Arema #4</option>
-<option value="Arema #4a">Arema #4a</option>
-<option value="Arema #5">Arema #5</option>
-<option value="Asphalt (customers must specify mix)">Asphalt (customers must specify mix)</option>
-<option value="Asphalt Grindings">Asphalt Grindings</option>
-<option value="Birdseye">Birdseye</option>
-<option value="Brown Shredded Mulch">Brown Shredded Mulch</option>
-<option value="California Gold DG">California Gold DG</option>
-<option value="California Stabilized Gold DG">California Stabilized Gold DG</option>
-<option value="Class I Rip Rap">Class I Rip Rap</option>
-<option value="Class II Base/CMB (Recycled)">Class II Base/CMB (Recycled)</option>
-<option value="Class II Natural Base">Class II Natural Base</option>
-<option value="Class II Permeable Base">Class II Permeable Base</option>
-<option value="Class II Rip Rap">Class II Rip Rap</option>
-<option value="Class III Rip Rap">Class III Rip Rap</option>
-<option value="Class IV Rip Rap">Class IV Rip Rap</option>
-<option value="Class V Rip Rap">Class V Rip Rap</option>
-<option value="CMB">CMB</option>
-<option value="Cobble">Cobble</option>
-<option value="Cold Mix">Cold Mix</option>
-<option value="Compost">Compost</option>
-<option value="Concrete - Washout">Concrete - Washout</option>
-<option value="Cone Fines">Cone Fines</option>
-<option value="Crushed Aggregate Base (CAB)">Crushed Aggregate Base (CAB)</option>
-<option value="Cyclone Sand">Cyclone Sand</option>
-<option value="Decomposed Granite">Decomposed Granite</option>
-<option value="DG">DG</option>
-<option value="Dry Plaster Sand (DPS)">Dry Plaster Sand (DPS)</option>
-<option value="Facing Class Rip Rap">Facing Class Rip Rap</option>
-<option value="Fill Dirt">Fill Dirt</option>
-<option value="Fill Sand">Fill Sand</option>
-<option value="Fine Arena Sand (Equifina)">Fine Arena Sand (Equifina)</option>
-<option value="G20 Sand">G20 Sand</option>
-<option value="Gas Sand">Gas Sand</option>
-<option value="Gold DG">Gold DG</option>
-<option value="Gorilla Hair">Gorilla Hair</option>
-<option value="Grey DG (Type II Rock Dust)">Grey DG (Type II Rock Dust)</option>
-<option value="Light Class Rip Rap">Light Class Rip Rap</option>
-<option value="Medium Bark Nuggets">Medium Bark Nuggets</option>
-<option value="Mojave Gold DG">Mojave Gold DG</option>
-<option value="Montecito Rock">Montecito Rock</option>
-<option value="Mulch">Mulch</option>
-<option value="Pink DG">Pink DG</option>
-<option value="Processed Misc. Base (PMB)">Processed Misc. Base (PMB)</option>
-<option value="Red Brick Fines">Red Brick Fines</option>
-<option value="Red DG">Red DG</option>
-<option value="Rock Dust">Rock Dust</option>
-<option value="Sandy Loam Topsoil">Sandy Loam Topsoil</option>
-<option value="Sespi Cobble">Sespi Cobble</option>
-<option value="Shoulder Backing">Shoulder Backing</option>
-<option value="Stabilized Decomposed Granite">Stabilized Decomposed Granite</option>
-<option value="Stabilized Gold DG">Stabilized Gold DG</option>
-<option value="Stabilized Red DG">Stabilized Red DG</option>
-<option value="Stabilized Wine Red DG">Stabilized Wine Red DG</option>
-<option value="Topsoil">Topsoil</option>
-<option value="Walk-On-Bark">Walk-On-Bark</option>
-<option value="Washed Concrete Sand (WCS)">Washed Concrete Sand (WCS)</option>
-<option value="Washed Plaster Sand">Washed Plaster Sand</option>
-<option value="Washed Plaster Sand (WPS)">Washed Plaster Sand (WPS)</option>
-<option value="Wine Red DG">Wine Red DG</option><option value="__other__">✏ Other (write in)...</option></select></div>
-        <div id="dmatCustomWrap" class="mat-custom-wrap"><input type="text" id="dmatCustom" placeholder="Type material name..." oninput="calc()"></div>
-        <div class="field"><label>Quantity<span class="unit-tog"><button id="dtonsBtnT" class="unit-on" onclick="setQtyUnit('dtons','tons')">TONS</button><button id="dtonsBtnC" onclick="setQtyUnit('dtons','cy')">CY</button><button id="dtonsBtnS" onclick="setQtyUnit('dtons','scoop')">SCOOP</button></span></label><input type="number" id="dtons" placeholder="0" min="0" step="0.5" oninput="calc()"></div>
+        <div class="field"><label>Demo / Export Site</label><input type="text" id="dsite" placeholder="Pickup / demo site address" oninput="onDemoAddrChange()"></div>
+        <div class="field"><label>Disposal / Receiving Site</label><input type="text" id="ddisp" placeholder="Disposal or receiving site address" oninput="onDemoAddrChange()"></div>
+        <div class="field"><label>Miles <span class="ms" id="dms"></span></label><input type="number" id="dmi" placeholder="Auto-calculated" min="0" step="0.1" oninput="calcDemo()"></div>
       </div>
       <div>
         <div class="fr2">
-          <div class="field"><label>Miles <span class="ms" id="dms"></span></label><input type="number" id="dmi" placeholder="Auto" min="0"></div>
-          <div class="field"><label>Haul Rate ($/ton)</label><input type="number" id="dhr" placeholder="Auto from formula" min="0" step="0.01"></div>
-        <div class="field gap" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
-          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">⛽ FUEL / COL SURCHARGE</label>
+          <div class="field"><label>Env Fee ($)</label><input type="number" id="def_" value="10" min="0" step="0.01" oninput="calcDemo()"></div>
+          <div class="field"><label>Tax Rate (%)</label><input type="number" id="dtaxr" value="0" min="0" step="0.01" oninput="calcDemo()"></div>
+        </div>
+        <div class="field"><label>Mark Up ($/ton)</label><input type="number" id="dmu" value="0" min="0" step="0.01" oninput="calcDemo()"></div>
+        <div class="field" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
+          <label style="color:#b8860b;font-weight:800;letter-spacing:1px;font-size:10px;">&#9981; FUEL / COL SURCHARGE</label>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
-            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;">
-              <input type="checkbox" id="scOnd" onchange="calc()" style="width:auto;margin:0;"> Enable
-            </label>
-            <select id="scTyped" onchange="calc()" style="width:90px;font-size:12px;padding:4px 6px;">
-              <option value="pct">% of haul</option>
-              <option value="flat">$/ton flat</option>
-            </select>
-            <input type="number" id="scAmtd" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calc()">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;"><input type="checkbox" id="scOnd" onchange="calcDemo()" style="width:auto;margin:0;"> Enable</label>
+            <select id="scTyped" onchange="calcDemo()" style="width:90px;font-size:12px;padding:4px 6px;"><option value="pct">% of haul</option><option value="flat">$/ton flat</option></select>
+            <input type="number" id="scAmtd" placeholder="0" min="0" step="0.01" style="width:80px;font-size:13px;" oninput="calcDemo()">
             <span id="scBadged" style="font-size:11px;color:#b8860b;font-weight:700;"></span>
           </div>
         </div>
-
-        </div>
-        <div class="fr2">
-          <div class="field">
-            <label>Dump Fee</label>
-            <div class="tog" style="margin-bottom:6px;"><button class="tbtn on" id="ddfTypeTon" onclick="setDumpFeeType('ton')">$/TON</button><button class="tbtn" id="ddfTypeLoad" onclick="setDumpFeeType('load')">$/PER LOAD</button></div>
-            <div id="ddfTonWrap"><input type="number" id="ddf" placeholder="0.00" min="0" step="0.01" oninput="calc()"></div>
-            <div id="ddfLoadWrap" style="display:none"><div style="display:flex;gap:6px;"><input type="number" id="ddfLoad" placeholder="$/load" min="0" step="0.01" style="flex:1;" oninput="calc()"><input type="number" id="ddfLoads" placeholder="# loads" min="1" step="1" style="flex:1;" oninput="calc()"></div><div style="font-size:10px;color:var(--sand);margin-top:3px;">$/load × # of loads</div></div>
-          </div>
-          <div class="field"><label>Env Fee ($)</label><input type="number" id="def_" value="10" min="0" step="0.01"></div>
-        </div>
-        <div class="fr2">
-          <div class="field">
-            <label>Tax Rate (%) <span class="txbadge" id="dtxbadge"></span></label>
-            <input type="number" id="dtaxr" value="0" min="0" step="0.01">
-          </div>
-          <div class="field"><label>Mark Up ($/ton)</label><input type="number" id="dmu" value="0" min="0" step="0.01"></div>
-        </div>
       </div>
+    </div>
+
+    <!-- Item count + auto-fill -->
+    <div style="display:flex;align-items:flex-end;gap:12px;margin:14px 0 8px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:140px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;margin-bottom:4px;">ITEMS TO SHOW</div>
+        <select id="demoItemCount" onchange="renderDemoRows()" style="width:100%;padding:7px 10px;font-size:13px;background:#fff;border:1.5px solid #c0d0e8;border-radius:4px;color:#111;">
+          <option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option>
+          <option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option>
+          <option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px;">
+        <button onclick="autoFillDemoHaul()" style="width:100%;padding:9px 10px;background:#e8f5e9;border:1.5px solid #4caf50;border-radius:4px;color:#2e7d32;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">&#9889; Auto-Fill Haul Rates</button>
+      </div>
+    </div>
+
+    <!-- Demo rows table -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#f0f4ff;border-bottom:2px solid #b0c8e8;text-align:left;">
+            <th style="padding:6px 4px;width:24px;text-align:center;color:#4a7cc7;font-size:10px;">#</th>
+            <th style="padding:6px 4px;color:#4a7cc7;font-size:10px;">Material</th>
+            <th style="padding:6px 4px;width:90px;color:#4a7cc7;font-size:10px;">Qty / Unit</th>
+            <th style="padding:6px 4px;width:110px;color:#4a7cc7;font-size:10px;">Truck</th>
+            <th style="padding:6px 4px;width:80px;color:#4a7cc7;font-size:10px;">Haul $/ton</th>
+            <th style="padding:6px 4px;width:80px;color:#4a7cc7;font-size:10px;">Dump $/ton</th>
+            <th style="padding:6px 4px;width:65px;color:#4a7cc7;font-size:10px;">Min/Load</th>
+          </tr>
+        </thead>
+        <tbody id="demoTbody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -1924,6 +1802,7 @@ function setQt(t) {
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
   document.getElementById("truckSec").classList.toggle("gone", false);
   plantPid=null; locPid=null;
+  if(t === "demo") renderDemoRows();
   calc();
 }
 
@@ -2079,6 +1958,7 @@ function minTons(actual) {
 function getDefaultMinPerLoad(unit, truckType) {
   if(unit === 'cy')    return 17;
   if(unit === 'scoop') return 34;
+  if(unit === 'load')  return 1;
   // tons — use truck cap
   return (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
 }
@@ -2462,31 +2342,8 @@ function calc() {
     updateFormulaBox(mi);
 
   } else if(qt==="demo") {
-    const dtxr = v("dtaxr")/100;
-    const tons=qtyToTons("dtons"), mi=currentMiles||v("dmi"), df=v("ddf"), ef=v("def_"), mu=v("dmu");
-    const autoHR = getAutoHaulRate(mi);
-    const hr = applySurcharge(v("dhr") || autoHR, "d");
-    if(!v("dhr") && autoHR>0) {
-      const el=document.getElementById("dhr");
-      if(el && !el.value) el.placeholder=fmt(autoHR)+" (auto)";
-    }
-    const eff = minTons(tons);
-    const demoLoads = numLoads(tons);
-    const haul = (hr+mu)*eff;
-    const dump = (typeof getDumpFeeTotal === 'function') ? getDumpFeeTotal(eff) : df*eff;
-    const efTotal = demoLoads * ef;
-    const efTax = efTotal * dtxr;
-    zonePrem = applyZonePremium(haul, eff);
-    const sub = haul+dump+efTotal+efTax+zonePrem;
-    if(eff>tons && tons>0) { showMin=true; minVal=haul; }
-    sumH += hdr("DEMO / EXPORT");
-    sumH += tr2("Haul", fmt(haul));
-    sumH += tr2((typeof getDumpFeeLabel === 'function') ? getDumpFeeLabel(eff) : "Dump Fee", fmt(dump));
-    sumH += tr2("Env Fee ("+demoLoads+" load"+(demoLoads!==1?"s":"")+" x "+fmt(ef)+")", fmt(efTotal));
-    if(efTax>0) sumH += tr2("Env Fee Tax ("+v("dtaxr")+"%)",""+fmt(efTax));
-    if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
-    grand = sub; perTon = eff>0 ? sub/eff : 0;
-    updateFormulaBox(mi);
+    calcDemo();
+    return;
   }
 
   document.getElementById("sumHtml").innerHTML = sumH;
@@ -3441,7 +3298,8 @@ function renderMMRows() {
     var unitVal  = ex.unit  || "tons";
     var unitOpts = '<option value="tons"'  + (unitVal==="tons" ?" selected":"") + '>Tons</option>'
       + '<option value="cy"'   + (unitVal==="cy"   ?" selected":"") + '>CY</option>'
-      + '<option value="scoop"'+ (unitVal==="scoop"?" selected":"") + '>Scoop</option>';
+      + '<option value="scoop"'+ (unitVal==="scoop"?" selected":"") + '>Scoop</option>'
+      + '<option value="load"' + (unitVal==="load" ?" selected":"") + '>Load</option>';
     var truckVal   = ex.truck || "";
     var minLoadDef = getDefaultMinPerLoad(unitVal, truckVal);
     var minLoadVal = (ex.minload !== undefined && ex.minload !== "") ? ex.minload : minLoadDef;
@@ -3521,8 +3379,13 @@ function calcMM() {
       var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
       var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
       var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
-      var effQtyUnit = applyMinPerLoad(qty, rowMin);          // effective qty in row's unit
-      var effTons    = unitToTons(effQtyUnit, rowUnit);       // convert to tons for haul
+      var effTons;
+      if(rowUnit === 'load') {
+        var truckCapL = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
+        effTons = applyMinPerLoad(qty, rowMin) * truckCapL;
+      } else {
+        effTons = unitToTons(applyMinPerLoad(qty, rowMin), rowUnit);
+      }
       var mat   = qty * price;
       var tax   = mat * txr;
       var efTax = env * txr;
@@ -3722,6 +3585,193 @@ function getMMData() {
   return rows;
 }
 
+// ── DEMO MULTI-ROW ────────────────────────────────────────────────────────────
+function renderDemoRows() {
+  var countEl = document.getElementById("demoItemCount");
+  var n = countEl ? (parseInt(countEl.value) || 3) : 3;
+  var tbody = document.getElementById("demoTbody");
+  if(!tbody) return;
+  var existing = [];
+  tbody.querySelectorAll("tr").forEach(function(tr) {
+    existing.push({
+      mat:     tr.querySelector(".dm-mat")         ? tr.querySelector(".dm-mat").value         : "",
+      matC:    tr.querySelector(".dm-mat-custom")  ? tr.querySelector(".dm-mat-custom").value  : "",
+      qty:     tr.querySelector(".dm-qty")         ? tr.querySelector(".dm-qty").value         : "",
+      unit:    tr.querySelector(".dm-unit")        ? tr.querySelector(".dm-unit").value        : "tons",
+      truck:   tr.querySelector(".dm-truck")       ? tr.querySelector(".dm-truck").value       : "",
+      haul:    tr.querySelector(".dm-haul")        ? tr.querySelector(".dm-haul").value        : "",
+      dump:    tr.querySelector(".dm-dump")        ? tr.querySelector(".dm-dump").value        : "",
+      minload: tr.querySelector(".dm-minload")     ? tr.querySelector(".dm-minload").value     : ""
+    });
+  });
+  var matOpts = buildMatOptions();
+  var inStyle = "width:100%;padding:5px 6px;font-size:11px;background:#fff;border:1.5px solid #b0c8e8;border-radius:4px;color:#111;";
+  var cstStyle = "width:100%;margin-top:3px;padding:5px 6px;font-size:11px;background:#f8faff;border:1.5px solid #4a7cc7;border-radius:4px;color:#111;box-sizing:border-box;";
+  var html = "";
+  for(var i = 0; i < n; i++) {
+    var ex = existing[i] || {};
+    var unitVal  = ex.unit  || "tons";
+    var truckVal = ex.truck || "";
+    var minDef = getDefaultMinPerLoad(unitVal, truckVal);
+    var minVal = (ex.minload !== undefined && ex.minload !== "") ? ex.minload : minDef;
+    var unitOpts = '<option value="tons"'  + (unitVal==="tons"  ?" selected":"") + '>Tons</option>'
+      + '<option value="cy"'    + (unitVal==="cy"    ?" selected":"") + '>CY</option>'
+      + '<option value="scoop"' + (unitVal==="scoop" ?" selected":"") + '>Scoop</option>'
+      + '<option value="load"'  + (unitVal==="load"  ?" selected":"") + '>Load</option>';
+    var truckOpts = '<option value="">— Truck —</option>'
+      + '<option value="s10"'+(truckVal==="s10"?" selected":"")+'>Super 10 (17t)</option>'
+      + '<option value="tf"' +(truckVal==="tf" ?" selected":"")+'>Transfer (25t)</option>'
+      + '<option value="bd"' +(truckVal==="bd" ?" selected":"")+'>Bottom Dump (25t)</option>'
+      + '<option value="ed"' +(truckVal==="ed" ?" selected":"")+'>End Dump (22t)</option>';
+    var mSel = '<select class="dm-mat" onchange="onDemoMatSelect(this)" style="'+inStyle+'">'
+      + matOpts + '</select>'
+      + '<div class="dm-mat-custom-wrap" style="display:none"><input type="text" class="dm-mat-custom" placeholder="Type material..." style="'+cstStyle+'" oninput="calcDemo()"></div>';
+    html += '<tr style="border-bottom:1px solid #dce8f5;">'
+      + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">'+(i+1)+'</td>'
+      + '<td style="padding:4px 3px;min-width:160px;">'+mSel+'</td>'
+      + '<td style="padding:4px 3px;width:90px;"><input type="number" class="dm-qty" placeholder="0" min="0" step="0.5" value="'+(ex.qty||"")+'" oninput="calcDemo()" style="'+inStyle+'margin-bottom:3px;">'
+      + '<select class="dm-unit" onchange="onDemoUnitChange(this,'+i+')" style="'+inStyle+'font-size:10px;padding:3px 4px;">'+unitOpts+'</select></td>'
+      + '<td style="padding:4px 3px;width:110px;"><select class="dm-truck" onchange="onDemoTruckChange(this,'+i+')" style="'+inStyle+'">'+truckOpts+'</select></td>'
+      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="dm-haul" placeholder="auto" min="0" step="0.01" value="'+(ex.haul||"")+'" oninput="calcDemo()" style="'+inStyle+'"></td>'
+      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="dm-dump" placeholder="0.00" min="0" step="0.01" value="'+(ex.dump||"")+'" oninput="calcDemo()" style="'+inStyle+'"></td>'
+      + '<td style="padding:4px 3px;width:65px;"><input type="number" class="dm-minload" placeholder="'+minDef+'" min="1" step="1" value="'+minVal+'" oninput="calcDemo()" title="Min per load" style="'+inStyle+'"></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+  tbody.querySelectorAll("tr").forEach(function(tr, i) {
+    var ex2 = existing[i] || {};
+    if(ex2.mat) { var ms = tr.querySelector(".dm-mat"); if(ms) ms.value = ex2.mat; }
+    if(ex2.mat === '__other__') {
+      var mw = tr.querySelector(".dm-mat-custom-wrap"); if(mw) mw.style.display='block';
+      var mc = tr.querySelector(".dm-mat-custom");      if(mc) mc.value = ex2.matC||'';
+    }
+  });
+}
+
+function getDemoFuelSurcharge(baseHaul) {
+  var onEl = document.getElementById("scOnd");
+  if(!onEl || !onEl.checked) return 0;
+  var type = (document.getElementById("scTyped")||{}).value || "pct";
+  var amt  = parseFloat((document.getElementById("scAmtd")||{}).value) || 0;
+  if(amt <= 0) return 0;
+  return type === "pct" ? baseHaul * (amt / 100) : amt;
+}
+
+function calcDemo() {
+  var dMiles  = parseFloat((document.getElementById("dmi")||{value:0}).value) || 0;
+  var autoHR  = getAutoHaulRate(dMiles);
+  var envFee  = parseFloat((document.getElementById("def_")||{value:10}).value) || 0;
+  var taxRate = (parseFloat((document.getElementById("dtaxr")||{value:0}).value) || 0) / 100;
+  var mu      = parseFloat((document.getElementById("dmu")||{value:0}).value) || 0;
+  var grand = 0;
+  var sumH  = hdr("DEMO / EXPORT");
+  var tbody = document.getElementById("demoTbody");
+  if(tbody) {
+    tbody.querySelectorAll("tr").forEach(function(tr, idx) {
+      var qty      = parseFloat((tr.querySelector(".dm-qty")   ||{}).value) || 0;
+      var rowUnit  = (tr.querySelector(".dm-unit") ||{}).value || "tons";
+      var rowTruck = (tr.querySelector(".dm-truck")||{}).value || "";
+      var rowMinRaw = parseFloat((tr.querySelector(".dm-minload")||{}).value);
+      var rowMin   = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
+      var haulEl   = tr.querySelector(".dm-haul");
+      var haulRate = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
+      var dumpFee  = parseFloat((tr.querySelector(".dm-dump")||{}).value) || 0;
+      var effTons;
+      if(rowUnit === 'load') {
+        var cap = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
+        effTons = applyMinPerLoad(qty, rowMin) * cap;
+      } else {
+        effTons = unitToTons(applyMinPerLoad(qty, rowMin), rowUnit);
+      }
+      if(effTons <= 0) return;
+      var truckCap = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
+      var loads   = Math.ceil(effTons / truckCap);
+      var sc      = getDemoFuelSurcharge(haulRate);
+      var haul    = (haulRate + sc + mu) * effTons;
+      var dump    = dumpFee * effTons;
+      var ef      = envFee * loads;
+      var efTax   = ef * taxRate;
+      var rowTotal = haul + dump + ef + efTax;
+      grand += rowTotal;
+      var matEl = tr.querySelector(".dm-mat");
+      var matName = (matEl && matEl.value && matEl.value !== '__other__') ? matEl.value : "";
+      if(!matName) { var mc = tr.querySelector(".dm-mat-custom"); matName = mc ? mc.value : ""; }
+      if(!matName) matName = "Item " + (idx+1);
+      sumH += tr2("#"+(idx+1)+" "+matName, fmt(rowTotal));
+    });
+  }
+  var cc = grand * 0.04;
+  document.getElementById("sumHtml").innerHTML = sumH;
+  document.getElementById("tgrand").textContent = fmt(grand);
+  document.getElementById("tcc").textContent    = fmt(cc);
+  document.getElementById("tcct").textContent   = fmt(grand + cc);
+  document.getElementById("tpt").textContent    = "$0.00/ton";
+}
+
+function autoFillDemoHaul() {
+  var dMiles = parseFloat((document.getElementById("dmi")||{value:0}).value) || 0;
+  var autoHR = getAutoHaulRate(dMiles);
+  if(autoHR <= 0) { alert("Enter the demo/disposal addresses or miles first."); return; }
+  var tbody = document.getElementById("demoTbody");
+  if(!tbody) return;
+  tbody.querySelectorAll(".dm-haul").forEach(function(el) {
+    el.value = autoHR.toFixed(2);
+    el.style.borderColor = "#2a8a4a";
+  });
+  calcDemo();
+}
+
+function onDemoMatSelect(sel) {
+  var wrap = sel.parentNode ? sel.parentNode.querySelector('.dm-mat-custom-wrap') : null;
+  if(wrap) wrap.style.display = sel.value === '__other__' ? 'block' : 'none';
+  calcDemo();
+}
+
+function onDemoUnitChange(sel, rowIndex) {
+  var row = document.getElementById("demoTbody").querySelectorAll("tr")[rowIndex];
+  var truckEl = row ? row.querySelector(".dm-truck") : null;
+  var ml = row ? row.querySelector(".dm-minload") : null;
+  if(ml) { var d = getDefaultMinPerLoad(sel.value, truckEl ? truckEl.value : ""); ml.value = d; ml.placeholder = d; }
+  calcDemo();
+}
+
+function onDemoTruckChange(sel, rowIndex) {
+  var row = document.getElementById("demoTbody").querySelectorAll("tr")[rowIndex];
+  var unitEl = row ? row.querySelector(".dm-unit") : null;
+  var unit = unitEl ? unitEl.value : "tons";
+  if(unit === "tons" || unit === "load") {
+    var ml = row ? row.querySelector(".dm-minload") : null;
+    if(ml) { var d = getDefaultMinPerLoad(unit, sel.value); ml.value = d; ml.placeholder = d; }
+  }
+  calcDemo();
+}
+
+var _demoMilesTimer = null;
+function onDemoAddrChange() {
+  calcDemo();
+  clearTimeout(_demoMilesTimer);
+  var orig = (document.getElementById("dsite")||{value:""}).value.trim();
+  var dest = (document.getElementById("ddisp")||{value:""}).value.trim();
+  if(orig.length < 5 || dest.length < 5) return;
+  if(typeof google === "undefined" || !google.maps) return;
+  _demoMilesTimer = setTimeout(function() {
+    new google.maps.DistanceMatrixService().getDistanceMatrix({
+      origins: [orig], destinations: [dest],
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.IMPERIAL, avoidTolls: true
+    }, function(resp, st) {
+      if(st === "OK" && resp.rows[0].elements[0].status === "OK") {
+        var miles = resp.rows[0].elements[0].distance.value / 1609.344;
+        var miEl = document.getElementById("dmi");
+        if(miEl) { miEl.value = miles.toFixed(1); miEl.style.borderColor = "#2a8a4a"; }
+        var msEl = document.getElementById("dms");
+        if(msEl) msEl.textContent = miles.toFixed(1) + " mi \u2713";
+        calcDemo();
+      }
+    });
+  }, 800);
+}
+
 function setDumpFeeType(type) {
   dumpFeeType = type;
   document.getElementById("ddfTypeTon").classList.toggle("on", type==="ton");
@@ -3853,18 +3903,56 @@ function genBreakdownQuote() {
       sec+='</div>';
       sectionsHtml+=sec;
     } else if(qt==="demo") {
-      const dtxr=v("dtaxr")/100,tons=qtyToTons("dtons"),ef=v("def_"),mu=v("dmu");
-      const dfl=numLoads(tons), hr=v("dhr")||autoHR, haul=(hr+mu)*tons, dumpTotal=getDumpFeeTotal(tons);
-      const efTotalD=dfl*ef, efTax=efTotalD*dtxr;
-      grandTotal+=haul+dumpTotal+efTotalD+efTax;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT'+(getMatName('dmat')?' — '+getMatName('dmat'):'')+'</div>';
-      sec+=brkLine('Hauling ('+tons+'t @ '+fmt(hr+mu)+'/ton)',haul);
-      sec+=brkLine(getDumpFeeLabel(tons),dumpTotal);
-      sec+=brkLine('Environmental Fee ('+dfl+' load'+(dfl!==1?'s':'')+' x '+fmt(ef)+')',efTotalD);
-      if(efTax>0) sec+=brkLine('Env Fee Tax ('+v("dtaxr")+'%)',efTax);
-      sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Demo/Export Subtotal</span><span>'+fmt(haul+dumpTotal+efTotalD+efTax)+'</span></div>';
-      sec+='</div>';
-      sectionsHtml+=sec;
+      const dMiles = parseFloat((document.getElementById("dmi")||{value:0}).value) || 0;
+      const dAutoHR = getAutoHaulRate(dMiles);
+      const envFee  = parseFloat((document.getElementById("def_")||{value:10}).value) || 0;
+      const taxRate = (parseFloat((document.getElementById("dtaxr")||{value:0}).value) || 0) / 100;
+      const mu      = parseFloat((document.getElementById("dmu")||{value:0}).value) || 0;
+      let demoSub = 0;
+      let sec = '<div class="brk-mat-section"><div class="brk-mat-hdr">DEMO / EXPORT</div>';
+      const demoTbody = document.getElementById("demoTbody");
+      if(demoTbody) {
+        demoTbody.querySelectorAll("tr").forEach(function(tr, idx) {
+          const qty      = parseFloat((tr.querySelector(".dm-qty")   ||{}).value) || 0;
+          const rowUnit  = (tr.querySelector(".dm-unit") ||{}).value || "tons";
+          const rowTruck = (tr.querySelector(".dm-truck")||{}).value || "";
+          const rowMinRaw = parseFloat((tr.querySelector(".dm-minload")||{}).value);
+          const rowMin   = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
+          const haulEl   = tr.querySelector(".dm-haul");
+          const haulRate = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : dAutoHR;
+          const dumpFee  = parseFloat((tr.querySelector(".dm-dump")||{}).value) || 0;
+          let effTons;
+          if(rowUnit === 'load') {
+            const cap = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
+            effTons = applyMinPerLoad(qty, rowMin) * cap;
+          } else {
+            effTons = unitToTons(applyMinPerLoad(qty, rowMin), rowUnit);
+          }
+          if(effTons <= 0) return;
+          const truckCap = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
+          const loads   = Math.ceil(effTons / truckCap);
+          const sc      = getDemoFuelSurcharge(haulRate);
+          const haul    = (haulRate + sc + mu) * effTons;
+          const dump    = dumpFee * effTons;
+          const ef      = envFee * loads;
+          const efTax   = ef * taxRate;
+          const rowTotal = haul + dump + ef + efTax;
+          demoSub += rowTotal;
+          grandTotal += rowTotal;
+          let matEl = tr.querySelector(".dm-mat");
+          let matName = (matEl && matEl.value && matEl.value !== '__other__') ? matEl.value : "";
+          if(!matName) { const mc = tr.querySelector(".dm-mat-custom"); matName = mc ? mc.value : ""; }
+          if(!matName) matName = "Item " + (idx+1);
+          sec += '<div style="font-size:11px;font-weight:600;color:#2a4a8a;margin:6px 0 2px;">#'+(idx+1)+' '+matName+'</div>';
+          sec += brkLine('Hauling ('+effTons.toFixed(1)+'t @ '+fmt(haulRate+sc+mu)+'/ton)', haul);
+          if(dumpFee>0) sec += brkLine('Dump Fee ('+effTons.toFixed(1)+'t @ '+fmt(dumpFee)+')', dump);
+          sec += brkLine('Environmental Fee ('+loads+' load'+(loads!==1?'s':'')+' x '+fmt(envFee)+')', ef);
+          if(efTax>0) sec += brkLine('Env Fee Tax ('+v("dtaxr")+'%)', efTax);
+        });
+      }
+      sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Demo/Export Subtotal</span><span>'+fmt(demoSub)+'</span></div>';
+      sec += '</div>';
+      sectionsHtml += sec;
     }
   }
 
