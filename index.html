@@ -3366,34 +3366,39 @@ function calcMM() {
   if(qStyle !== "breakdown") return;
   var txr = v("taxr") / 100;
   var grand = 0;
-  var tbody = document.getElementById("mmTbody");
-  if(tbody) {
-    var autoHR = getAutoHaulRate(currentMiles || 0);
-    tbody.querySelectorAll("tr").forEach(function(tr) {
-      var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
-      var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
-      var haulEl = tr.querySelector(".mm-haul");
-      var baseHaul = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
-      var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
-      var rowTruck  = (tr.querySelector(".mm-truck")  ||{}).value || "";
-      var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
-      var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
-      var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
-      var effTons;
-      if(rowUnit === 'load') {
-        var truckCapL = (rowTruck && TRUCK_RATES[rowTruck]) ? TRUCK_RATES[rowTruck].cap : 25;
-        effTons = applyMinPerLoad(qty, rowMin) * truckCapL;
-      } else {
-        effTons = unitToTons(applyMinPerLoad(qty, rowMin), rowUnit);
-      }
-      var mat   = qty * price;
-      var tax   = mat * txr;
-      var efTax = env * txr;
-      var sc    = getMmFuelSurcharge(baseHaul);
-      grand += mat + tax + ((baseHaul + sc) * effTons) + env + efTax;
-    });
-  }
+  var sumH = "";
+  var rows = getMMData().filter(function(r){ return r.qty > 0; });
+  rows.forEach(function(row, idx) {
+    var rowUnit = row.unit || "tons";
+    var rowMin  = row.minload > 0 ? row.minload : getDefaultMinPerLoad(rowUnit, row.truck);
+    var effTons;
+    if(rowUnit === 'load') {
+      var truckCapL = (row.truck && TRUCK_RATES[row.truck]) ? TRUCK_RATES[row.truck].cap : 25;
+      effTons = applyMinPerLoad(row.qty, rowMin) * truckCapL;
+    } else {
+      effTons = unitToTons(applyMinPerLoad(row.qty, rowMin), rowUnit);
+    }
+    var loads   = Math.ceil(row.qty > 0 ? row.qty / rowMin : 0);
+    var mat     = row.qty * row.price;
+    var tax     = mat * txr;
+    var sc      = getMmFuelSurcharge(row.haul);
+    var haul    = (row.haul + sc) * effTons;
+    var efTotal = loads * row.env;
+    var efTax   = efTotal * txr;
+    var rowTotal = mat + tax + haul + efTotal + efTax;
+    grand += rowTotal;
+    var label = "MATERIAL " + (idx + 1) + (row.desc ? " \u2014 " + row.desc : "");
+    if(idx > 0) sumH += '<hr class="div">';
+    sumH += hdr(label);
+    if(row.price > 0) sumH += tr2("Material", fmt(mat));
+    if(tax > 0) sumH += tr2("Sales Tax (" + v("taxr") + "%)", fmt(tax));
+    sumH += tr2("Haul (" + effTons.toFixed(2) + "t @ " + fmt(row.haul) + "/ton)", fmt(row.haul * effTons));
+    if(sc > 0) sumH += tr2("Fuel Surcharge", fmt(sc * effTons));
+    if(efTotal > 0) sumH += tr2("Env Fee (" + loads + " load" + (loads !== 1 ? "s" : "") + " x " + fmt(row.env) + ")", fmt(efTotal));
+    if(efTax > 0) sumH += tr2("Env Fee Tax", fmt(efTax));
+  });
   var cc = grand * 0.04;
+  document.getElementById("sumHtml").innerHTML = sumH;
   document.getElementById("tgrand").textContent = fmt(grand);
   document.getElementById("tcc").textContent    = fmt(cc);
   document.getElementById("tcct").textContent   = fmt(grand + cc);
@@ -3801,8 +3806,6 @@ function getDumpFeeLabel(eff) {
 
 // ── BREAKDOWN QUOTE GENERATOR ─────────────────────────────────────────────────
 function genBreakdownQuote() {
-  calc();
-  const grand = parseFloat(document.getElementById("tgrand").textContent.replace("$",""))||0;
   const vd = s("vdays");
 
   document.getElementById("bpqn").textContent=qnum;
@@ -3962,6 +3965,9 @@ function genBreakdownQuote() {
   document.getElementById("brkSubAmt").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCash").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCC").textContent = fmt(grandTotal * 1.04);
+  document.getElementById("tgrand").textContent = fmt(grandTotal);
+  document.getElementById("tcc").textContent    = fmt(grandTotal * 0.04);
+  document.getElementById("tcct").textContent   = fmt(grandTotal * 1.04);
   // Sync page 2 date/quote fields
   const bpdt2el=document.getElementById("bpdt2"); if(bpdt2el) bpdt2el.textContent=document.getElementById("bpdt").textContent;
   const bpqn2el=document.getElementById("bpqn2"); if(bpqn2el) bpqn2el.textContent=document.getElementById("bpqn").textContent;
