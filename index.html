@@ -3827,6 +3827,7 @@ function genBreakdownQuote() {
   const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || 0);
   let sectionsHtml = "";
   let grandTotal = 0;
+  let sumH = "";
 
   function brkLine(label, amount) {
     return '<div class="brk-line"><span>'+label+'</span><span>'+fmt(amount)+'</span></div>';
@@ -3853,6 +3854,15 @@ function genBreakdownQuote() {
       const efTax = efTotal * txr;
       const rowTotal = matCost + tax + haul + efTotal + efTax;
       grandTotal += rowTotal;
+      // Build quote summary card breakdown
+      if(idx > 0) sumH += '<hr class="div">';
+      sumH += hdr("MATERIAL " + (idx+1) + (row.desc ? " \u2014 " + row.desc : ""));
+      if(row.price > 0) sumH += tr2("Material", fmt(matCost));
+      if(tax > 0) sumH += tr2("Sales Tax ("+v("taxr")+"%)", fmt(tax));
+      sumH += tr2("Haul ("+effTons.toFixed(2)+"t @ "+fmt(row.haul)+"/ton)", fmt(row.haul * effTons));
+      if(sc > 0) sumH += tr2("Fuel Surcharge", fmt(sc * effTons));
+      if(efTotal > 0) sumH += tr2("Env Fee ("+mmLoads+" load"+(mmLoads!==1?"s":"")+" x "+fmt(row.env)+")", fmt(efTotal));
+      if(efTax > 0) sumH += tr2("Env Fee Tax", fmt(efTax));
       let sec = '<div class="brk-mat-section">';
       const mmTruckLabel = row.truck ? (TRUCK_LABELS[row.truck] || row.truck) : "";
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+(mmTruckLabel?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">| '+mmTruckLabel+'</span>':'')+'</div>';
@@ -3965,6 +3975,7 @@ function genBreakdownQuote() {
   document.getElementById("brkSubAmt").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCash").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCC").textContent = fmt(grandTotal * 1.04);
+  document.getElementById("sumHtml").innerHTML = sumH;
   document.getElementById("tgrand").textContent = fmt(grandTotal);
   document.getElementById("tcc").textContent    = fmt(grandTotal * 0.04);
   document.getElementById("tcct").textContent   = fmt(grandTotal * 1.04);
