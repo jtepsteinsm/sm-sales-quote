@@ -4084,6 +4084,26 @@ function calcMilesManual() {
     tryMiles();
   });
 }
+
+// ── DISPATCH HQ INTEGRATION ───────────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'sm-get-quote') return;
+  // Ensure a quote is rendered
+  genQuote();
+  // Determine which quote area is visible
+  var area = document.getElementById('parea');
+  var areaBrk = document.getElementById('pareaBrk');
+  var html = '';
+  if (areaBrk && (areaBrk.style.display === 'block')) {
+    html = areaBrk.outerHTML;
+  } else if (area && area.classList.contains('show')) {
+    html = area.outerHTML;
+  }
+  var qn = (document.getElementById('pqn') || {}).textContent || '';
+  var cust = (document.getElementById('pcust') || {}).textContent || '';
+  var quoteName = ('Q' + (qn ? '-' + qn : '') + (cust ? ' for ' + cust : '')).trim();
+  e.source.postMessage({type: 'sm-quote-data', html: html, quoteName: quoteName}, e.origin || '*');
+});
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
 </body>
