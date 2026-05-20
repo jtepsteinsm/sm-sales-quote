@@ -341,12 +341,45 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       <div class="tc" id="tr_ed" onclick="selTruck('ed')"><div class="ti">⬆️</div><div class="tn">End Dump</div><div style="font-size:10px;color:#4a7cc7;">22t min</div></div>
     </div>
 
+    <!-- Truck rate/cap overrides — shown after truck selection -->
+    <div id="truckOverrides" style="display:none;background:rgba(255,255,255,.04);border:1px solid rgba(0,191,255,.12);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;margin-bottom:8px;">RATE OVERRIDE <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#6090b0;">(leave blank to use defaults)</span></div>
+      <div class="tov" id="tov_s10" style="display:none;"><div class="fr2">
+        <div class="field"><label>Rate $/ton <span style="color:#6090b0;">(default $135)</span></label><input type="number" id="rs10" placeholder="135" min="0" step="0.01" oninput="calc()"></div>
+        <div class="field"><label>Capacity tons <span style="color:#6090b0;">(default 17)</span></label><input type="number" id="cs10" placeholder="17" min="1" step="1" oninput="calc()"></div>
+      </div></div>
+      <div class="tov" id="tov_tf" style="display:none;"><div class="fr2">
+        <div class="field"><label>Rate $/ton <span style="color:#6090b0;">(default $155)</span></label><input type="number" id="rtf" placeholder="155" min="0" step="0.01" oninput="calc()"></div>
+        <div class="field"><label>Capacity tons <span style="color:#6090b0;">(default 25)</span></label><input type="number" id="ctf" placeholder="25" min="1" step="1" oninput="calc()"></div>
+      </div></div>
+      <div class="tov" id="tov_bd" style="display:none;"><div class="fr2">
+        <div class="field"><label>Rate $/ton <span style="color:#6090b0;">(default $140)</span></label><input type="number" id="rbd" placeholder="140" min="0" step="0.01" oninput="calc()"></div>
+        <div class="field"><label>Capacity tons <span style="color:#6090b0;">(default 25)</span></label><input type="number" id="cbd" placeholder="25" min="1" step="1" oninput="calc()"></div>
+      </div></div>
+      <div class="tov" id="tov_ed" style="display:none;"><div class="fr2">
+        <div class="field"><label>Rate $/ton <span style="color:#6090b0;">(default $145)</span></label><input type="number" id="red" placeholder="145" min="0" step="0.01" oninput="calc()"></div>
+        <div class="field"><label>Capacity tons <span style="color:#6090b0;">(default 22)</span></label><input type="number" id="ced" placeholder="22" min="1" step="1" oninput="calc()"></div>
+      </div></div>
+    </div>
+
     <div class="g2">
       <div>
+        <!-- Zone / Area -->
+        <div class="field">
+          <label>Zone / Area <span style="font-size:10px;color:#6090b0;">(auto-set from delivery address)</span></label>
+          <select id="zoneSelect" onchange="calc()">
+            <option value="Z0">Z0 — Open/Rural (Palmdale, Lancaster, Victorville, Mojave)</option>
+            <option value="Z1">Z1 — Highway Corridor (Santa Clarita, Simi Valley, Oxnard)</option>
+            <option value="Z2">Z2 — Suburban (Burbank, Glendale, Pasadena)</option>
+            <option value="Z3">Z3 — Urban Valley (Van Nuys, Sherman Oaks, N. Hollywood)</option>
+            <option value="Z4">Z4 — Urban LA Core (Hollywood, Downtown LA)</option>
+            <option value="Z5">Z5 — Premium/Difficult (Malibu, Pac Palisades, Canyon Roads)</option>
+          </select>
+        </div>
         <!-- Q1: Truck access -->
         <div class="field">
           <label>Can a large delivery truck access the site?</label>
-          <select id="q_access" onchange="calc()">
+          <select id="q_access" onchange="onAccessChange();calc()">
             <option value="easy">✅ Yes — easy access (wide streets, flat, open)</option>
             <option value="commercial">🏭 Yes — commercial or industrial yard</option>
             <option value="tight">⚠️ With difficulty — tight or narrow streets</option>
@@ -354,6 +387,12 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <option value="no_close">🚫 No — but staging area is nearby (&lt;1 mile)</option>
             <option value="no_far">🚫 No — staging area is far (&gt;1 mile from site)</option>
           </select>
+        </div>
+        <!-- Staging row — shown when no_far is selected -->
+        <div id="stagingRow" style="display:none;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:#c8a020;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="accNoTransfer" style="width:auto;margin:0;"> Transfer staging +$1.75/ton applied
+          </label>
         </div>
         <!-- Q2: Job type -->
         <div class="field">
@@ -1823,7 +1862,21 @@ function selTruck(type) {
   truck = type;
   document.querySelectorAll(".tc").forEach(c => c.classList.remove("on"));
   document.getElementById("tr_"+type).classList.add("on");
+  // Show truck override panel and activate the right fields
+  const ow = document.getElementById("truckOverrides");
+  if(ow) {
+    ow.style.display = "block";
+    document.querySelectorAll(".tov").forEach(d => d.style.display = "none");
+    const panel = document.getElementById("tov_"+type);
+    if(panel) panel.style.display = "";
+  }
   calc();
+}
+
+function onAccessChange() {
+  const access = (document.getElementById("q_access")||{}).value || "easy";
+  const row = document.getElementById("stagingRow");
+  if(row) row.style.display = (access === "no_far") ? "flex" : "none";
 }
 
 function setHaulback(mode) {
@@ -4206,6 +4259,11 @@ function clearAll() {
   const m2msEl=document.getElementById("m2ms"); if(m2msEl) m2msEl.textContent="";
   const mi2El=document.getElementById("mi2"); if(mi2El) mi2El.value="";
   currentMiles=0; truck=null; activeZone=null;
+  const zsEl=document.getElementById("zoneSelect"); if(zsEl) zsEl.value="Z0";
+  const toEl=document.getElementById("truckOverrides"); if(toEl) toEl.style.display="none";
+  document.querySelectorAll(".tov").forEach(d=>d.style.display="none");
+  ["rs10","cs10","rtf","ctf","rbd","cbd","red","ced"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+  const srEl=document.getElementById("stagingRow"); if(srEl) srEl.style.display="none";
   document.getElementById("parea").classList.remove("show");
   if(document.getElementById("pareaBrk")) document.getElementById("pareaBrk").style.display="none";
   document.getElementById("zoneBadge").classList.remove("show");
