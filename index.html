@@ -4141,37 +4141,7 @@ window.addEventListener('message', function(e) {
   var loc  = ((document.getElementById('location') || {}).value || '').trim();
   var mid = proj || loc || '';
   var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_') || 'Quote';
-  var gasUrl = new URLSearchParams(window.location.search).get('gasUrl') || '';
-  var phone = e.data.phone || '';
-  if (gasUrl) {
-    var body = new URLSearchParams();
-    body.append('action', 'saveQuote');
-    body.append('html', html);
-    body.append('quoteName', quoteName);
-    if (phone) body.append('phone', phone);
-    fetch(gasUrl, {method:'POST', body:body, redirect:'follow'})
-      .then(function(r){ return r.json(); })
-      .then(function(res){
-        if (res.error) {
-          showToast('Save failed: ' + res.error);
-          window.parent.postMessage({type:'sm-save-done', error:res.error}, '*');
-        } else {
-          if (phone) {
-            showToast('Quote sent by text!');
-          } else {
-            showToast('Saved! Opening Drive...');
-            window.open(res.viewUrl, '_blank');
-          }
-          window.parent.postMessage({type:'sm-save-done', sms:!!phone}, '*');
-        }
-      })
-      .catch(function(err){
-        showToast('Save error: ' + err.message);
-        window.parent.postMessage({type:'sm-save-done', error:err.message}, '*');
-      });
-  } else {
-    window.parent.postMessage({type:'sm-quote-data', html:html, quoteName:quoteName}, '*');
-  }
+  window.parent.postMessage({type:'sm-quote-data', html:html, quoteName:quoteName}, '*');
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
