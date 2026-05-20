@@ -1759,6 +1759,12 @@ let zones=[]; // loaded from localStorage
 let activeZone=null;
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
+// Cache Apps Script URL from DispatchHQ so standalone saves work too
+(function() {
+  var gu = new URLSearchParams(window.location.search).get('gasUrl') || '';
+  if (gu) localStorage.setItem('sm_gas_url', gu);
+})();
+
 window.onload = function() {
   document.getElementById("qdate").value = new Date().toISOString().split("T")[0];
   qnum = "Q" + Date.now().toString().slice(-6);
@@ -3993,8 +3999,7 @@ function genBreakdownQuote() {
 
 function printQ() {
   genQuote();
-  if (window.self !== window.top) { savePdfToWebApp(); return; }
-  setTimeout(()=>window.print(),300);
+  savePdfToWebApp();
 }
 
 async function savePdfToWebApp() {
@@ -4018,7 +4023,25 @@ async function savePdfToWebApp() {
     var doc = new jsPDF({unit:'px', format:[imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape'});
     doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
     var base64 = doc.output('datauristring').split(',')[1];
-    window.parent.postMessage({type:'sm-pdf-data', base64:base64, quoteName:quoteName}, '*');
+    if (window.self !== window.top) {
+      // Inside DispatchHQ iframe — parent saves to Drive via google.script.run
+      window.parent.postMessage({type:'sm-pdf-data', base64:base64, quoteName:quoteName}, '*');
+    } else {
+      // Standalone (phone / direct access) — download locally + try Drive
+      doc.save(quoteName + '.pdf');
+      if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
+      var gasUrl = localStorage.getItem('sm_gas_url') || '';
+      if (gasUrl) {
+        var body = new URLSearchParams();
+        body.append('action', 'savePdf');
+        body.append('base64', base64);
+        body.append('quoteName', quoteName);
+        fetch(gasUrl, {method:'POST', body:body, redirect:'follow'})
+          .then(function(r){ return r.json(); })
+          .then(function(res){ if (!res.error) showToast('Also saved to Drive!'); })
+          .catch(function(){});
+      }
+    }
   } catch(err) {
     alert('PDF error: ' + err.message);
     if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
