@@ -1446,6 +1446,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="q-abl">Delivery Address</div>
         <div id="pproj" style="font-weight:700;"></div>
         <div id="ploc"></div>
+        <div id="pqn_addr" style="font-size:10px;color:#555;margin-top:4px;"></div>
         <div id="ptrk" style="font-size:10px;color:#4a7cc7;"></div>
         <div id="pzone" style="font-size:10px;color:#c8a020;"></div>
         <div id="psd" style="font-size:10px;color:#4a7cc7;"></div>
@@ -1535,6 +1536,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div class="q-abl">Project / Delivery</div>
         <div id="bpproj" style="font-weight:700;"></div>
         <div id="bploc"></div>
+        <div id="bpqn_addr" style="font-size:10px;color:#555;margin-top:4px;"></div>
         <div id="bptrk" style="font-size:10px;color:#4a7cc7;"></div>
         <div id="bpsd" style="font-size:10px;color:#4a7cc7;"></div>
         <div id="bpdur" style="font-size:10px;color:#4a7cc7;"></div>
@@ -2871,6 +2873,7 @@ function genQuote() {
   document.getElementById("pem").textContent=s("email")?"✉ "+s("email"):"";
   document.getElementById("pproj").textContent=s("projname");
   document.getElementById("ploc").textContent=s("location");
+  document.getElementById("pqn_addr").textContent=qnum?"Quote #"+qnum:"";
   document.getElementById("ptrk").textContent=truck?"Truck: "+truckLabel():"";
   document.getElementById("pzone").textContent=activeZone?"Zone: "+activeZone.name+" ("+zoneRuleText(activeZone)+")":"";
   document.getElementById("psd").textContent=s("sdate")?"Start: "+new Date(s("sdate")+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"";
@@ -3819,6 +3822,7 @@ function genBreakdownQuote() {
   document.getElementById("bpem").textContent=s("email")?"✉ "+s("email"):"";
   document.getElementById("bpproj").textContent=s("projname");
   document.getElementById("bploc").textContent=s("location");
+  document.getElementById("bpqn_addr").textContent=qnum?"Quote #"+qnum:"";
   document.getElementById("bptrk").textContent=truck?"Truck: "+truckLabel():"";
   document.getElementById("bpsd").textContent=s("sdate")?"Start: "+new Date(s("sdate")+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"";
   document.getElementById("bpdur").textContent=s("duration")?"Duration: "+s("duration"):"";
