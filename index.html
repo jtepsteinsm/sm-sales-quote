@@ -4015,14 +4015,21 @@ async function savePdfToWebApp() {
   var quoteName = [cust, mid, qn ? 'Q'+qn : ''].filter(Boolean).join('_') || 'Quote';
   var btn = document.querySelector('.btn.btnp');
   if (btn) { btn.textContent = '⏳ Saving PDF...'; btn.disabled = true; }
+  var _safetyTimer = setTimeout(function() {
+    if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
+  }, 30000);
   try {
-    var canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    var canvas = await Promise.race([
+      html2canvas(el, {scale:2, useCORS:true, allowTaint:true, backgroundColor:'#ffffff', imageTimeout:8000, logging:false}),
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('Render timeout — try again')); }, 25000); })
+    ]);
     var imgW = canvas.width / 2;
     var imgH = canvas.height / 2;
     var { jsPDF } = window.jspdf;
     var doc = new jsPDF({unit:'px', format:[imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape'});
     doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
     var base64 = doc.output('datauristring').split(',')[1];
+    clearTimeout(_safetyTimer);
     if (window.self !== window.top) {
       // Inside DispatchHQ iframe — parent saves to Drive via google.script.run
       window.parent.postMessage({type:'sm-pdf-data', base64:base64, quoteName:quoteName}, '*');
@@ -4043,6 +4050,7 @@ async function savePdfToWebApp() {
       }
     }
   } catch(err) {
+    clearTimeout(_safetyTimer);
     alert('PDF error: ' + err.message);
     if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
   }
