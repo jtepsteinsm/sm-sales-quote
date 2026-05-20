@@ -4126,29 +4126,67 @@ window.addEventListener('message', function(e) {
     return;
   }
   if (e.data.type !== 'sm-get-quote') return;
-  // Ensure a quote is rendered
-  genQuote();
-  // Determine which quote area is visible
-  var area = document.getElementById('parea');
-  var areaBrk = document.getElementById('pareaBrk');
-  var html = '';
-  if (areaBrk && (areaBrk.style.display === 'block')) {
-    html = areaBrk.outerHTML;
-  } else if (area && area.classList.contains('show')) {
-    html = area.outerHTML;
-  }
-  var qn = ((document.getElementById('pqn') || {}).textContent || '').trim();
-  var cust = ((document.getElementById('customer') || {}).value || '').trim();
-  var proj = ((document.getElementById('projname') || {}).value || '').trim();
-  var loc  = ((document.getElementById('location') || {}).value || '').trim();
-  var mid = proj || loc || '';
-  var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_');
-  if (!quoteName) quoteName = 'Quote';
-  window.parent.postMessage({type: 'sm-quote-data', html: html, quoteName: quoteName}, '*');;
-});
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
-</body>
-</html>
+    // Ensure a quote is rendered
+    genQuote();
+    // Determine which quote area is visible
+    var area = document.getElementById('parea');
+    var areaBrk = document.getElementById('pareaBrk');
+    var html = '';
+    if (areaBrk && (areaBrk.style.display === 'block')) {
+      html = areaBrk.outerHTML;
+    } else if (area && area.classList.contains('show')) {
+      html = area.outerHTML;
+    }
+    var qn = ((document.getElementById('pqn') || {}).textContent || '').trim();
+    var cust = ((document.getElementById('customer') || {}).value || '').trim();
+    var proj = ((document.getElementById('projname') || {}).value || '').trim();
+    var loc  = ((document.getElementById('location') || {}).value || '').trim();
+    var mid = proj || loc || '';
+    var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_');
+    if (!quoteName) quoteName = 'Quote';
+    e.source.postMessage({type: 'sm-quote-data', html: html, quoteName: quoteName}, '*');
+  });
+
+  REPLACE WITH:
+    if (e.data.type !== 'sm-get-quote') return;
+    genQuote();
+    var area = document.getElementById('parea');
+    var areaBrk = document.getElementById('pareaBrk');
+    var html = '';
+    if (areaBrk && (areaBrk.style.display === 'block')) {
+      html = areaBrk.outerHTML;
+    } else if (area && area.classList.contains('show')) {
+      html = area.outerHTML;
+    }
+    var qn = ((document.getElementById('pqn') || {}).textContent || '').trim();
+    var cust = ((document.getElementById('customer') || {}).value || '').trim();
+    var proj = ((document.getElementById('projname') || {}).value || '').trim();
+    var loc  = ((document.getElementById('location') || {}).value || '').trim();
+    var mid = proj || loc || '';
+    var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_') || 'Quote';
+    var gasUrl = new URLSearchParams(window.location.search).get('gasUrl') || '';
+    if (gasUrl) {
+      var body = new URLSearchParams();
+      body.append('action', 'saveQuote');
+      body.append('html', html);
+      body.append('quoteName', quoteName);
+      fetch(gasUrl, {method:'POST', body:body, redirect:'follow'})
+        .then(function(r){ return r.json(); })
+        .then(function(res){
+          if (res.error) {
+            showToast('Save failed: ' + res.error);
+            window.parent.postMessage({type:'sm-save-done', error:res.error}, '*');
+          } else {
+            showToast('Saved! Opening Drive...');
+            window.open(res.viewUrl, '_blank');
+            window.parent.postMessage({type:'sm-save-done'}, '*');
+          }
+        })
+        .catch(function(err){
+          showToast('Save error: ' + err.message);
+          window.parent.postMessage({type:'sm-save-done', error:err.message}, '*');
+        });
+    } else {
+      window.parent.postMessage({type:'sm-quote-data', html:html, quoteName:quoteName}, '*');
+    }
+  });
