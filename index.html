@@ -626,7 +626,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <!-- SPLIT MAT 2 -->
   <div class="card gap gone" id="mat2Sec">
     <div class="ct">2nd Material <span class="tag">LOAD 2</span></div>
-    <div class="slf-note"><strong>Split Load Fee:</strong> $35.00 same plant · $120.00 different plant</div>
+    <div class="slf-note"><strong>Split Load — Transfer only</strong> · $35 same plant · $135 different plant</div>
     <div style="margin-bottom:12px;">
       <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;margin-bottom:6px;">TONS CALCULATOR (optional)</div>
       <div class="fr3">
@@ -683,6 +683,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option><option value="35.798644,-114.313162" data-name="Rock Pros USA — White Hills Quarry">Rock Pros USA — White Hills Quarry</option><option value="33.181630,-111.244875" data-name="Rock Pros USA — Mineral Mountain">Rock Pros USA — Mineral Mountain</option><option value="37.000142,-116.754207" data-name="Rock Pros USA — Beatty">Rock Pros USA — Beatty</option><option value="35.373100,-113.690859" data-name="Rock Pros USA — Valentine">Rock Pros USA — Valentine</option><option value="32.731806,-111.133217" data-name="Rock Pros USA — Broccoli">Rock Pros USA — Broccoli</option><option value="31150 Boyer Gap Rd, Quartzsite, AZ 85346" data-name="Rock Pros USA — Boyer Gap">Rock Pros USA — Boyer Gap</option><option value="33.254675,-111.095163" data-name="Rock Pros USA — Superior">Rock Pros USA — Superior</option><option value="32.389320,-111.451640" data-name="Rock Pros USA — Silverbell">Rock Pros USA — Silverbell</option><option value="CRH2+53, Chloride, AZ" data-name="Rock Pros USA — Chloride">Rock Pros USA — Chloride</option><option value="14900 AZ-169, Dewey, AZ 86327" data-name="MDI Rock (Dewey Quarry)">MDI Rock (Dewey Quarry)</option><option value="PXFF+RQ Wickenburg, AZ 85390" data-name="West Valley Rock — Big Horn Pit">West Valley Rock — Big Horn Pit</option><option value="RMW7+XG, Peoria, AZ 85342" data-name="West Valley Rock — KB1 Pit">West Valley Rock — KB1 Pit</option><option value="M4W3+M6 Wickenburg, AZ 85390" data-name="West Valley Rock — Belmont Gold Pit">West Valley Rock — Belmont Gold Pit</option><option value="46211 N Old Black Canyon Hwy, New River, AZ 85087" data-name="West Valley Rock — NR1 Pit">West Valley Rock — NR1 Pit</option><option value="26350 W Tonopah Salome Hwy, Buckeye, AZ 85396" data-name="West Valley Rock — Turner North Pit">West Valley Rock — Turner North Pit</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa2" placeholder="Plant address"></div>
+        <div class="field"><label>Plant 2 Miles <span class="ms" id="m2ms"></span></label><input type="number" id="mi2" placeholder="Auto-calc" min="0" oninput="calc()"></div>
         <div class="field"><label>Material</label><select id="mat2" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
@@ -829,7 +830,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           <div class="field"><label>Split Load Fee</label>
             <select id="slf">
               <option value="35">$35 — Same Plant</option>
-              <option value="120">$120 — Different Plant</option>
+              <option value="135">$135 — Different Plant</option>
             </select>
           </div>
           <div class="field"><label>Env Fee ($)</label><input type="number" id="ef2" value="10.98" min="0" step="0.01"></div>
@@ -1754,6 +1755,7 @@ const PLANT_CODES = {
 };
 
 let plantPid=null, locPid=null, locLat=null, locLng=null, plantLat=null, plantLng=null;
+let plantPid2=null, plantLat2=null, plantLng2=null, currentMiles2=0;
 let milesTimer=null;
 let currentMiles=0;
 let gfMap=null, gfDrawing=null, gfPolygon=null, gfPoints=[], gfMarkers=[], gfPolyline=null;
@@ -2255,9 +2257,10 @@ function calc() {
   if(qt==="std" || qt==="split") {
     const rawQ1=v("qty1"), q1=qtyToTons("qty1"), p1=v("pr1"), ef1=v("ef1");
     const mi1 = currentMiles || v("mi1");
-    const autoHR = getAutoHaulRate(mi1);
-    const hr1 = applySurcharge(v("hr1") || autoHR, "1"); // use override if entered, else formula
-    // Auto-fill haul rate field if blank
+    const mi2eff = qt==="split" ? (currentMiles2 || v("mi2") || 0) : 0;
+    const effectiveMi = qt==="split" ? (Math.max(mi1||0, mi2eff) || mi1) : mi1;
+    const autoHR = getAutoHaulRate(effectiveMi);
+    const hr1 = applySurcharge(v("hr1") || autoHR, "1");
     if(!v("hr1") && autoHR > 0) {
       const hrEl = document.getElementById("hr1");
       if(hrEl && !hrEl.value) hrEl.placeholder = fmt(autoHR) + " (auto)";
@@ -2266,36 +2269,56 @@ function calc() {
     const loads1 = numLoads(q1);
     const mat1 = rawQ1 * p1;
     const tax1 = mat1 * txr;
-    const efTotal1 = loads1 * ef1;          // per-load env fee x loads
+    const efTotal1 = loads1 * ef1;
     const efTax1 = efTotal1 * txr;
-    const haul1 = hr1 * effQ1;
-    zonePrem = applyZonePremium(haul1, effQ1);
-    const sub1 = mat1 + tax1 + haul1 + zonePrem + efTotal1 + efTax1;
-    if(effQ1 > q1 && q1 > 0) { showMin=true; minVal=haul1; }
-
-    sumH += hdr("MATERIAL 1");
-    sumH += tr2("Material", fmt(mat1));
-    if(tax1>0) sumH += tr2("Sales Tax ("+v("taxr")+"%)",""+fmt(tax1));
-    sumH += tr2("Haul ("+effQ1+"t @ "+fmt(hr1)+"/ton)", fmt(haul1));
-    if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
-    sumH += tr2("Env Fee ("+loads1+" load"+(loads1!==1?"s":"")+" x "+fmt(ef1)+")", fmt(efTotal1));
-    if(efTax1>0) sumH += tr2("Env Fee Tax", fmt(efTax1));
-    grand += sub1;
-    if(q1>0) perTon = sub1 / q1;
-    updateFormulaBox(mi1);
 
     if(qt==="split") {
+      // Split load: 1 combined haul from furthest plant (Transfer only), separate env fees per material
       const rawQ2=v("qty2"), q2=qtyToTons("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
+      const effQ2 = q2 > 0 ? minTons(q2) : 0;
       const loads2 = numLoads(q2);
       const mat2=rawQ2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
-      const sub2 = mat2+tax2+slf+efTotal2+efTax2;
+      const totalEffQ = effQ1 + effQ2;
+      const haul = hr1 * totalEffQ;
+      zonePrem = applyZonePremium(haul, totalEffQ);
+      if(totalEffQ > (q1+q2) && (q1+q2) > 0) { showMin=true; minVal=haul; }
+
+      sumH += hdr("MATERIAL 1");
+      sumH += tr2("Material", fmt(mat1));
+      if(tax1>0) sumH += tr2("Sales Tax ("+v("taxr")+"%)",""+fmt(tax1));
+      sumH += tr2("Env Fee ("+loads1+" load"+(loads1!==1?"s":"")+" x "+fmt(ef1)+")", fmt(efTotal1));
+      if(efTax1>0) sumH += tr2("Env Fee Tax", fmt(efTax1));
+
       sumH += '<hr class="div">' + hdr("MATERIAL 2");
       sumH += tr2("Material", fmt(mat2));
       if(tax2>0) sumH += tr2("Sales Tax", fmt(tax2));
-      sumH += tr2("Split Load Fee", fmt(slf));
       sumH += tr2("Env Fee ("+loads2+" load"+(loads2!==1?"s":"")+" x "+fmt(ef2)+")", fmt(efTotal2));
       if(efTax2>0) sumH += tr2("Env Fee Tax", fmt(efTax2));
-      grand += sub2;
+
+      sumH += '<hr class="div">' + hdr("COMBINED — TRANSFER");
+      sumH += tr2("Haul ("+totalEffQ+"t @ "+fmt(hr1)+"/ton, "+effectiveMi.toFixed(1)+" mi)", fmt(haul));
+      if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
+      sumH += tr2("Split Load Fee (non-taxable)", fmt(slf));
+
+      grand = mat1+tax1+efTotal1+efTax1 + mat2+tax2+efTotal2+efTax2 + haul+zonePrem+slf;
+      perTon = totalEffQ > 0 ? grand / totalEffQ : 0;
+      updateFormulaBox(effectiveMi);
+    } else {
+      // Standard load
+      const haul1 = hr1 * effQ1;
+      zonePrem = applyZonePremium(haul1, effQ1);
+      const sub1 = mat1 + tax1 + haul1 + zonePrem + efTotal1 + efTax1;
+      if(effQ1 > q1 && q1 > 0) { showMin=true; minVal=haul1; }
+      sumH += hdr("MATERIAL 1");
+      sumH += tr2("Material", fmt(mat1));
+      if(tax1>0) sumH += tr2("Sales Tax ("+v("taxr")+"%)",""+fmt(tax1));
+      sumH += tr2("Haul ("+effQ1+"t @ "+fmt(hr1)+"/ton)", fmt(haul1));
+      if(zonePrem>0) sumH += tr2("🗺 Zone: "+activeZone.name, fmt(zonePrem));
+      sumH += tr2("Env Fee ("+loads1+" load"+(loads1!==1?"s":"")+" x "+fmt(ef1)+")", fmt(efTotal1));
+      if(efTax1>0) sumH += tr2("Env Fee Tax", fmt(efTax1));
+      grand += sub1;
+      if(q1>0) perTon = sub1 / q1;
+      updateFormulaBox(mi1);
     }
 
   } else if(qt==="haul") {
@@ -2445,12 +2468,21 @@ function initMaps() {
     const ac = new google.maps.places.Autocomplete(el,{fields:["place_id","formatted_address","geometry"]});
     ac.addListener("place_changed", function() {
       const p = ac.getPlace();
-      if(p.place_id) { plantPid=p.place_id; }
-      if(p.geometry && p.geometry.location) {
-        plantLat=p.geometry.location.lat();
-        plantLng=p.geometry.location.lng();
+      if(fid === "pa2") {
+        if(p.place_id) plantPid2 = p.place_id;
+        if(p.geometry && p.geometry.location) {
+          plantLat2 = p.geometry.location.lat();
+          plantLng2 = p.geometry.location.lng();
+        }
+        tryMiles2();
+      } else {
+        if(p.place_id) { plantPid=p.place_id; }
+        if(p.geometry && p.geometry.location) {
+          plantLat=p.geometry.location.lat();
+          plantLng=p.geometry.location.lng();
+        }
+        tryMiles();
       }
-      tryMiles();
     });
   });
 }
@@ -2462,14 +2494,22 @@ function onPlant(selId) {
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
   if(manId) document.getElementById(manId).value=addr;
-  if(typeof google === "undefined" || !google.maps) { tryMiles(); return; }
+  const isPlant2 = (selId === "ps2");
+  if(typeof google === "undefined" || !google.maps) { isPlant2 ? tryMiles2() : tryMiles(); return; }
   const gc = new google.maps.Geocoder();
   gc.geocode({address:addr}, function(res,st) {
     if(st==="OK" && res[0]) {
-      plantPid=res[0].place_id;
-      plantLat=res[0].geometry.location.lat();
-      plantLng=res[0].geometry.location.lng();
-      tryMiles();
+      if(isPlant2) {
+        plantPid2=res[0].place_id;
+        plantLat2=res[0].geometry.location.lat();
+        plantLng2=res[0].geometry.location.lng();
+        tryMiles2();
+      } else {
+        plantPid=res[0].place_id;
+        plantLat=res[0].geometry.location.lat();
+        plantLng=res[0].geometry.location.lng();
+        tryMiles();
+      }
     }
   });
 }
@@ -2566,6 +2606,69 @@ function tryMiles() {
   });
 }
   const statusMap = {std:"m1ms",split:"m1ms",haul:"hms",freight:"fms",demo:"dms"};
+
+// ── PLANT 2 DISTANCE (SPLIT LOAD) ────────────────────────────────────────────
+function tryMiles2() {
+  const stEl = document.getElementById("m2ms");
+  if(!locLat && !locLng && !locPid) {
+    if(stEl) { stEl.textContent="⚠ Set delivery address first"; stEl.className="ms er"; }
+    return;
+  }
+  if(!plantLat2 && !plantLng2 && !plantPid2) return;
+  function applyMiles2(miles, label) {
+    currentMiles2 = parseFloat(miles);
+    const mi2El = document.getElementById("mi2");
+    if(mi2El) mi2El.value = parseFloat(miles).toFixed(1);
+    if(stEl) { stEl.textContent="✓ "+label; stEl.className="ms ok"; }
+    // If Plant 2 is the furthest, update haul rate
+    const mi1val = currentMiles || v("mi1") || 0;
+    if(currentMiles2 > mi1val || !document.getElementById("hr1").value) {
+      const autoHR2 = getAutoHaulRate(Math.max(currentMiles2, mi1val));
+      if(autoHR2 > 0) {
+        const hrEl = document.getElementById("hr1");
+        if(hrEl) { hrEl.value = autoHR2.toFixed(2); hrEl.style.borderColor="rgba(0,191,255,.5)"; }
+      }
+    }
+    calc();
+  }
+  if(typeof google === "undefined" || !google.maps) {
+    if(plantLat2 && plantLng2 && locLat && locLng) {
+      const R=3958.8, dLat=(locLat-plantLat2)*Math.PI/180, dLng=(locLng-plantLng2)*Math.PI/180;
+      const a=Math.sin(dLat/2)**2+Math.cos(plantLat2*Math.PI/180)*Math.cos(locLat*Math.PI/180)*Math.sin(dLng/2)**2;
+      applyMiles2((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*1.35).toFixed(1),"est straight-line");
+    }
+    return;
+  }
+  if(stEl) { stEl.textContent="⟳ Calculating..."; stEl.className="ms ld"; }
+  const origin = plantPid2 ? {placeId:plantPid2} : {lat:plantLat2,lng:plantLng2};
+  const destination = locPid ? {placeId:locPid} : {lat:locLat,lng:locLng};
+  new google.maps.DirectionsService().route({
+    origin, destination,
+    travelMode:google.maps.TravelMode.DRIVING, avoidTolls:true, avoidFerries:true,
+    unitSystem:google.maps.UnitSystem.IMPERIAL
+  }, function(result, status) {
+    if(status===google.maps.DirectionsStatus.OK) {
+      const leg=result.routes[0].legs[0];
+      applyMiles2((leg.distance.value/1609.344).toFixed(1), leg.distance.text+" — no tolls");
+    } else {
+      new google.maps.DistanceMatrixService().getDistanceMatrix({
+        origins:[origin], destinations:[destination],
+        travelMode:google.maps.TravelMode.DRIVING, unitSystem:google.maps.UnitSystem.IMPERIAL, avoidTolls:true
+      }, function(resp, st2) {
+        if(st2==="OK" && resp.rows[0].elements[0].status==="OK") {
+          const el=resp.rows[0].elements[0];
+          applyMiles2((el.distance.value/1609.344).toFixed(1), el.distance.text+" driving");
+        } else if(plantLat2 && plantLng2 && locLat && locLng) {
+          const R=3958.8, dLat=(locLat-plantLat2)*Math.PI/180, dLng=(locLng-plantLng2)*Math.PI/180;
+          const a=Math.sin(dLat/2)**2+Math.cos(plantLat2*Math.PI/180)*Math.cos(locLat*Math.PI/180)*Math.sin(dLng/2)**2;
+          applyMiles2((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*1.35).toFixed(1),"~est");
+        } else {
+          if(stEl) { stEl.textContent="⚠ Could not calculate"; stEl.className="ms er"; }
+        }
+      });
+    }
+  });
+}
 
 // ── STRAIGHT-LINE DISTANCE FALLBACK ──────────────────────────────────────────
 function straightLineFallback(applyMiles, stEl) {
@@ -2931,53 +3034,44 @@ function genQuote() {
       );
     });
   } else if(qt==="std"||qt==="split") {
-    const rawQ1=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
+    const rawQ1=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),ef1=v("ef1");
+    const mi2effG = qt==="split" ? (currentMiles2||v("mi2")||0) : 0;
+    const effectiveMiG = qt==="split" ? (Math.max(mi1||0,mi2effG)||mi1) : mi1;
+    const autoHRg = getAutoHaulRate(effectiveMiG);
+    const hr1=applySurcharge(v("hr1")||autoHRg,"1");
     const effQ1=minTons(q1), loads1=numLoads(q1), mat1=rawQ1*p1, tax1=mat1*txr;
-    const efTotal1=loads1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1;
+    const efTotal1=loads1*ef1, efTax1=efTotal1*txr;
     totalEfTax += efTax1;
-    const zonePrem=applyZonePremium(haul1,effQ1);
     const matName1=getMatName("mat1")||"Rock/Aggregate";
-    const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+efTotal1+(efTax1>0?efTax1:0);
-    // Row 1: per-ton/per-load rates
-    stdRows+=rateRow(
-      matName1,
-      fmt(p1)+"/ton",
-      txr>0 ? fmt(p1*txr)+"/ton" : "&mdash;",
-      fmt(hr1)+"/ton",
-      ef1>0 ? fmt(ef1)+"/load"+(txr>0?" +tax":"") : "&mdash;"
-    );
-    // Row 2: extended totals
-    stdRows+=totRow(
-      q1+" TON"+(loads1>0?" / "+loads1+" load"+(loads1!==1?"s":""):"")+(effQ1>q1?" (min "+effQ1+"t)":""),
-      "",
-      fmt(mat1),
-      (tax1+efTax1)>0 ? fmt(tax1+efTax1) : "&mdash;",
-      fmt(haul1+(zonePrem>0?zonePrem:0)),
-      ef1>0 ? fmt(efTotal1) : "&mdash;",
-      fmt(line1Total)
-    );
     if(qt==="split") {
+      // Split load: combined haul (Transfer only), separate env fees
       const rawQ2=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-      const loads2=numLoads(q2), mat2=rawQ2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
+      const effQ2=q2>0?minTons(q2):0, loads2=numLoads(q2), mat2=rawQ2*p2, tax2=mat2*txr;
+      const efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       totalEfTax += efTax2;
       const matName2=getMatName("mat2")||"2nd Material";
-      const line2Total=mat2+tax2+slf+efTotal2+(efTax2>0?efTax2:0);
-      stdRows+=rateRow(
-        matName2+" (Split)",
-        fmt(p2)+"/ton",
-        txr>0 ? fmt(p2*txr)+"/ton" : "&mdash;",
-        fmt(slf/(q2||1))+"/ton",
-        ef2>0 ? fmt(ef2)+"/load"+(txr>0?" +tax":"") : "&mdash;"
-      );
-      stdRows+=totRow(
-        q2+" TON"+(loads2>0?" / "+loads2+" load"+(loads2!==1?"s":""):""),
-        "",
-        fmt(mat2),
-        (tax2+efTax2)>0 ? fmt(tax2+efTax2) : "&mdash;",
-        fmt(slf),
-        ef2>0 ? fmt(efTotal2) : "&mdash;",
-        fmt(line2Total)
-      );
+      const totalEffQ=effQ1+effQ2;
+      const haulTotal=hr1*totalEffQ;
+      const zonePrem=applyZonePremium(haulTotal,totalEffQ);
+      // Material 1 rows
+      stdRows+=rateRow(matName1,fmt(p1)+"/ton",txr>0?fmt(p1*txr)+"/ton":"&mdash;","See haul &darr;",ef1>0?fmt(ef1)+"/load"+(txr>0?" +tax":""):"&mdash;");
+      stdRows+=totRow(q1+" TON"+(loads1>0?" / "+loads1+" load"+(loads1!==1?"s":""):""),""
+        ,fmt(mat1),(tax1+efTax1)>0?fmt(tax1+efTax1):"&mdash;","&mdash;",ef1>0?fmt(efTotal1):"&mdash;",fmt(mat1+tax1+efTotal1+efTax1));
+      // Material 2 rows
+      stdRows+=rateRow(matName2+" (Split)",fmt(p2)+"/ton",txr>0?fmt(p2*txr)+"/ton":"&mdash;","&mdash;",ef2>0?fmt(ef2)+"/load"+(txr>0?" +tax":""):"&mdash;");
+      stdRows+=totRow(q2+" TON"+(loads2>0?" / "+loads2+" load"+(loads2!==1?"s":""):""),""
+        ,fmt(mat2),(tax2+efTax2)>0?fmt(tax2+efTax2):"&mdash;","&mdash;",ef2>0?fmt(efTotal2):"&mdash;",fmt(mat2+tax2+efTotal2+efTax2));
+      // Combined haul row
+      stdRows+=totRow(totalEffQ+"t @ "+fmt(hr1)+"/ton","Transfer Haul — "+effectiveMiG.toFixed(1)+" mi (furthest plant)","&mdash;","&mdash;",fmt(haulTotal+(zonePrem>0?zonePrem:0)),"&mdash;",fmt(haulTotal+(zonePrem>0?zonePrem:0)));
+      // Split load fee row
+      stdRows+=totRow("","Split Load Fee (non-taxable)","&mdash;","&mdash;","&mdash;","&mdash;",fmt(slf));
+    } else {
+      const haul1=hr1*effQ1;
+      const zonePrem=applyZonePremium(haul1,effQ1);
+      const line1Total=mat1+tax1+haul1+(zonePrem>0?zonePrem:0)+efTotal1+(efTax1>0?efTax1:0);
+      stdRows+=rateRow(matName1,fmt(p1)+"/ton",txr>0?fmt(p1*txr)+"/ton":"&mdash;",fmt(hr1)+"/ton",ef1>0?fmt(ef1)+"/load"+(txr>0?" +tax":""):"&mdash;");
+      stdRows+=totRow(q1+" TON"+(loads1>0?" / "+loads1+" load"+(loads1!==1?"s":""):"")+(effQ1>q1?" (min "+effQ1+"t)":""),""
+        ,fmt(mat1),(tax1+efTax1)>0?fmt(tax1+efTax1):"&mdash;",fmt(haul1+(zonePrem>0?zonePrem:0)),ef1>0?fmt(efTotal1):"&mdash;",fmt(line1Total));
     }
   } else if(qt==="haul") {
     const tons=qtyToTons("htons"),mi=currentMiles||v("hmi"),rate=applySurcharge(v("hhr")||getAutoHaulRate(mi),"h");
@@ -3885,31 +3979,48 @@ function genBreakdownQuote() {
     // Fallback: single qt-based section
     const mi = currentMiles || v("mi1") || v("hmi") || v("dmi") || 0;
     if(qt==="std"||qt==="split") {
-      const rawQ1b=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
-      const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=rawQ1b*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
-      grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
-      sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
-      if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
-      sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
-      sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
-      if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
-      sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Subtotal</span><span>'+fmt(mat1+tax1+haul1+efTotal1+efTax1)+'</span></div>';
-      sec+='</div>';
-      sectionsHtml+=sec;
-      if(qt==="split"){
+      const rawQ1b=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),ef1=v("ef1");
+      const mi2effB=qt==="split"?(currentMiles2||v("mi2")||0):0;
+      const effectiveMiB=qt==="split"?(Math.max(mi||0,mi2effB)||mi):mi;
+      const autoHRb=getAutoHaulRate(effectiveMiB);
+      const hr1=applySurcharge(v("hr1")||autoHRb,"1");
+      const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=rawQ1b*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr;
+      if(qt==="split") {
+        // Split: separate mat sections, combined haul section
         const rawQ2b=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-        const fl2=numLoads(q2), mat2=rawQ2b*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
-        grandTotal+=mat2+tax2+slf+efTotal2+efTax2;
+        const effQ2b=q2>0?minTons(q2):0, fl2=numLoads(q2), mat2=rawQ2b*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
+        const totalEffQb=effQ1b+effQ2b, haulB=hr1*totalEffQb;
+        grandTotal+=mat1+tax1+efTotal1+efTax1+mat2+tax2+efTotal2+efTax2+haulB+slf;
+        let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
+        sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
+        if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
+        sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
+        if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
+        sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Subtotal</span><span>'+fmt(mat1+tax1+efTotal1+efTax1)+'</span></div></div>';
+        sectionsHtml+=sec;
         let sec2='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 2'+(getMatName('mat2')?' — '+getMatName('mat2'):'')+'</div>';
         sec2+=brkLine(q2+' tons @ '+fmt(p2)+'/ton',mat2);
         if(tax2>0) sec2+=brkLine('Sales Tax ('+v("taxr")+'%)',tax2);
-        sec2+=brkLine('Split Load Fee',slf);
         sec2+=brkLine('Environmental Fee ('+fl2+' load'+(fl2!==1?'s':'')+' x '+fmt(ef2)+')',efTotal2);
         if(efTax2>0) sec2+=brkLine('Env Fee Tax',efTax2);
-        sec2+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 2 Subtotal</span><span>'+fmt(mat2+tax2+slf+efTotal2+efTax2)+'</span></div>';
-        sec2+='</div>';
+        sec2+=brkLine('Split Load Fee (non-taxable)',slf);
+        sec2+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 2 Subtotal</span><span>'+fmt(mat2+tax2+efTotal2+efTax2+slf)+'</span></div></div>';
         sectionsHtml+=sec2;
+        let sec3='<div class="brk-mat-section"><div class="brk-mat-hdr">COMBINED TRANSFER HAUL</div>';
+        sec3+=brkLine('Haul ('+totalEffQb+'t @ '+fmt(hr1)+'/ton, '+effectiveMiB.toFixed(1)+' mi — furthest plant)',haulB);
+        sec3+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Haul Subtotal</span><span>'+fmt(haulB)+'</span></div></div>';
+        sectionsHtml+=sec3;
+      } else {
+        const haul1=hr1*effQ1b;
+        grandTotal+=mat1+tax1+haul1+efTotal1+efTax1;
+        let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
+        sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
+        if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
+        sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
+        sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
+        if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
+        sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Subtotal</span><span>'+fmt(mat1+tax1+haul1+efTotal1+efTax1)+'</span></div></div>';
+        sectionsHtml+=sec;
       }
     } else if(qt==="haul") {
       const tons=qtyToTons("htons"),rate=v("hhr")||autoHR,haul=rate*tons;
@@ -4083,6 +4194,9 @@ function clearAll() {
   document.getElementById("taxr").value="0";
   document.getElementById("dtaxr").value="0";
   plantPid=null; locPid=null; locLat=null; locLng=null;
+  plantPid2=null; plantLat2=null; plantLng2=null; currentMiles2=0;
+  const m2msEl=document.getElementById("m2ms"); if(m2msEl) m2msEl.textContent="";
+  const mi2El=document.getElementById("mi2"); if(mi2El) mi2El.value="";
   currentMiles=0; truck=null; activeZone=null;
   document.getElementById("parea").classList.remove("show");
   if(document.getElementById("pareaBrk")) document.getElementById("pareaBrk").style.display="none";
