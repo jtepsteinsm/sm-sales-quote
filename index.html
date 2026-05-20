@@ -333,6 +333,14 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
   <div class="card gap" id="truckSec">
     <div class="ct">Delivery Details</div>
 
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;margin-bottom:6px;">TRUCK TYPE</div>
+    <div class="trucks">
+      <div class="tc" id="tr_s10" onclick="selTruck('s10')"><div class="ti">🚛</div><div class="tn">Super 10</div><div style="font-size:10px;color:#4a7cc7;">17t min</div></div>
+      <div class="tc" id="tr_tf" onclick="selTruck('tf')"><div class="ti">🚚</div><div class="tn">Transfer</div><div style="font-size:10px;color:#4a7cc7;">25t min</div></div>
+      <div class="tc" id="tr_bd" onclick="selTruck('bd')"><div class="ti">🔽</div><div class="tn">Bottom Dump</div><div style="font-size:10px;color:#4a7cc7;">25t min</div></div>
+      <div class="tc" id="tr_ed" onclick="selTruck('ed')"><div class="ti">⬆️</div><div class="tn">End Dump</div><div style="font-size:10px;color:#4a7cc7;">22t min</div></div>
+    </div>
+
     <div class="g2">
       <div>
         <!-- Q1: Truck access -->
@@ -1952,7 +1960,8 @@ function getAutoHaulRate(miles) {
 
 function minTonsForTruck(actual, truckType) {
   if(actual <= 0) return actual;
-  const cap = (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
+  if(!truckType || !TRUCK_RATES[truckType]) return actual; // no truck selected — no minimum applied
+  const cap = TRUCK_RATES[truckType].cap;
   return Math.ceil(actual / cap) * cap;
 }
 function minTons(actual) {
@@ -1974,7 +1983,7 @@ function applyMinPerLoad(qty, minPerLoad) {
 // Number of truck loads (ROUNDUP(qty/cap,0)) — used for per-load env fee
 function numLoads(qty) {
   if(qty <= 0) return 0;
-  const cap = (truck && TRUCK_RATES[truck] && TRUCK_RATES[truck].cap) ? TRUCK_RATES[truck].cap : 25;
+  const cap = (truck && TRUCK_RATES[truck]) ? TRUCK_RATES[truck].cap : 25;
   return Math.ceil(qty / cap);
 }
 
