@@ -1759,12 +1759,6 @@ let zones=[]; // loaded from localStorage
 let activeZone=null;
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
-// Cache Apps Script URL from DispatchHQ so standalone saves work too
-(function() {
-  var gu = new URLSearchParams(window.location.search).get('gasUrl') || '';
-  if (gu) localStorage.setItem('sm_gas_url', gu);
-})();
-
 window.onload = function() {
   document.getElementById("qdate").value = new Date().toISOString().split("T")[0];
   qnum = "Q" + Date.now().toString().slice(-6);
@@ -4030,24 +4024,23 @@ async function savePdfToWebApp() {
     doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
     var base64 = doc.output('datauristring').split(',')[1];
     clearTimeout(_safetyTimer);
-    if (window.self !== window.top) {
-      // Inside DispatchHQ iframe — parent saves to Drive via google.script.run
-      window.parent.postMessage({type:'sm-pdf-data', base64:base64, quoteName:quoteName}, '*');
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      // Served by Apps Script (?page=quote) — save directly, no cross-origin needed
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
+          if (res && res.error) { showToast('Save error: ' + res.error); }
+          else { showToast('Saved to Drive!'); if (res && res.viewUrl) window.open(res.viewUrl, '_blank'); }
+        })
+        .withFailureHandler(function(err) {
+          if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
+          showToast('Save failed: ' + (err.message || err));
+        })
+        .app_savePdfToDrive(base64, quoteName);
     } else {
-      // Standalone (phone / direct access) — download locally + try Drive
+      // Standalone (GitHub Pages / phone) — download locally
       doc.save(quoteName + '.pdf');
       if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
-      var gasUrl = localStorage.getItem('sm_gas_url') || '';
-      if (gasUrl) {
-        var body = new URLSearchParams();
-        body.append('action', 'savePdf');
-        body.append('base64', base64);
-        body.append('quoteName', quoteName);
-        fetch(gasUrl, {method:'POST', body:body, redirect:'follow'})
-          .then(function(r){ return r.json(); })
-          .then(function(res){ if (!res.error) showToast('Also saved to Drive!'); })
-          .catch(function(){});
-      }
     }
   } catch(err) {
     clearTimeout(_safetyTimer);
@@ -4148,32 +4141,6 @@ function calcMilesManual() {
   });
 }
 
-// ── DISPATCH HQ INTEGRATION ───────────────────────────────────────────────────
-window.addEventListener('message', function(e) {
-  if (!e.data) return;
-  if (e.data.type === 'sm-pdf-done') {
-    var btn = document.querySelector('.btn.btnp');
-    if (btn) { btn.textContent = '⏺ PRINT / SAVE PDF'; btn.disabled = false; }
-    return;
-  }
-  if (e.data.type !== 'sm-get-quote') return;
-  genQuote();
-  var area = document.getElementById('parea');
-  var areaBrk = document.getElementById('pareaBrk');
-  var html = '';
-  if (areaBrk && (areaBrk.style.display === 'block')) {
-    html = areaBrk.outerHTML;
-  } else if (area && area.classList.contains('show')) {
-    html = area.outerHTML;
-  }
-  var qn = ((document.getElementById('pqn') || {}).textContent || '').trim();
-  var cust = ((document.getElementById('customer') || {}).value || '').trim();
-  var proj = ((document.getElementById('projname') || {}).value || '').trim();
-  var loc  = ((document.getElementById('location') || {}).value || '').trim();
-  var mid = proj || loc || '';
-  var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_') || 'Quote';
-  window.parent.postMessage({type:'sm-quote-data', html:html, quoteName:quoteName}, '*');
-});
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
