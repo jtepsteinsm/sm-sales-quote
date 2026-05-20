@@ -1800,8 +1800,8 @@ function showPage(id) {
 function setQt(t) {
   qt = t;
   document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","demo"][i]===t));
-  document.getElementById("matSec").classList.add("gone");
-  document.getElementById("mat2Sec").classList.add("gone");
+  document.getElementById("matSec").classList.toggle("gone", t!=="std" && t!=="split");
+  document.getElementById("mat2Sec").classList.toggle("gone", t!=="split");
   document.getElementById("haulSec").classList.toggle("gone", t!=="haul");
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
   document.getElementById("truckSec").classList.toggle("gone", false);
@@ -2275,10 +2275,9 @@ function calc() {
     if(qt==="split") {
       // Split load: 1 combined haul from furthest plant (Transfer only), separate env fees per material
       const rawQ2=v("qty2"), q2=qtyToTons("qty2"), p2=v("pr2"), ef2=v("ef2"), slf=v("slf");
-      const effQ2 = q2 > 0 ? minTons(q2) : 0;
       const loads2 = numLoads(q2);
       const mat2=rawQ2*p2, tax2=mat2*txr, efTotal2=loads2*ef2, efTax2=efTotal2*txr;
-      const totalEffQ = effQ1 + effQ2;
+      const totalEffQ = q1+q2 > 0 ? minTons(q1+q2) : 0;
       const haul = hr1 * totalEffQ;
       zonePrem = applyZonePremium(haul, totalEffQ);
       if(totalEffQ > (q1+q2) && (q1+q2) > 0) { showMin=true; minVal=haul; }
@@ -3046,11 +3045,11 @@ function genQuote() {
     if(qt==="split") {
       // Split load: combined haul (Transfer only), separate env fees
       const rawQ2=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-      const effQ2=q2>0?minTons(q2):0, loads2=numLoads(q2), mat2=rawQ2*p2, tax2=mat2*txr;
+      const loads2=numLoads(q2), mat2=rawQ2*p2, tax2=mat2*txr;
       const efTotal2=loads2*ef2, efTax2=efTotal2*txr;
       totalEfTax += efTax2;
       const matName2=getMatName("mat2")||"2nd Material";
-      const totalEffQ=effQ1+effQ2;
+      const totalEffQ=q1+q2>0?minTons(q1+q2):0;
       const haulTotal=hr1*totalEffQ;
       const zonePrem=applyZonePremium(haulTotal,totalEffQ);
       // Material 1 rows
@@ -3988,8 +3987,8 @@ function genBreakdownQuote() {
       if(qt==="split") {
         // Split: separate mat sections, combined haul section
         const rawQ2b=v("qty2"),q2=qtyToTons("qty2"),p2=v("pr2"),ef2=v("ef2"),slf=v("slf");
-        const effQ2b=q2>0?minTons(q2):0, fl2=numLoads(q2), mat2=rawQ2b*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
-        const totalEffQb=effQ1b+effQ2b, haulB=hr1*totalEffQb;
+        const fl2=numLoads(q2), mat2=rawQ2b*p2, tax2=mat2*txr, efTotal2=fl2*ef2, efTax2=efTotal2*txr;
+        const totalEffQb=q1+q2>0?minTons(q1+q2):0, haulB=hr1*totalEffQb;
         grandTotal+=mat1+tax1+efTotal1+efTax1+mat2+tax2+efTotal2+efTax2+haulB+slf;
         let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
         sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
