@@ -315,15 +315,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           </div>
           <div class="txst" id="txst"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-          <div class="field" style="margin:0;flex:0 0 160px;">
-            <label style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4a7cc7;display:block;margin-bottom:4px;">Tax Rate (%) <span class="txbadge" id="txbadge2"></span></label>
-            <input type="number" id="taxr_top" value="0" min="0" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #c0d0e8;border-radius:4px;font-size:14px;" oninput="syncTaxRate(this.value)" placeholder="Auto from address">
-          </div>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#e8251f;cursor:pointer;margin-top:14px;">
-            <input type="checkbox" id="taxExempt2" onchange="setTaxExempt(this.checked)" style="width:15px;height:15px;cursor:pointer;"> Tax Exempt / Resale
-          </label>
-        </div>
       </div>
       <div>
         <div class="fr2">
@@ -363,18 +354,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <option value="standard">Standard delivery</option>
             <option value="repeat">Repeat or high-volume customer</option>
             <option value="rush">Rush, single load, or small order</option>
-          </select>
-        </div>
-        <!-- Q3: Zone -->
-        <div class="field">
-          <label>Delivery Zone <span style="font-size:9px;color:#4a7cc7;font-weight:400;">(auto-set from address · override if needed)</span></label>
-          <select id="zoneSelect" onchange="calc()" style="font-size:12px;">
-            <option value="Z0">Z0 — Open/Rural (Palmdale, Lancaster, Victorville, Mojave) ×1.00</option>
-            <option value="Z1">Z1 — Highway Corridor (Santa Clarita, Simi Valley, Oxnard) ×1.05</option>
-            <option value="Z2">Z2 — Suburban (Burbank, Glendale, Pasadena) ×1.15</option>
-            <option value="Z3">Z3 — Urban LA (Downtown, Mid-City, East LA) ×1.25</option>
-            <option value="Z4">Z4 — Dense Urban (Hollywood, Culver City, Century City) ×1.40</option>
-            <option value="Z5">Z5 — Premium/Difficult (Malibu, Pac Palisades, Canyon Roads) ×1.55</option>
           </select>
         </div>
         <!-- HAUL DIRECTION -->
@@ -1286,43 +1265,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     </div>
   </div>
 
-  <!-- PRICE PER TON -->
-  <div class="card gap gone" id="ptonSec">
-    <div class="ct">Price Per Ton Quote</div>
-    <div class="slf-note" style="color:#7ab3f0;border-color:rgba(122,179,240,.3);background:rgba(122,179,240,.08);">Shows per-ton rate breakdown with unit price — no quantity-based totals.</div>
-    <div class="g2">
-      <div>
-        <div class="field"><label>Material Description</label><input type="text" id="pton_mat" placeholder="e.g. 3/4&quot; Crushed Rock" oninput="calc()"></div>
-        <div class="fr2">
-          <div class="field"><label>Material ($/ton)</label><input type="number" id="pton_matpt" placeholder="0.00" min="0" step="0.01" oninput="calc()"></div>
-          <div class="field"><label>Freight ($/ton)</label><input type="number" id="pton_haul" placeholder="0.00" min="0" step="0.01" oninput="calc()"></div>
-        </div>
-        <div class="fr2">
-          <div class="field">
-            <label>Tax Rate (%)</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="pton_taxr" value="0" min="0" step="0.01" style="flex:1;" oninput="calc()">
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#e8251f;cursor:pointer;white-space:nowrap;">
-                <input type="checkbox" id="pton_taxExempt" onchange="calc()" style="width:15px;height:15px;cursor:pointer;"> Tax Exempt
-              </label>
-            </div>
-          </div>
-          <div class="field"><label>Env Fee ($/load)</label><input type="number" id="pton_ef" value="10" min="0" step="0.01" oninput="calc()"></div>
-        </div>
-      </div>
-      <div>
-        <div class="formula-box" style="margin-top:4px;">
-          <div class="formula-title">Unit Price Breakdown</div>
-          <div class="formula-row"><span>Material</span><span class="formula-val" id="pton_dmat">—</span></div>
-          <div class="formula-row"><span>Tax</span><span class="formula-val" id="pton_dtax">—</span></div>
-          <div class="formula-row"><span>Freight</span><span class="formula-val" id="pton_dhaul">—</span></div>
-          <div class="formula-row"><span>Env Fee</span><span class="formula-val" id="pton_def">—</span></div>
-          <div class="formula-big" id="pton_dunit">$0.00 / ton</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- DEMO -->
   <div class="card gap gone" id="demoSec">
     <div class="ct">Demo / Export Quote</div>
@@ -1465,9 +1407,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sand);margin-bottom:6px;">MATERIALS TO SHOW</div>
         <select id="brkMatCount" onchange="renderMMRows()" style="background:rgba(255,255,255,.07);border-color:rgba(0,191,255,.2);color:var(--dust);"><option value="1">1 item</option><option value="2">2 items</option><option value="3" selected>3 items</option><option value="4">4 items</option><option value="5">5 items</option><option value="6">6 items</option><option value="7">7 items</option><option value="8">8 items</option><option value="9">9 items</option></select>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sand);cursor:pointer;margin-bottom:10px;">
-        <input type="checkbox" id="perTonToggle" onchange="perTonMode=this.checked" style="width:15px;height:15px;cursor:pointer;"> Price Per Ton Output
-      </label>
       <button class="btn btnp" onclick="genQuote()">▶ GENERATE QUOTE</button>
       <button class="btn btns" onclick="applyAutoHaul()" style="background:rgba(0,191,255,.12);border-color:var(--acc);color:var(--acc);">⚡ AUTO HAUL RATE</button>
       <button class="btn btns" onclick="printQ()">⎙ PRINT / SAVE PDF</button>
@@ -1714,7 +1653,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     <div class="ct">Freight Rate Formula Reference</div>
     <p style="font-size:12px;color:#4a7cc7;margin-bottom:16px;">
       <strong>Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)</strong><br>
-      <span style="font-size:11px;color:#6090b0;">Minimum rate: $6.00/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
+      <span style="font-size:11px;color:#6090b0;">Minimum rate: $10.50/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
     </p>
     <div class="g2">
       <div>
@@ -1762,7 +1701,6 @@ const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
-let perTonMode = false;
 
 // -- PLANT SHORTCODES --
 const PLANT_CODES = {
@@ -1857,12 +1795,11 @@ function showPage(id) {
 // ── QUOTE TYPE ────────────────────────────────────────────────────────────────
 function setQt(t) {
   qt = t;
-  document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","demo","pton"][i]===t));
+  document.querySelectorAll(".qtab").forEach((b,i) => b.classList.toggle("on", ["std","split","haul","demo"][i]===t));
   document.getElementById("matSec").classList.add("gone");
   document.getElementById("mat2Sec").classList.add("gone");
   document.getElementById("haulSec").classList.toggle("gone", t!=="haul");
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
-  document.getElementById("ptonSec").classList.toggle("gone", t!=="pton");
   document.getElementById("truckSec").classList.toggle("gone", false);
   plantPid=null; locPid=null;
   if(t === "demo") renderDemoRows();
@@ -1886,18 +1823,19 @@ function setHaulback(mode) {
 }
 
 function setTaxExempt(checked) {
-  ["taxExemptMM","taxExempt","taxExempt2"].forEach(id=>{
-    var cb=document.getElementById(id); if(cb) cb.checked=checked;
-  });
-  ["taxr","taxr_top","dtaxr"].forEach(id=>{
-    var el=document.getElementById(id); if(!el) return;
-    if(checked){
-      el.dataset.prevVal=el.value; el.value="0"; el.disabled=true; el.style.opacity="0.5";
-    } else {
-      el.disabled=false; el.style.opacity="";
-      el.value=el.dataset.prevVal||document.getElementById("taxr").dataset.prevVal||"0";
-    }
-  });
+  var mmCb = document.getElementById("taxExemptMM"); if(mmCb) mmCb.checked = checked;
+  var mainCb = document.getElementById("taxExempt"); if(mainCb) mainCb.checked = checked;
+  var taxr = document.getElementById("taxr");
+  if(checked) {
+    taxr.dataset.prevVal = taxr.value;
+    taxr.value = "0";
+    taxr.disabled = true;
+    taxr.style.opacity = "0.5";
+  } else {
+    taxr.disabled = false;
+    taxr.style.opacity = "";
+    taxr.value = taxr.dataset.prevVal || "0";
+  }
   calc();
 }
 
@@ -1977,7 +1915,7 @@ function calcHaulRate(miles) {
   const accessMod = getAccessMod();
   const transferFee = getTransferFee();
   const base = ((0.2175 * miles) + 2.7) * 1.25 * zoneMult + accessMod + transferFee;
-  return Math.max(Math.round(base * 100) / 100, 6.00);
+  return Math.max(Math.round(base * 100) / 100, 10.50);
 }
 
 function updateFormulaBox(miles) {
@@ -1990,7 +1928,7 @@ function updateFormulaBox(miles) {
   const baseCalc = ((0.2175 * miles) + 2.7) * 1.25;
   const afterZone = baseCalc * zoneMult;
   const afterAccess = afterZone + accessMod;
-  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 6.00);
+  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 10.50);
   const zoneKey = s("zoneSelect") || "Z0";
   const zoneLabel = ZONE_MULTIPLIERS[zoneKey] ? ZONE_MULTIPLIERS[zoneKey].label : "Z0 — Open/Rural";
 
@@ -2001,7 +1939,7 @@ function updateFormulaBox(miles) {
   document.getElementById("fCycleTime").textContent  = (accessMod>=0?"+":"")+accessMod.toFixed(2)+" access modifier";
   document.getElementById("fCapacity").textContent   = transferFee>0 ? "+$1.75/ton transfer staging fee" : "No transfer fee";
   document.getElementById("fHaulback").textContent   = haulback==="back"?"Haul-Back applied":haulback==="round"?"Round Trip":"One-Way";
-  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===6.00?" (minimum)":"");
+  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===10.50?" (minimum)":"");
 }
 
 function getAutoHaulRate(miles) {
@@ -2403,28 +2341,6 @@ function calc() {
     grand = total; perTon = eff>0 ? rate+fuel : 0;
     updateFormulaBox(mi);
 
-  } else if(qt==="pton") {
-    const mat  = v("pton_matpt");
-    const haul = v("pton_haul");
-    const txr  = (document.getElementById("pton_taxExempt").checked ? 0 : v("pton_taxr")) / 100;
-    const ef   = v("pton_ef");
-    const tax  = mat * txr;
-    const unitPrice = mat + tax + haul;
-    // Update live formula box
-    const dm = document.getElementById("pton_dmat");  if(dm) dm.textContent = mat>0 ? fmt(mat)+"/ton" : "—";
-    const dt = document.getElementById("pton_dtax");  if(dt) dt.textContent = tax>0 ? fmt(tax)+"/ton" : "—";
-    const dh = document.getElementById("pton_dhaul"); if(dh) dh.textContent = haul>0 ? fmt(haul)+"/ton" : "—";
-    const de = document.getElementById("pton_def");   if(de) de.textContent = ef>0 ? fmt(ef)+"/load" : "—";
-    const du = document.getElementById("pton_dunit"); if(du) du.textContent = fmt(unitPrice)+" / ton";
-    sumH += hdr("PRICE PER TON");
-    if(mat>0)  sumH += tr2("Material", fmt(mat)+"/ton");
-    if(tax>0)  sumH += tr2("Tax ("+v("pton_taxr")+"%)&nbsp;", fmt(tax)+"/ton");
-    if(haul>0) sumH += tr2("Freight", fmt(haul)+"/ton");
-    if(ef>0)   sumH += tr2("Env Fee", fmt(ef)+"/load");
-    sumH += tr2("<strong>Unit Price</strong>", "<strong>"+fmt(unitPrice)+"/ton</strong>");
-    grand = unitPrice;
-    perTon = unitPrice;
-
   } else if(qt==="demo") {
     calcDemo();
     return;
@@ -2494,15 +2410,14 @@ function initMaps() {
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat();
       locLng=p.geometry.location.lng();
-      // Extract city + county for tax fallback
-      let county = "", city = "";
+      // Extract county for tax fallback
+      let county = "";
       if(p.address_components) {
         p.address_components.forEach(c => {
           if(c.types.includes("administrative_area_level_2")) county = c.long_name;
-          if(c.types.includes("locality")) city = c.long_name;
         });
       }
-      fetchTax(locLat, locLng, county, city);
+      fetchTax(locLat, locLng, county);
       autoAssignZone(p.address_components, locLat, locLng);
     }
   });
@@ -2670,74 +2585,10 @@ function straightLineFallback(applyMiles, stEl) {
   if(stEl) { stEl.textContent="⚠ Estimated miles (×1.35 road factor) — enable Google billing for exact route"; stEl.className="ms"; stEl.style.color="#c8a020"; }
 }
 
-// ── CA CITY + COUNTY TAX FALLBACK TABLE ───────────────────────────────────────
-// City-level rates (lowercase). Last updated: 2025. Verify at cdtfa.ca.gov.
-const CA_TAX_CITY = {
-  // ── Los Angeles County (most 10.25%) ──
-  "palmdale":0.1025,"lancaster":0.1025,"los angeles":0.1025,"la":0.1025,
-  "long beach":0.1025,"burbank":0.1025,"glendale":0.1025,"pasadena":0.1025,
-  "santa clarita":0.1025,"valencia":0.1025,"newhall":0.1025,"sylmar":0.1025,
-  "san fernando":0.1025,"arleta":0.1025,"north hollywood":0.1025,"van nuys":0.1025,
-  "reseda":0.1025,"chatsworth":0.1025,"canoga park":0.1025,"woodland hills":0.1025,
-  "west hills":0.1025,"calabasas":0.1025,"sun valley":0.1025,"granada hills":0.1025,
-  "northridge":0.1025,"porter ranch":0.1025,"lake view terrace":0.1025,
-  "torrance":0.1025,"hawthorne":0.1025,"inglewood":0.1025,"compton":0.1025,
-  "gardena":0.1025,"redondo beach":0.1025,"manhattan beach":0.1025,
-  "el segundo":0.1025,"culver city":0.1025,"santa monica":0.1025,
-  "beverly hills":0.1025,"west hollywood":0.1025,"monterey park":0.1025,
-  "alhambra":0.1025,"san gabriel":0.1025,"arcadia":0.1025,"monrovia":0.1025,
-  "azusa":0.1025,"glendora":0.1025,"san dimas":0.1025,"pomona":0.1025,
-  "west covina":0.1025,"covina":0.1025,"la puente":0.1025,"walnut":0.1025,
-  "diamond bar":0.1025,"whittier":0.1025,"downey":0.1025,"bellflower":0.1025,
-  "cerritos":0.1025,"lakewood":0.1025,"signal hill":0.1025,"carson":0.1025,
-  "norwalk":0.1025,"pico rivera":0.1025,"santa fe springs":0.1025,
-  "la mirada":0.1025,"el monte":0.1025,"south el monte":0.1025,"rosemead":0.1025,
-  "montebello":0.1025,"irwindale":0.1025,"baldwin park":0.1025,"la verne":0.1025,
-  "claremont":0.1025,"south gate":0.1025,"lynwood":0.1025,"bell":0.1025,
-  "huntington park":0.1025,"maywood":0.1025,"cudahy":0.1025,
-  "acton":0.1025,"agua dulce":0.1025,"little rock":0.1025,"llano":0.1025,
-  "canyon country":0.1025,"saugus":0.1025,"stevenson ranch":0.1025,
-  // ── San Bernardino County ──
-  "san bernardino":0.0875,"ontario":0.0775,"rancho cucamonga":0.0775,
-  "upland":0.0775,"fontana":0.0775,"rialto":0.0775,"colton":0.0775,
-  "redlands":0.0775,"loma linda":0.0775,"highland":0.0775,"yucaipa":0.0775,
-  "victorville":0.0775,"hesperia":0.0775,"apple valley":0.0775,
-  "adelanto":0.0775,"lucerne valley":0.0775,"barstow":0.0775,
-  "big bear lake":0.0775,"big bear city":0.0775,"needles":0.0775,
-  "twentynine palms":0.0775,"yucca valley":0.0775,"joshua tree":0.0775,
-  "chino":0.0775,"chino hills":0.0775,"montclair":0.0775,"grand terrace":0.0775,
-  // ── Riverside County ──
-  "riverside":0.0875,"corona":0.0875,"moreno valley":0.0875,"perris":0.0875,
-  "murrieta":0.0875,"temecula":0.0875,"hemet":0.0875,"banning":0.0875,
-  "beaumont":0.0875,"calimesa":0.0875,"lake elsinore":0.0875,"wildomar":0.0875,
-  "menifee":0.0875,"cathedral city":0.0875,"palm desert":0.0875,
-  "rancho mirage":0.0875,"indio":0.0875,"coachella":0.0875,
-  "la quinta":0.0875,"desert hot springs":0.0875,
-  "palm springs":0.0925,"norco":0.0775,"jurupa valley":0.0775,"eastvale":0.0775,
-  // ── Ventura County ──
-  "ventura":0.075,"oxnard":0.075,"thousand oaks":0.075,"simi valley":0.075,
-  "camarillo":0.075,"moorpark":0.075,"fillmore":0.075,"santa paula":0.075,
-  "port hueneme":0.075,
-  // ── Kern County ──
-  "bakersfield":0.0825,"mojave":0.0725,"rosamond":0.0725,"tehachapi":0.0725,
-  "california city":0.0725,"ridgecrest":0.0725,"taft":0.0725,
-  // ── Orange County ──
-  "anaheim":0.0775,"santa ana":0.0775,"irvine":0.0775,"huntington beach":0.0775,
-  "garden grove":0.0775,"fullerton":0.0775,"orange":0.0775,"costa mesa":0.0775,
-  "mission viejo":0.0775,"lake forest":0.0775,"buena park":0.0775,
-  "yorba linda":0.0775,"placentia":0.0775,"brea":0.0775,"cypress":0.0775,
-  "seal beach":0.0775,"westminster":0.0775,"fountain valley":0.0775,
-  "tustin":0.0775,"newport beach":0.0775,"laguna beach":0.0775,
-  "san clemente":0.0775,"san juan capistrano":0.0775,"dana point":0.0775,
-  // ── San Diego County ──
-  "san diego":0.0775,"chula vista":0.0775,"oceanside":0.0775,"escondido":0.0775,
-  "el cajon":0.0775,"vista":0.0775,"carlsbad":0.0775,"san marcos":0.0775
-};
-
-// County-level fallback (when city not in table)
+// ── CA COUNTY TAX FALLBACK TABLE ──────────────────────────────────────────────
 const CA_TAX = {
   "los angeles":0.1025,"san bernardino":0.0775,"riverside":0.0775,
-  "orange":0.0775,"ventura":0.0775,"san diego":0.0775,"kern":0.0725,
+  "orange":0.0775,"ventura":0.0775,"san diego":0.0775,"kern":0.0775,
   "santa barbara":0.0775,"san luis obispo":0.0775,"fresno":0.0975,
   "tulare":0.0775,"kings":0.0725,"monterey":0.0925,"santa cruz":0.0875,
   "san benito":0.0775,"merced":0.0775,"madera":0.0775,"stanislaus":0.0875,
@@ -2749,11 +2600,10 @@ const CA_TAX = {
 };
 
 function applyTaxRate(pct, source, badge) {
-  ["taxr","taxr_top","dtaxr"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value=pct;
-  });
+  document.getElementById("taxr").value = pct;
+  document.getElementById("dtaxr").value = pct;
   const txst = document.getElementById("txst");
-  ["txbadge","txbadge2","dtxbadge"].forEach(id=>{
+  ["txbadge","dtxbadge"].forEach(id=>{
     const b=document.getElementById(id);
     if(b){ b.textContent=badge; b.style.display="inline"; }
   });
@@ -2761,77 +2611,42 @@ function applyTaxRate(pct, source, badge) {
   calc();
 }
 
-// Syncs manual tax rate entry across all tax fields
-function syncTaxRate(val) {
-  ["taxr","dtaxr"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value=val;
-  });
-  const topEl=document.getElementById("taxr_top");
-  if(topEl) topEl.value=val;
-  // Update badge to show manually set
-  ["txbadge","txbadge2"].forEach(id=>{
-    const b=document.getElementById(id);
-    if(b){ b.textContent="✎ manual"; b.style.display="inline"; }
-  });
-  calc();
-}
-
 // ── CA TAX LOOKUP ─────────────────────────────────────────────────────────────
-function fetchTax(lat, lng, countyHint, cityHint) {
+function fetchTax(lat, lng, countyHint) {
   const txst = document.getElementById("txst");
   if(txst) { txst.textContent="⟳ Looking up CA sales tax..."; txst.style.color="#4a7cc7"; }
   const cdtfaUrl = `https://services.maps.cdtfa.ca.gov/api/taxrate/GetRateByLngLat?Longitude=${lng}&Latitude=${lat}`;
 
-  function parseRate(raw) {
-    // CDTFA may return rate as decimal (0.1025) or percentage (10.25) — handle both
-    if(raw == null || isNaN(raw)) return null;
-    const r = parseFloat(raw);
-    return r > 1 ? r : r * 100; // convert decimal to pct if needed
-  }
-
   function applyRate(data) {
-    try {
-      const info = (data.taxRateInfo && data.taxRateInfo.length > 0) ? data.taxRateInfo[0] : null;
-      if(!info) return false;
-      const pctNum = parseRate(info.rate);
-      if(!pctNum || pctNum < 1 || pctNum > 15) return false; // sanity check
-      const pct = pctNum.toFixed(4).replace(/\.?0+$/, "");
-      const jur = info.jurisdiction || info.city || info.county || "CA";
-      const cty = info.county || "";
+    if(data.taxRateInfo && data.taxRateInfo.length>0) {
+      const info = data.taxRateInfo[0];
+      const pct = (info.rate*100).toFixed(4).replace(/\.?0+$/,"");
+      const jur = info.jurisdiction||info.city||info.county||"CA";
+      const cty = info.county||"";
       applyTaxRate(pct, "✓ CA tax rate auto-filled — edit if needed", `✓ ${pct}% — ${jur}${cty&&cty!==jur?", "+cty:""}`);
       return true;
-    } catch(e) { return false; }
+    }
+    return false;
   }
 
-  function staticFallback() {
-    const city   = (cityHint  ||"").toLowerCase().trim();
+  function countyFallback() {
+    // Use county from address components or try to reverse-geocode
     const county = (countyHint||"").toLowerCase().replace(" county","").trim();
-    const rate = CA_TAX_CITY[city] || CA_TAX[county] || CA_TAX["los angeles"];
-    const pct  = (rate * 100).toFixed(2).replace(/\.?0+$/, "");
-    const label = city ? cityHint : (county ? countyHint : "Los Angeles County");
-    applyTaxRate(pct, `⚠ Estimated rate (${label}) — verify at cdtfa.ca.gov`, `~${pct}% — ${label} (est.)`);
+    const rate = CA_TAX[county] || CA_TAX["los angeles"]; // default to LA rate
+    const pct = (rate*100).toFixed(2).replace(/\.?0+$/,"");
+    const label = county ? county.replace(/\b\w/g,c=>c.toUpperCase())+" County" : "Los Angeles County";
+    applyTaxRate(pct, `⚠ Estimated rate (${label}) — CDTFA lookup unavailable`, `~${pct}% — ${label} (est.)`);
   }
 
-  // 1. Try CDTFA directly
-  fetch(cdtfaUrl, {signal: AbortSignal.timeout(5000)})
-    .then(r => { if(!r.ok) throw new Error("http "+r.status); return r.json(); })
-    .then(d => { if(!applyRate(d)) throw new Error("no data"); })
-    .catch(() => {
-      // 2. Try via corsproxy.io
-      fetch(`https://corsproxy.io/?${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(6000)})
-        .then(r => { if(!r.ok) throw new Error("proxy http "+r.status); return r.json(); })
-        .then(d => { if(!applyRate(d)) throw new Error("no data"); })
-        .catch(() => {
-          // 3. Try via allorigins (unwrap .contents)
-          fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(6000)})
-            .then(r => r.json())
-            .then(w => {
-              const parsed = typeof w.contents === "string" ? JSON.parse(w.contents) : w.contents;
-              if(!applyRate(parsed)) throw new Error("no data");
-            })
-            .catch(() => staticFallback()); // 4. City/county static table
-        });
-    });
+  fetch(cdtfaUrl, {signal: AbortSignal.timeout(4000)})
+    .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
+    .catch(()=>fetch(`https://corsproxy.io/?${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
+      .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
+      .catch(()=>fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
+        .then(r=>r.json()).then(w=>{ if(!applyRate(JSON.parse(w.contents))) countyFallback(); })
+        .catch(()=>countyFallback())
+      )
+    );
 }
 
 // ── GEO-FENCE MAP ─────────────────────────────────────────────────────────────
@@ -3191,15 +3006,6 @@ function genQuote() {
       "&mdash;",
       fmt(freight+(zp>0?zp:0))
     );
-  } else if(qt==="pton") {
-    const mat  = v("pton_matpt");
-    const haul = v("pton_haul");
-    const txr  = (document.getElementById("pton_taxExempt").checked ? 0 : v("pton_taxr")) / 100;
-    const ef   = v("pton_ef");
-    const tax  = mat * txr;
-    const unitPrice = mat + tax + haul;
-    const matName = document.getElementById("pton_mat").value || "Material";
-    stdRows += `<tr><td style="text-align:center;">ton</td><td style="text-align:left;">${matName}</td><td style="text-align:right;">${mat>0?fmt(mat):"&mdash;"}</td><td style="text-align:right;">${tax>0?fmt(tax):"&mdash;"}</td><td style="text-align:right;">${haul>0?fmt(haul):"&mdash;"}</td><td style="text-align:right;">${ef>0?fmt(ef)+" per load":"&mdash;"}</td><td style="text-align:right;font-weight:700;">${fmt(unitPrice)} per ton</td></tr>`;
   } else if(qt==="demo") {
     const dtxr=v("dtaxr")/100, tons=qtyToTons("dtons"),mi=currentMiles||v("dmi"),df=v("ddf"),ef=v("def_"),mu=v("dmu");
     const hr=applySurcharge(v("dhr")||getAutoHaulRate(mi),"d"), eff=minTons(tons);
@@ -3224,12 +3030,6 @@ if(txExemptEl&&txExemptEl.checked){var tbl=document.getElementById("txbadge");if
 var pte=document.getElementById("ptaxexempt");if(pte)pte.style.display="block";}else{var pte2=document.getElementById("ptaxexempt");if(pte2)pte2.style.display="none";}
 document.getElementById("ppaylbl").textContent=pay==="cc"?"TOTAL (CREDIT CARD)":"TOTAL (CASH/CHECK)";
   document.getElementById("pgtotal").textContent=fmt(disp);
-  // For price/ton mode: override totals box to show unit price label
-  if(qt==="pton") {
-    document.getElementById("ptotd").innerHTML="";
-    document.getElementById("ppaylbl").textContent=pay==="cc"?"UNIT PRICE (CREDIT CARD)":"UNIT PRICE (CASH/CHECK)";
-    document.getElementById("pgtotal").textContent=fmt(grand)+" / ton";
-  }
   const n=s("notes");
   document.getElementById("pnotes").style.display=n?"block":"none";
   document.getElementById("pnotestxt").textContent=n;
@@ -4027,12 +3827,10 @@ function genBreakdownQuote() {
   const autoHR = getAutoHaulRate(currentMiles || v("mi1") || v("hmi") || v("dmi") || 0);
   let sectionsHtml = "";
   let grandTotal = 0;
+  let sumH = "";
 
   function brkLine(label, amount) {
     return '<div class="brk-line"><span>'+label+'</span><span>'+fmt(amount)+'</span></div>';
-  }
-  function brkPtLine(label) {
-    return '<div class="brk-line"><span>'+label+'</span><span></span></div>';
   }
 
   const mmRows = getMMData().filter(function(r){ return r.qty > 0; });
@@ -4055,32 +3853,27 @@ function genBreakdownQuote() {
       const efTotal = mmLoads * row.env;
       const efTax = efTotal * txr;
       const rowTotal = matCost + tax + haul + efTotal + efTax;
+      grandTotal += rowTotal;
+      // Build quote summary card breakdown
+      if(idx > 0) sumH += '<hr class="div">';
+      sumH += hdr("MATERIAL " + (idx+1) + (row.desc ? " \u2014 " + row.desc : ""));
+      if(row.price > 0) sumH += tr2("Material", fmt(matCost));
+      if(tax > 0) sumH += tr2("Sales Tax ("+v("taxr")+"%)", fmt(tax));
+      sumH += tr2("Haul ("+effTons.toFixed(2)+"t @ "+fmt(row.haul)+"/ton)", fmt(row.haul * effTons));
+      if(sc > 0) sumH += tr2("Fuel Surcharge", fmt(sc * effTons));
+      if(efTotal > 0) sumH += tr2("Env Fee ("+mmLoads+" load"+(mmLoads!==1?"s":"")+" x "+fmt(row.env)+")", fmt(efTotal));
+      if(efTax > 0) sumH += tr2("Env Fee Tax", fmt(efTax));
       let sec = '<div class="brk-mat-section">';
       const mmTruckLabel = row.truck ? (TRUCK_LABELS[row.truck] || row.truck) : "";
       sec += '<div class=\"brk-mat-hdr\">MATERIAL '+(idx+1)+(row.desc?' \u2014 '+row.desc:'')+(row.plant?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">('+row.plant+')</span>':'')+(mmTruckLabel?' &nbsp;<span style=\"font-size:9px;font-weight:400;opacity:.8;\">| '+mmTruckLabel+'</span>':'')+'</div>';
-      if(perTonMode) {
-        const taxPerTon = row.price * txr;
-        const envTaxPerLoad = row.env * txr;
-        const minTonsLabel = row.truck && TRUCK_MIN[row.truck] ? TRUCK_MIN[row.truck] : rowMin;
-        const ptSubtotal = row.price + taxPerTon + row.haul;
-        const ptEnvTotal = row.env + envTaxPerLoad;
-        sec += brkPtLine(fmt(row.price)+'/ton');
-        if(txr > 0) sec += brkPtLine('Sales Tax ('+v("taxr")+'%) '+fmt(taxPerTon));
-        sec += brkPtLine('Haul ('+minTonsLabel+' tons minimum) '+fmt(row.haul)+'/ton');
-        sec += brkPtLine('Environmental Fee (1 load x '+fmt(row.env)+')');
-        if(txr > 0) sec += brkPtLine('Env Fee Tax '+fmt(envTaxPerLoad)+'/load');
-        sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material '+(idx+1)+' Price Per Ton</span><span>'+fmt(ptSubtotal)+' + '+fmt(ptEnvTotal)+' Per Load Env Fee</span></div>';
-      } else {
-        sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/'+unitLabel, matCost);
-        if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
-        const haulMinNote = effQtyUnit > row.qty ? ' (min '+effQtyUnit+' '+unitLabelPlural+')' : '';
-        sec += brkLine('Haul ('+effQtyUnit+' '+unitLabelPlural+' \u2192 '+effTons.toFixed(2)+'t @ '+fmt(row.haul)+'/ton)'+haulMinNote, row.haul * effTons);
-        if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * effTons);
-        sec += brkLine('Environmental Fee (' + mmLoads + ' load' + (mmLoads!==1?'s':'') + ' x ' + fmt(row.env) + ')', efTotal);
-        if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
-        sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material '+(idx+1)+' Subtotal</span><span>'+fmt(rowTotal)+'</span></div>';
-        grandTotal += rowTotal;
-      }
+      sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/'+unitLabel, matCost);
+      if(tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', tax);
+      const haulMinNote = effQtyUnit > row.qty ? ' (min '+effQtyUnit+' '+unitLabelPlural+')' : '';
+      sec += brkLine('Haul ('+effQtyUnit+' '+unitLabelPlural+' \u2192 '+effTons.toFixed(2)+'t @ '+fmt(row.haul)+'/ton)'+haulMinNote, row.haul * effTons);
+      if(sc > 0) sec += brkLine('Fuel/COL Surcharge', sc * effTons);
+      sec += brkLine('Environmental Fee (' + mmLoads + ' load' + (mmLoads!==1?'s':'') + ' x ' + fmt(row.env) + ')', efTotal);
+      if(efTax > 0) sec += brkLine('Env Fee Tax', efTax);
+      sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material '+(idx+1)+' Subtotal</span><span>'+fmt(rowTotal)+'</span></div>';
       sec += '</div>';
       sectionsHtml += sec;
     });
@@ -4090,28 +3883,14 @@ function genBreakdownQuote() {
     if(qt==="std"||qt==="split") {
       const rawQ1b=v("qty1"),q1=qtyToTons("qty1"),p1=v("pr1"),hr1=applySurcharge(v("hr1")||autoHR,"1"),ef1=v("ef1");
       const effQ1b=minTons(q1), fl1=numLoads(q1), mat1=rawQ1b*p1, tax1=mat1*txr, efTotal1=fl1*ef1, efTax1=efTotal1*txr, haul1=hr1*effQ1b;
-      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+(getMatName('mat1')&&s('mat1')?'':'' )+'</div>';
-      if(perTonMode) {
-        const taxPerTon1 = p1 * txr;
-        const envTaxPerLoad1 = ef1 * txr;
-        const minTonsLabel1 = truck && TRUCK_MIN[truck] ? TRUCK_MIN[truck] : effQ1b;
-        const ptSubtotal1 = p1 + taxPerTon1 + hr1;
-        const ptEnvTotal1 = ef1 + envTaxPerLoad1;
-        sec += brkPtLine(fmt(p1)+'/ton');
-        if(txr > 0) sec += brkPtLine('Sales Tax ('+v("taxr")+'%) '+fmt(taxPerTon1));
-        sec += brkPtLine('Haul ('+minTonsLabel1+' tons minimum) '+fmt(hr1)+'/ton');
-        sec += brkPtLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')');
-        if(txr > 0) sec += brkPtLine('Env Fee Tax '+fmt(envTaxPerLoad1)+'/load');
-        sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Price Per Ton</span><span>'+fmt(ptSubtotal1)+' + '+fmt(ptEnvTotal1)+' Per Load Env Fee</span></div>';
-      } else {
-        grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
-        sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
-        if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
-        sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
-        sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
-        if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
-        sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Subtotal</span><span>'+fmt(mat1+tax1+haul1+efTotal1+efTax1)+'</span></div>';
-      }
+      grandTotal += mat1+tax1+haul1+efTotal1+efTax1;
+      let sec='<div class="brk-mat-section"><div class="brk-mat-hdr">MATERIAL 1'+(getMatName('mat1')?' — '+getMatName('mat1'):'')+'</div>';
+      sec+=brkLine(q1+' tons @ '+fmt(p1)+'/ton',mat1);
+      if(tax1>0) sec+=brkLine('Sales Tax ('+v("taxr")+'%)',tax1);
+      sec+=brkLine('Haul ('+effQ1b+'t @ '+fmt(hr1)+'/ton)'+(effQ1b>q1?' (min '+effQ1b+'t)':''),haul1);
+      sec+=brkLine('Environmental Fee ('+fl1+' load'+(fl1!==1?'s':'')+' x '+fmt(ef1)+')',efTotal1);
+      if(efTax1>0) sec+=brkLine('Env Fee Tax',efTax1);
+      sec+='<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>Material 1 Subtotal</span><span>'+fmt(mat1+tax1+haul1+efTotal1+efTax1)+'</span></div>';
       sec+='</div>';
       sectionsHtml+=sec;
       if(qt==="split"){
@@ -4193,10 +3972,10 @@ function genBreakdownQuote() {
   const cc = grandTotal * 0.04;
 
   document.getElementById("brkSections").innerHTML = sectionsHtml;
-  document.querySelectorAll(".brk-totals").forEach(function(el){ el.style.display = perTonMode ? "none" : ""; });
   document.getElementById("brkSubAmt").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCash").textContent = fmt(grandTotal);
   document.getElementById("bpgtotalCC").textContent = fmt(grandTotal * 1.04);
+  document.getElementById("sumHtml").innerHTML = sumH;
   document.getElementById("tgrand").textContent = fmt(grandTotal);
   document.getElementById("tcc").textContent    = fmt(grandTotal * 0.04);
   document.getElementById("tcct").textContent   = fmt(grandTotal * 1.04);
@@ -4212,7 +3991,39 @@ function genBreakdownQuote() {
   document.getElementById("pareaBrk").scrollIntoView({behavior:"smooth"});
 }
 
-function printQ() { genQuote(); setTimeout(()=>window.print(),300); }
+function printQ() {
+  genQuote();
+  if (window.self !== window.top) { savePdfToWebApp(); return; }
+  setTimeout(()=>window.print(),300);
+}
+
+async function savePdfToWebApp() {
+  var area = document.getElementById('parea');
+  var areaBrk = document.getElementById('pareaBrk');
+  var el = (areaBrk && areaBrk.style.display === 'block') ? areaBrk : (area && area.classList.contains('show') ? area : null);
+  if (!el) { alert('Generate a quote first.'); return; }
+  var qn = ((document.getElementById('pqn')||{}).textContent||'').trim();
+  var cust = ((document.getElementById('customer')||{}).value||'').trim();
+  var proj = ((document.getElementById('projname')||{}).value||'').trim();
+  var loc  = ((document.getElementById('location')||{}).value||'').trim();
+  var mid  = proj || loc || '';
+  var quoteName = [cust, mid, qn ? 'Q'+qn : ''].filter(Boolean).join('_') || 'Quote';
+  var btn = document.querySelector('.btn.btnp');
+  if (btn) { btn.textContent = '⏳ Saving PDF...'; btn.disabled = true; }
+  try {
+    var canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    var imgW = canvas.width / 2;
+    var imgH = canvas.height / 2;
+    var { jsPDF } = window.jspdf;
+    var doc = new jsPDF({unit:'px', format:[imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape'});
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+    var base64 = doc.output('datauristring').split(',')[1];
+    window.parent.postMessage({type:'sm-pdf-data', base64:base64, quoteName:quoteName}, '*');
+  } catch(err) {
+    alert('PDF error: ' + err.message);
+    if (btn) { btn.textContent = '⎙ PRINT / SAVE PDF'; btn.disabled = false; }
+  }
+}
 
 function copyEmail() {
   genQuote();
@@ -4305,7 +4116,36 @@ function calcMilesManual() {
     tryMiles();
   });
 }
+
+// ── DISPATCH HQ INTEGRATION ───────────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (!e.data) return;
+  if (e.data.type === 'sm-pdf-done') {
+    var btn = document.querySelector('.btn.btnp');
+    if (btn) { btn.textContent = '⏺ PRINT / SAVE PDF'; btn.disabled = false; }
+    return;
+  }
+  if (e.data.type !== 'sm-get-quote') return;
+  genQuote();
+  var area = document.getElementById('parea');
+  var areaBrk = document.getElementById('pareaBrk');
+  var html = '';
+  if (areaBrk && (areaBrk.style.display === 'block')) {
+    html = areaBrk.outerHTML;
+  } else if (area && area.classList.contains('show')) {
+    html = area.outerHTML;
+  }
+  var qn = ((document.getElementById('pqn') || {}).textContent || '').trim();
+  var cust = ((document.getElementById('customer') || {}).value || '').trim();
+  var proj = ((document.getElementById('projname') || {}).value || '').trim();
+  var loc  = ((document.getElementById('location') || {}).value || '').trim();
+  var mid = proj || loc || '';
+  var quoteName = [cust, mid, qn ? 'Q' + qn : ''].filter(Boolean).join('_') || 'Quote';
+  window.parent.postMessage({type:'sm-quote-data', html:html, quoteName:quoteName}, '*');
+});
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
 </body>
 </html>
