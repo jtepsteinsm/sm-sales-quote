@@ -2766,8 +2766,9 @@ function applyTaxRate(pct, source, badge) {
     const b=document.getElementById(id);
     if(b){ b.textContent=badge; b.style.display="inline"; }
   });
-  if(txst){ txst.textContent=source; txst.style.color="#2a8a4a"; }
+  if(txst){ txst.textContent = badge + " · " + source; txst.style.color="#2a8a4a"; }
   calc();
+  if(typeof calcMM === "function" && qStyle === "breakdown") calcMM();
 }
 
 // ── CA TAX LOOKUP ─────────────────────────────────────────────────────────────
