@@ -4325,5 +4325,133 @@ function calcMilesManual() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
+
+<!-- ── DispatchHQ Integration ──────────────────────────────────── -->
+<script>
+(function () {
+  var _embedded = (window.self !== window.top);
+
+  // ── Helper: collect current form values into a structured object ──
+  function _collectQuoteData() {
+    var grand = parseFloat((document.getElementById('tgrand') || {}).textContent || '') || 0;
+    return {
+      customer:  s('customer'),
+      contact:   s('contact'),
+      address:   s('address'),
+      city:      s('city'),
+      zip:       s('zip'),
+      phone:     s('phone'),
+      email:     s('email'),
+      projname:  s('projname'),
+      location:  s('location'),
+      notes:     s('notes'),
+      jobtype:   (document.getElementById('q_jobtype') || {}).value || '',
+      quoteNum:  qnum || '',
+      total:     grand ? '$' + grand.toFixed(2) : '',
+      validDays: s('vdays'),
+      date:      s('qdate')
+    };
+  }
+
+  // ── Helper: set a field value and fire change/input events ──
+  function _setField(id, val) {
+    if (val == null || val === '') return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') {
+      for (var i = 0; i < el.options.length; i++) {
+        if (el.options[i].value === val || el.options[i].text === val) {
+          el.selectedIndex = i; break;
+        }
+      }
+    } else {
+      el.value = val;
+    }
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // ── Incoming messages from DispatchHQ ────────────────────────────
+  window.addEventListener('message', function (e) {
+    if (!e.data || !e.data.type) return;
+
+    // sm-get-quote: DispatchHQ wants to save/send the current quote
+    if (e.data.type === 'sm-get-quote') {
+      var area    = document.getElementById('pareaBrk');
+      var areaAlt = document.getElementById('parea');
+      var el = (area && area.style.display === 'block') ? area
+             : (areaAlt && areaAlt.classList.contains('show')) ? areaAlt
+             : null;
+      var html = el ? el.outerHTML : '';
+      var cust = s('customer');
+      var proj = s('projname') || s('location') || '';
+      var quoteName = [cust, proj, qnum ? 'Q' + qnum : ''].filter(Boolean).join('_') || 'Quote';
+      window.parent.postMessage({
+        type:      'sm-quote-data',
+        html:      html,
+        quoteName: quoteName,
+        phone:     e.data.phone || s('phone'),
+        quoteData: _collectQuoteData()
+      }, '*');
+    }
+
+    // sm-load-quote: DispatchHQ is recalling a saved quote — populate the form
+    if (e.data.type === 'sm-load-quote') {
+      var d = e.data.data || {};
+      _setField('customer', d.customer);
+      _setField('contact',  d.contact);
+      _setField('address',  d.address);
+      _setField('city',     d.city);
+      _setField('zip',      d.zip);
+      _setField('phone',    d.phone);
+      _setField('email',    d.email);
+      _setField('projname', d.projname);
+      _setField('location', d.location);
+      _setField('notes',    d.notes);
+      _setField('q_jobtype', d.jobtype);
+      _setField('qdate',    d.date);
+      if (d.validDays) _setField('vdays', d.validDays);
+      window.scrollTo(0, 0);
+    }
+
+    // sm-pdf-done: DispatchHQ finished saving the PDF — re-enable button
+    if (e.data.type === 'sm-pdf-done') {
+      var btn = document.querySelector('.btn.btnp');
+      if (btn) { btn.textContent = '\u2399 PRINT / SAVE PDF'; btn.disabled = false; }
+    }
+  });
+
+  // ── PDF save: route via postMessage when embedded in DispatchHQ ──
+  // Patch savePdfToWebApp to send sm-pdf-data instead of downloading
+  var _origSavePdf = window.savePdfToWebApp;
+  window.savePdfToWebApp = async function () {
+    if (!_embedded) { return _origSavePdf.apply(this, arguments); }
+    var area    = document.getElementById('parea');
+    var areaBrk = document.getElementById('pareaBrk');
+    var el = (areaBrk && areaBrk.style.display === 'block') ? areaBrk
+           : (area && area.classList.contains('show')) ? area : null;
+    if (!el) { alert('Generate a quote first.'); return; }
+    var cust = s('customer');
+    var proj = s('projname') || s('location') || '';
+    var quoteName = [cust, proj, qnum ? 'Q' + qnum : ''].filter(Boolean).join('_') || 'Quote';
+    var btn = document.querySelector('.btn.btnp');
+    if (btn) { btn.textContent = '\u23f3 Saving PDF\u2026'; btn.disabled = true; }
+    try {
+      var canvas = await Promise.race([
+        html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', imageTimeout: 8000, logging: false }),
+        new Promise(function (_, reject) { setTimeout(function () { reject(new Error('Render timeout')); }, 25000); })
+      ]);
+      var imgW = canvas.width / 2, imgH = canvas.height / 2;
+      var doc = new window.jspdf.jsPDF({ unit: 'px', format: [imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape' });
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+      var base64 = doc.output('datauristring').split(',')[1];
+      window.parent.postMessage({ type: 'sm-pdf-data', base64: base64, quoteName: quoteName }, '*');
+    } catch (err) {
+      if (btn) { btn.textContent = '\u2399 PRINT / SAVE PDF'; btn.disabled = false; }
+      alert('PDF error: ' + err.message);
+    }
+  };
+})();
+</script>
 </body>
 </html>
