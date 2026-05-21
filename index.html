@@ -1809,7 +1809,7 @@ window.onload = function() {
   loadSettings();
   loadZones();
   renderSavedCustSelect();
-  setQStyle();
+  setQt('std');
   document.addEventListener("input", function(e) {
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) calc();
   });
@@ -1844,6 +1844,7 @@ function setQt(t) {
   document.getElementById("haulSec").classList.toggle("gone", t!=="haul");
   document.getElementById("demoSec").classList.toggle("gone", t!=="demo");
   document.getElementById("truckSec").classList.toggle("gone", false);
+  const mmEl = document.getElementById("mmSec"); if(mmEl) mmEl.classList.add("gone");
   plantPid=null; locPid=null;
   if(t === "demo") renderDemoRows();
   calc();
