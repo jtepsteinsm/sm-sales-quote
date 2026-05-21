@@ -1695,7 +1695,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     <div class="ct">Freight Rate Formula Reference</div>
     <p style="font-size:12px;color:#4a7cc7;margin-bottom:16px;">
       <strong>Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)</strong><br>
-      <span style="font-size:11px;color:#6090b0;">Minimum rate: $10.50/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
+      <span style="font-size:11px;color:#6090b0;">Minimum rate: $6.00/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
     </p>
     <div class="g2">
       <div>
@@ -1931,7 +1931,7 @@ function getTruckConfig() {
 // Haul-back   = one-way drive + load_allowance, reduced by credit %
 // ── FREIGHT RATE FORMULA ─────────────────────────────────────────────────────
 // Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)
-// Minimum: $10.50
+// Minimum: $6.00
 
 const ZONE_MULTIPLIERS = {
   Z0: {mult:1.00, label:"Z0 — Open/Rural (Palmdale, Lancaster, Victorville, Mojave)"},
@@ -1973,7 +1973,7 @@ function calcHaulRate(miles) {
   const accessMod = getAccessMod();
   const transferFee = getTransferFee();
   const base = ((0.2175 * miles) + 2.7) * 1.25 * zoneMult + accessMod + transferFee;
-  return Math.max(Math.round(base * 100) / 100, 10.50);
+  return Math.max(Math.round(base * 100) / 100, 6.00);
 }
 
 function updateFormulaBox(miles) {
@@ -1986,7 +1986,7 @@ function updateFormulaBox(miles) {
   const baseCalc = ((0.2175 * miles) + 2.7) * 1.25;
   const afterZone = baseCalc * zoneMult;
   const afterAccess = afterZone + accessMod;
-  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 10.50);
+  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 6.00);
   const zoneKey = s("zoneSelect") || "Z0";
   const zoneLabel = ZONE_MULTIPLIERS[zoneKey] ? ZONE_MULTIPLIERS[zoneKey].label : "Z0 — Open/Rural";
 
@@ -1997,7 +1997,7 @@ function updateFormulaBox(miles) {
   document.getElementById("fCycleTime").textContent  = (accessMod>=0?"+":"")+accessMod.toFixed(2)+" access modifier";
   document.getElementById("fCapacity").textContent   = transferFee>0 ? "+$1.75/ton transfer staging fee" : "No transfer fee";
   document.getElementById("fHaulback").textContent   = haulback==="back"?"Haul-Back applied":haulback==="round"?"Round Trip":"One-Way";
-  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===10.50?" (minimum)":"");
+  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===6.00?" (minimum)":"");
 }
 
 function getAutoHaulRate(miles) {
