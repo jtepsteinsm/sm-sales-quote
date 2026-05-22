@@ -4425,42 +4425,38 @@ function calcMilesManual() {
   });
 
   // ── PDF save: route via postMessage when embedded in DispatchHQ ──
-  // Patch savePdfToWebApp to send sm-pdf-data instead of downloading
+  // html2canvas hangs in iframe context — instead send HTML to parent for Drive
+  // save, then open print dialog for local PDF.
   var _origSavePdf = window.savePdfToWebApp;
-  window.savePdfToWebApp = async function () {
+  window.savePdfToWebApp = function () {
     if (!_embedded) { return _origSavePdf.apply(this, arguments); }
     var area    = document.getElementById('parea');
     var areaBrk = document.getElementById('pareaBrk');
     var el = (areaBrk && areaBrk.style.display === 'block') ? areaBrk
            : (area && area.classList.contains('show')) ? area : null;
     if (!el) { alert('Generate a quote first.'); return; }
+    var html = el.outerHTML;
     var cust = s('customer');
     var proj = s('projname') || s('location') || '';
     var quoteName = [cust, proj, qnum ? 'Q' + qnum : ''].filter(Boolean).join('_') || 'Quote';
     var btn = document.querySelector('.btn.btnp');
-    if (btn) { btn.textContent = '\u23f3 Saving PDF\u2026'; btn.disabled = true; }
-    try {
-      var canvas = await Promise.race([
-        html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', imageTimeout: 8000, logging: false }),
-        new Promise(function (_, reject) { setTimeout(function () { reject(new Error('Render timeout')); }, 25000); })
-      ]);
-      var imgW = canvas.width / 2, imgH = canvas.height / 2;
-      var doc = new window.jspdf.jsPDF({ unit: 'px', format: [imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape' });
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
-      var base64 = doc.output('datauristring').split(',')[1];
-      window.parent.postMessage({ type: 'sm-pdf-data', base64: base64, quoteName: quoteName }, '*');
-      // Safety timer: re-enable button if sm-pdf-done never arrives within 45s
-      if (_pdfSafetyTimer) clearTimeout(_pdfSafetyTimer);
-      _pdfSafetyTimer = setTimeout(function () {
-        _pdfSafetyTimer = null;
-        var b = document.querySelector('.btn.btnp');
-        if (b && b.disabled) { b.textContent = '\u2399 PRINT / SAVE PDF'; b.disabled = false; }
-      }, 45000);
-    } catch (err) {
-      if (_pdfSafetyTimer) { clearTimeout(_pdfSafetyTimer); _pdfSafetyTimer = null; }
-      if (btn) { btn.textContent = '\u2399 PRINT / SAVE PDF'; btn.disabled = false; }
-      alert('PDF error: ' + err.message);
-    }
+    if (btn) { btn.textContent = '\u23f3 Saving\u2026'; btn.disabled = true; }
+    // Send HTML to parent → saved to Drive
+    window.parent.postMessage({
+      type:      'sm-quote-data',
+      html:      html,
+      quoteName: quoteName,
+      quoteData: _collectQuoteData()
+    }, '*');
+    // Safety timer re-enables button if parent never responds
+    if (_pdfSafetyTimer) clearTimeout(_pdfSafetyTimer);
+    _pdfSafetyTimer = setTimeout(function () {
+      _pdfSafetyTimer = null;
+      var b = document.querySelector('.btn.btnp');
+      if (b && b.disabled) { b.textContent = '\u2399 PRINT / SAVE PDF'; b.disabled = false; }
+    }, 30000);
+    // Also open print dialog so user can save as PDF locally
+    setTimeout(function () { window.print(); }, 300);
   };
 })();
 </script>
