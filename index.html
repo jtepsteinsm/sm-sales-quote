@@ -4032,7 +4032,7 @@ async function savePdfToWebApp() {
   var proj = ((document.getElementById('projname')||{}).value||'').trim();
   var loc  = ((document.getElementById('location')||{}).value||'').trim();
   var mid  = proj || loc || '';
-  var quoteName = [cust, mid, qn ? 'Q'+qn : ''].filter(Boolean).join('_') || 'Quote';
+  var quoteName = [cust, mid, qn || ''].filter(Boolean).join('_') || 'Quote';
   var btn = document.querySelector('.btn.btnp');
   if (btn) { btn.textContent = '⏳ Saving PDF...'; btn.disabled = true; }
   try {
