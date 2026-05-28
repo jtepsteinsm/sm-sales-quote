@@ -1766,6 +1766,15 @@ window.onload = function() {
   loadSettings();
   loadZones();
   renderSavedCustSelect();
+  // Sync customers from parent (Apps Script) via postMessage
+  window.parent.postMessage({type: "sm-get-customers"}, "*");
+  window.addEventListener("message", function(e) {
+    if (!e.data || e.data.type !== "sm-customers-data") return;
+    if (e.data.customers && e.data.customers.length) {
+      localStorage.setItem("smSalesCustomers", JSON.stringify(e.data.customers));
+      renderSavedCustSelect();
+    }
+  });
   setQStyle();
   document.addEventListener("input", function(e) {
     if(["INPUT","SELECT","TEXTAREA"].includes(e.target.tagName)) calc();
@@ -2436,6 +2445,20 @@ function initMaps() {
     }
   });
 
+  // Disposal / Receiving Site autocomplete
+  const ddispEl = document.getElementById("ddisp");
+  if(ddispEl) {
+    var dispPid = null;
+    const dispAC = new google.maps.places.Autocomplete(ddispEl,{
+      fields:["place_id","formatted_address","geometry"]
+    });
+    dispAC.addListener("place_changed", function() {
+      const p = dispAC.getPlace();
+      if(p.formatted_address) ddispEl.value = p.formatted_address;
+      if(p.place_id) { dispPid = p.place_id; }
+    });
+  }
+
   // Manual plant address fields
   ["pa1","pa2","hpa","fpa"].forEach(function(fid) {
     const el = document.getElementById(fid);
@@ -2782,6 +2805,7 @@ function saveCustomer() {
     custs.sort(function(a,b){ return a.customer.localeCompare(b.customer); });
   }
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  window.parent.postMessage({type: "sm-save-customers", customers: custs}, "*");
   renderSavedCustSelect();
   // Select the just-saved customer
   var sel = document.getElementById("savedCustSel");
@@ -2804,6 +2828,7 @@ function deleteSavedCustomer() {
   if(!confirm("Delete saved customer \""+data.customer+"\"?")) return;
   custs.splice(parseInt(sel.value), 1);
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  window.parent.postMessage({type: "sm-save-customers", customers: custs}, "*");
   sel.value = "";
   renderSavedCustSelect();
 }
