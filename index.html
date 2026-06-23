@@ -4374,6 +4374,36 @@ function calcMilesManual() {
   }
 
   // ── Incoming messages from DispatchHQ ────────────────────────────
+  // Render the active quote area to a PDF base64 and reply to parent.
+  // Parent (DispatchHQ Code.js) posts 'sm-get-quote-pdf' for Save to Drive /
+  // Send by Text and waits for 'sm-pdf-data' {base64,...} or 'sm-pdf-error'.
+  async function _generateQuotePdf() {
+    var area    = document.getElementById('parea');
+    var areaBrk = document.getElementById('pareaBrk');
+    var el = (areaBrk && areaBrk.style.display === 'block') ? areaBrk
+           : (area && area.classList.contains('show')) ? area : null;
+    var cust = s('customer');
+    var proj = s('projname') || s('location') || '';
+    var quoteName = [cust, proj, qnum ? 'Q' + qnum : ''].filter(Boolean).join('_') || 'Quote';
+    if (!el) {
+      window.parent.postMessage({ type: 'sm-pdf-error', error: 'Generate a quote first.' }, '*');
+      return;
+    }
+    try {
+      var canvas = await Promise.race([
+        html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', imageTimeout: 8000, logging: false }),
+        new Promise(function (_, reject) { setTimeout(function () { reject(new Error('Render timeout')); }, 25000); })
+      ]);
+      var imgW = canvas.width / 2, imgH = canvas.height / 2;
+      var doc = new window.jspdf.jsPDF({ unit: 'px', format: [imgW, imgH], orientation: imgH > imgW ? 'portrait' : 'landscape' });
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+      var base64 = doc.output('datauristring').split(',')[1];
+      window.parent.postMessage({ type: 'sm-pdf-data', base64: base64, quoteName: quoteName, quoteData: _collectQuoteData() }, '*');
+    } catch (err) {
+      window.parent.postMessage({ type: 'sm-pdf-error', error: (err && err.message) || String(err) }, '*');
+    }
+  }
+
   window.addEventListener('message', function (e) {
     if (!e.data || !e.data.type) return;
 
@@ -4398,6 +4428,12 @@ function calcMilesManual() {
     }
 
     // sm-load-quote: DispatchHQ is recalling a saved quote — populate the form
+    // sm-get-quote-pdf: DispatchHQ wants a rendered PDF (Save to Drive / Send by Text)
+    if (e.data.type === 'sm-get-quote-pdf') {
+      _generateQuotePdf();
+      return;
+    }
+
     if (e.data.type === 'sm-load-quote') {
       var d = e.data.data || {};
       _setField('customer', d.customer);
