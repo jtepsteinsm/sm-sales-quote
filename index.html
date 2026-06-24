@@ -2959,6 +2959,10 @@ function saveCustomer() {
     custs.sort(function(a,b){ return a.customer.localeCompare(b.customer); });
   }
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  // Sync to the shared spreadsheet when embedded in DispatchHQ
+  if(window.self !== window.top) {
+    try { window.parent.postMessage({ type:"sm-upsert-customer", customer:data }, '*'); } catch(e) {}
+  }
   renderSavedCustSelect();
   // Select the just-saved customer
   var sel = document.getElementById("savedCustSel");
@@ -2981,6 +2985,10 @@ function deleteSavedCustomer() {
   if(!confirm("Delete saved customer \""+data.customer+"\"?")) return;
   custs.splice(parseInt(sel.value), 1);
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
+  // Sync deletion to the shared spreadsheet when embedded in DispatchHQ
+  if(window.self !== window.top) {
+    try { window.parent.postMessage({ type:"sm-delete-customer", name:data.customer }, '*'); } catch(e) {}
+  }
   sel.value = "";
   renderSavedCustSelect();
 }
@@ -4537,7 +4545,19 @@ function calcMilesManual() {
       var btn = document.querySelector('.btn.btnp');
       if (btn) { btn.textContent = '\u2399 PRINT / SAVE PDF'; btn.disabled = false; }
     }
+
+    // sm-customers-data: shared customer list from the spreadsheet (source of truth)
+    if (e.data.type === 'sm-customers-data') {
+      var list = Array.isArray(e.data.customers) ? e.data.customers : [];
+      try { localStorage.setItem(CUST_KEY, JSON.stringify(list)); } catch (_e) {}
+      if (typeof renderSavedCustSelect === 'function') renderSavedCustSelect();
+    }
   });
+
+  // When embedded, pull the shared customer list on startup
+  if (_embedded) {
+    try { window.parent.postMessage({ type: 'sm-get-customers' }, '*'); } catch (_e) {}
+  }
 
   // ── PDF save: route via postMessage when embedded in DispatchHQ ──
   // html2canvas hangs in iframe context — instead send HTML to parent for Drive
