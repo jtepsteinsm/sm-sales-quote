@@ -4419,6 +4419,7 @@ function calcMilesManual() {
 (function () {
   var _embedded = (window.self !== window.top);
   var _pdfSafetyTimer = null;
+  var _custMigrated = false;
 
   // ── Helper: collect current form values into a structured object ──
   function _collectQuoteData() {
@@ -4549,6 +4550,24 @@ function calcMilesManual() {
     // sm-customers-data: shared customer list from the spreadsheet (source of truth)
     if (e.data.type === 'sm-customers-data') {
       var list = Array.isArray(e.data.customers) ? e.data.customers : [];
+      // One-time migration: push any browser-local customers not yet on the
+      // shared sheet up to the server, so existing per-browser lists get merged.
+      if (!_custMigrated) {
+        _custMigrated = true;
+        var localCusts = [];
+        try { localCusts = JSON.parse(localStorage.getItem(CUST_KEY) || '[]'); } catch (_e) {}
+        var have = {};
+        list.forEach(function (c) { have[(c.customer || '').toLowerCase().trim()] = true; });
+        localCusts.forEach(function (c) {
+          var key = (c.customer || '').toLowerCase().trim();
+          if (key && !have[key]) {
+            have[key] = true;
+            list.push(c);
+            try { window.parent.postMessage({ type: 'sm-upsert-customer', customer: c }, '*'); } catch (_e2) {}
+          }
+        });
+        list.sort(function (a, b) { return (a.customer || '').localeCompare(b.customer || ''); });
+      }
       try { localStorage.setItem(CUST_KEY, JSON.stringify(list)); } catch (_e) {}
       if (typeof renderSavedCustSelect === 'function') renderSavedCustSelect();
     }
