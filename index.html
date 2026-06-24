@@ -4547,28 +4547,33 @@ function calcMilesManual() {
       if (btn) { btn.textContent = '\u2399 PRINT / SAVE PDF'; btn.disabled = false; }
     }
 
-    // sm-customers-data: shared customer list from the spreadsheet (source of truth)
+    // sm-customers-data: shared customer list from the spreadsheet.
+    // Merge-only: the shared sheet and this browser's cache are UNIONED, never
+    // replaced — so an empty/partial server reply can never wipe local data.
     if (e.data.type === 'sm-customers-data') {
       var list = Array.isArray(e.data.customers) ? e.data.customers : [];
-      // One-time migration: push any browser-local customers not yet on the
-      // shared sheet up to the server, so existing per-browser lists get merged.
-      if (!_custMigrated) {
-        _custMigrated = true;
-        var localCusts = [];
-        try { localCusts = JSON.parse(localStorage.getItem(CUST_KEY) || '[]'); } catch (_e) {}
-        var have = {};
-        list.forEach(function (c) { have[(c.customer || '').toLowerCase().trim()] = true; });
-        localCusts.forEach(function (c) {
-          var key = (c.customer || '').toLowerCase().trim();
-          if (key && !have[key]) {
-            have[key] = true;
-            list.push(c);
+      var localCusts = [];
+      try { localCusts = JSON.parse(localStorage.getItem(CUST_KEY) || '[]'); } catch (_e) {}
+      var have = {};
+      list.forEach(function (c) { have[(c.customer || '').toLowerCase().trim()] = true; });
+      // Union any browser-local customers the shared sheet doesn't have yet,
+      // and (once per load) push those missing ones up to the shared sheet.
+      localCusts.forEach(function (c) {
+        var key = (c.customer || '').toLowerCase().trim();
+        if (key && !have[key]) {
+          have[key] = true;
+          list.push(c);
+          if (!_custMigrated) {
             try { window.parent.postMessage({ type: 'sm-upsert-customer', customer: c }, '*'); } catch (_e2) {}
           }
-        });
-        list.sort(function (a, b) { return (a.customer || '').localeCompare(b.customer || ''); });
+        }
+      });
+      _custMigrated = true;
+      list.sort(function (a, b) { return (a.customer || '').localeCompare(b.customer || ''); });
+      // Never blank a populated cache with an empty result.
+      if (list.length > 0 || localCusts.length === 0) {
+        try { localStorage.setItem(CUST_KEY, JSON.stringify(list)); } catch (_e) {}
       }
-      try { localStorage.setItem(CUST_KEY, JSON.stringify(list)); } catch (_e) {}
       if (typeof renderSavedCustSelect === 'function') renderSavedCustSelect();
     }
   });
