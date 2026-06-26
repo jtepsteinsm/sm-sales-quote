@@ -4645,7 +4645,7 @@ function calcMilesManual() {
   var ALLOWED_DOMAIN = "smsalesinc.com";
 
   var fbReady = false, db = null, auth = null, storage = null, user = null;
-  var _fsQuoteId = null, _saving = false;
+  var _fsQuoteId = null, _saving = false, _restoring = false;
 
   // ── helpers ──────────────────────────────────────────────────────────
   function uid() {
@@ -4778,7 +4778,9 @@ function calcMilesManual() {
     var qidEl = document.getElementById("qid");
     if (qidEl && typeof qnum !== "undefined") qidEl.textContent = "QUOTE #" + qnum;
     if (typeof calc === "function") calc();
-    if (typeof genQuote === "function") genQuote();
+    _restoring = true;
+    try { if (typeof genQuote === "function") genQuote(); }
+    finally { _restoring = false; }
   }
 
   // ── Firestore quote numbering ────────────────────────────────────────
@@ -4840,19 +4842,22 @@ function calcMilesManual() {
     bar.style.cssText = "position:fixed;top:0;right:0;z-index:99998;display:flex;align-items:center;gap:8px;padding:6px 12px;background:#0f2747;color:#fff;font:600 12px system-ui,sans-serif;border-bottom-left-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);";
     bar.innerHTML =
       '<span id="smAuthStatus" style="opacity:.9;">Not signed in</span>' +
+      '<button id="smQuotesBtn" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#2a6ad0;color:#fff;">Quotes</button>' +
       '<button id="smSignIn" style="cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#2a8a4a;color:#fff;">Sign in with Google</button>' +
       '<button id="smSignOut" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#444;color:#fff;">Sign out</button>';
     document.body.appendChild(bar);
     document.getElementById("smSignIn").onclick = doSignIn;
     document.getElementById("smSignOut").onclick = function () { auth.signOut(); };
+    document.getElementById("smQuotesBtn").onclick = openPanel;
   }
   function refreshBar() {
     var st = document.getElementById("smAuthStatus");
     var si = document.getElementById("smSignIn");
     var so = document.getElementById("smSignOut");
+    var qb = document.getElementById("smQuotesBtn");
     if (!st) return;
-    if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; }
-    else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; }
+    if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; if (qb) qb.style.display = ""; }
+    else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; if (qb) qb.style.display = "none"; }
   }
 
   // ── full-screen gate: hide the builder until a verified @domain user
@@ -4892,6 +4897,107 @@ function calcMilesManual() {
     });
   }
 
+  // ── quotes list panel (shared, searchable) + open into builder ───────
+  var _allQuotes = [];   // cached [{id, data}] from last load
+
+  function money(n) { n = +n || 0; return "$" + n.toFixed(2); }
+  function fmtDate(ts) {
+    try {
+      var d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+      if (!d) return "";
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+        " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    } catch (e) { return ""; }
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function buildPanel() {
+    var p = document.createElement("div");
+    p.id = "smPanel";
+    p.style.cssText = "position:fixed;inset:0;z-index:100001;display:none;background:rgba(8,20,40,.55);";
+    p.innerHTML =
+      '<div style="position:absolute;top:0;right:0;height:100%;width:min(560px,100%);background:#f4f7fc;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.3);">' +
+      '<div style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:#0f2747;color:#fff;">' +
+      '<div style="font:800 16px system-ui,sans-serif;flex:1;">Saved Quotes</div>' +
+      '<button id="smPanelRefresh" style="cursor:pointer;border:0;border-radius:6px;padding:6px 10px;font:600 12px system-ui;background:#2a6ad0;color:#fff;">Refresh</button>' +
+      '<button id="smPanelClose" style="cursor:pointer;border:0;border-radius:6px;padding:6px 11px;font:600 14px system-ui;background:#444;color:#fff;">✕</button>' +
+      '</div>' +
+      '<div style="padding:10px 14px;background:#fff;border-bottom:1px solid #dce4f0;">' +
+      '<input id="smPanelSearch" placeholder="Search customer, project, quote #, phone…" style="width:100%;box-sizing:border-box;padding:9px 11px;font:14px system-ui;border:1.5px solid #b0c8e8;border-radius:7px;">' +
+      '</div>' +
+      '<div id="smPanelList" style="flex:1;overflow:auto;padding:8px 10px;font:13px system-ui;color:#111;"></div>' +
+      '</div>';
+    document.body.appendChild(p);
+    document.getElementById("smPanelClose").onclick = closePanel;
+    document.getElementById("smPanelRefresh").onclick = loadQuotes;
+    document.getElementById("smPanelSearch").addEventListener("input", function () { renderList(this.value); });
+    p.addEventListener("click", function (e) { if (e.target === p) closePanel(); });
+  }
+  function openPanel() {
+    if (!document.getElementById("smPanel")) buildPanel();
+    document.getElementById("smPanel").style.display = "block";
+    loadQuotes();
+  }
+  function closePanel() {
+    var p = document.getElementById("smPanel"); if (p) p.style.display = "none";
+  }
+  function loadQuotes() {
+    if (!fbReady || !user) return;
+    var listEl = document.getElementById("smPanelList");
+    if (listEl) listEl.innerHTML = '<div style="padding:20px;text-align:center;opacity:.6;">Loading…</div>';
+    db.collection("quotes").orderBy("lastModifiedAt", "desc").limit(300).get().then(function (snap) {
+      _allQuotes = [];
+      snap.forEach(function (doc) { _allQuotes.push({ id: doc.id, data: doc.data() }); });
+      var sb = document.getElementById("smPanelSearch");
+      renderList(sb ? sb.value : "");
+    }).catch(function (e) {
+      console.warn("List load failed", e);
+      if (listEl) listEl.innerHTML = '<div style="padding:20px;text-align:center;color:#c0392b;">Failed to load: ' + esc(e && e.message || e) + '</div>';
+    });
+  }
+  function renderList(filter) {
+    var listEl = document.getElementById("smPanelList"); if (!listEl) return;
+    var f = (filter || "").toLowerCase().trim();
+    var rows = _allQuotes.filter(function (q) {
+      if (!f) return true;
+      var d = q.data || {};
+      return [d.quoteNum, d.customer, d.projname, d.phone].join(" ").toLowerCase().indexOf(f) !== -1;
+    });
+    if (!rows.length) {
+      listEl.innerHTML = '<div style="padding:24px;text-align:center;opacity:.6;">' + (_allQuotes.length ? "No matches." : "No saved quotes yet.") + '</div>';
+      return;
+    }
+    var html = "";
+    rows.forEach(function (q) {
+      var d = q.data || {};
+      var cur = (q.id === _fsQuoteId);
+      html += '<div class="smQRow" data-id="' + esc(q.id) + '" style="cursor:pointer;background:#fff;border:1.5px solid ' + (cur ? "#2a8a4a" : "#dce4f0") + ';border-radius:8px;padding:10px 12px;margin-bottom:8px;">' +
+        '<div style="display:flex;gap:8px;align-items:baseline;">' +
+        '<span style="font-weight:800;color:#0f2747;">' + esc(d.quoteNum || "—") + '</span>' +
+        '<span style="font-weight:700;flex:1;">' + esc(d.customer || "(no customer)") + '</span>' +
+        '<span style="font-weight:800;color:#1a7a3a;">' + money(d.total) + '</span>' +
+        '</div>' +
+        (d.projname ? '<div style="opacity:.75;margin-top:2px;">' + esc(d.projname) + '</div>' : '') +
+        '<div style="opacity:.55;font-size:11px;margin-top:4px;">' + esc((d.lastModifiedBy || "").split("@")[0]) + ' · ' + fmtDate(d.lastModifiedAt) + (cur ? ' · <b style="color:#2a8a4a;">open now</b>' : '') + '</div>' +
+        '</div>';
+    });
+    listEl.innerHTML = html;
+    listEl.querySelectorAll(".smQRow").forEach(function (el) {
+      el.onclick = function () { openQuote(el.getAttribute("data-id")); };
+    });
+  }
+  // Open a saved quote into the builder and bind it for edit-resave:
+  // setting _fsQuoteId means the next Generate updates THIS doc (same id).
+  function openQuote(id) {
+    var hit = null;
+    for (var i = 0; i < _allQuotes.length; i++) { if (_allQuotes[i].id === id) { hit = _allQuotes[i]; break; } }
+    if (!hit) return;
+    _fsQuoteId = id;
+    restore(hit.data);
+    closePanel();
+    toast("Opened " + (hit.data && hit.data.quoteNum || ""), true);
+  }
+
   function init() {
     if (!TOP) return; // embedded: leave current postMessage behavior alone
     if (!window.firebase || !firebase.initializeApp) { console.warn("Firebase SDK not loaded"); return; }
@@ -4918,9 +5024,9 @@ function calcMilesManual() {
     });
 
     // public hooks for the generate flow + later steps
-    window._smOnGenerate = function () { if (user) saveQuote(); };
+    window._smOnGenerate = function () { if (user && !_restoring) saveQuote(); };
     window._smNewQuote = function () { _fsQuoteId = null; };
-    window.SMQuoteStore = { save: saveQuote, restore: restore, serialize: serialize, getId: function () { return _fsQuoteId; } };
+    window.SMQuoteStore = { save: saveQuote, restore: restore, serialize: serialize, openPanel: openPanel, getId: function () { return _fsQuoteId; } };
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
