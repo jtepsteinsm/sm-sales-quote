@@ -3213,6 +3213,7 @@ document.getElementById("ppaylbl").textContent=pay==="cc"?"TOTAL (CREDIT CARD)":
   document.getElementById("pareaBrk").style.display = "none";
   document.getElementById("parea").classList.add("show");
   document.getElementById("parea").scrollIntoView({behavior:"smooth"});
+  if(window._smOnGenerate) window._smOnGenerate();
 }
 
 // ── QUOTE STYLE ───────────────────────────────────────────────────────────────
@@ -4249,6 +4250,7 @@ function genBreakdownQuote() {
   document.getElementById("parea").style.display = "none";
   document.getElementById("parea").classList.remove("show");
   document.getElementById("pareaBrk").scrollIntoView({behavior:"smooth"});
+  if(window._smOnGenerate) window._smOnGenerate();
 }
 
 function printQ() {
@@ -4356,6 +4358,7 @@ function clearAll() {
   qnum="Q"+Date.now().toString().slice(-6);
   document.getElementById("qid").textContent="QUOTE #"+qnum;
   document.getElementById("qdate").value=new Date().toISOString().split("T")[0];
+  if(window._smNewQuote) window._smNewQuote();
   calc();
 }
 function mapsLoadError() {
@@ -4617,6 +4620,277 @@ function calcMilesManual() {
     // Also open print dialog so user can save as PDF locally
     setTimeout(function () { window.print(); }, 300);
   };
+})();
+</script>
+
+<!-- ── SM Firebase Quote Store (Option B: direct browser → Firestore) ──── -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+(function () {
+  // Only active at top level — Google sign-in is unreliable in cross-origin
+  // iframes (third-party cookies). Embedded view keeps existing behavior.
+  var TOP = (window.self === window.top);
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyCUiumSMtdIFHPKvI-jSwsseMxZIMQmZ14",
+    authDomain: "positive-apex-490623-j2.firebaseapp.com",
+    projectId: "positive-apex-490623-j2",
+    storageBucket: "positive-apex-490623-j2.firebasestorage.app",
+    messagingSenderId: "824305714303",
+    appId: "1:824305714303:web:4d7788ae47966b2c57ab4a"
+  };
+  var ALLOWED_DOMAIN = "smsalesinc.com";
+
+  var fbReady = false, db = null, auth = null, storage = null, user = null;
+  var _fsQuoteId = null, _saving = false;
+
+  // ── helpers ──────────────────────────────────────────────────────────
+  function uid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, "");
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+  }
+  function toast(msg, ok) {
+    var t = document.getElementById("smToast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "smToast";
+      t.style.cssText = "position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;font:600 13px system-ui,sans-serif;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;pointer-events:none;";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = ok === false ? "#c0392b" : "#1a7a3a";
+    t.style.opacity = "1";
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.style.opacity = "0"; }, 2600);
+  }
+
+  // ── full-payload serializer ──────────────────────────────────────────
+  // Captures raw INPUT state so a re-run of the engine reconstructs the
+  // quote exactly: all id'd inputs/selects/textareas + the dynamic
+  // multi-material (mmTbody) and demo (demoTbody) rows + engine globals.
+  function serialize() {
+    var inputs = {};
+    document.querySelectorAll("input[id],select[id],textarea[id]").forEach(function (el) {
+      if (!el.id) return;
+      if (el.type === "checkbox" || el.type === "radio") inputs[el.id] = { c: el.checked };
+      else inputs[el.id] = { v: el.value };
+    });
+    function rowVals(tr, cls) {
+      var o = {};
+      cls.forEach(function (c) { var e = tr.querySelector("." + c); o[c] = e ? e.value : ""; });
+      return o;
+    }
+    var materials = [], demo = [];
+    var mmCls = ["mm-plant", "mm-plant-custom-name", "mm-plant-custom-addr", "mm-mat",
+      "mm-mat-custom", "mm-qty", "mm-price", "mm-haul", "mm-env", "mm-truck", "mm-unit", "mm-minload"];
+    var dmCls = ["dm-mat", "dm-mat-custom", "dm-qty", "dm-unit", "dm-truck", "dm-haul", "dm-dump", "dm-minload"];
+    var mb = document.getElementById("mmTbody");
+    if (mb) mb.querySelectorAll("tr").forEach(function (tr) { materials.push(rowVals(tr, mmCls)); });
+    var dbo = document.getElementById("demoTbody");
+    if (dbo) dbo.querySelectorAll("tr").forEach(function (tr) { demo.push(rowVals(tr, dmCls)); });
+    var gEl = document.getElementById("tgrand");
+    var grand = gEl ? (parseFloat((gEl.textContent || "").replace(/[$,]/g, "")) || 0) : 0;
+    return {
+      schema: 2,
+      state: {
+        qnum: (typeof qnum !== "undefined") ? qnum : "",
+        qt: (typeof qt !== "undefined") ? qt : "std",
+        qStyle: (typeof qStyle !== "undefined") ? qStyle : "breakdown",
+        pay: (typeof pay !== "undefined") ? pay : "cash",
+        currentMiles: (typeof currentMiles !== "undefined") ? currentMiles : 0,
+        currentMiles2: (typeof currentMiles2 !== "undefined") ? currentMiles2 : 0,
+        truck: (typeof truck !== "undefined") ? truck : null
+      },
+      inputs: inputs,
+      materials: materials,
+      demo: demo,
+      toggles: {
+        perTonOnly: !!(document.getElementById("optPerTonOnly") || {}).checked,
+        hideGrand: !!(document.getElementById("optHideGrand") || {}).checked
+      },
+      header: {
+        customer: (typeof s === "function") ? s("customer") : "",
+        contact: (typeof s === "function") ? s("contact") : "",
+        phone: (typeof s === "function") ? s("phone") : "",
+        email: (typeof s === "function") ? s("email") : "",
+        projname: (typeof s === "function") ? s("projname") : "",
+        location: (typeof s === "function") ? s("location") : ""
+      },
+      total: grand
+    };
+  }
+
+  // ── restore (used by Open/Edit in later steps) ───────────────────────
+  function restore(doc) {
+    var p = (doc && doc.payload) ? doc.payload : doc;
+    if (!p) return;
+    if (p.state) {
+      if (typeof qnum !== "undefined") qnum = p.state.qnum || qnum;
+      if (typeof qt !== "undefined") qt = p.state.qt || qt;
+      if (typeof qStyle !== "undefined") qStyle = p.state.qStyle || qStyle;
+      if (typeof pay !== "undefined") pay = p.state.pay || pay;
+      if (typeof currentMiles !== "undefined") currentMiles = p.state.currentMiles || 0;
+      if (typeof currentMiles2 !== "undefined") currentMiles2 = p.state.currentMiles2 || 0;
+      if (typeof truck !== "undefined") truck = p.state.truck || null;
+    }
+    // Scalar inputs first (sets brkMatCount/taxr/toggles/header before render)
+    if (p.inputs) Object.keys(p.inputs).forEach(function (id) {
+      var el = document.getElementById(id); if (!el) return;
+      var r = p.inputs[id];
+      if (r.c !== undefined) el.checked = r.c; else el.value = r.v;
+    });
+    if (typeof renderMMRows === "function") renderMMRows();
+    if (p.materials) {
+      var trs = document.querySelectorAll("#mmTbody tr");
+      p.materials.forEach(function (m, i) {
+        var tr = trs[i]; if (!tr) return;
+        function set(c, val, fire) {
+          var e = tr.querySelector(c); if (!e) return; e.value = val;
+          if (fire) e.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        set(".mm-plant", m["mm-plant"], true);
+        set(".mm-plant-custom-name", m["mm-plant-custom-name"]);
+        set(".mm-plant-custom-addr", m["mm-plant-custom-addr"]); // no fire: avoid geocode override
+        set(".mm-mat", m["mm-mat"], true);
+        set(".mm-mat-custom", m["mm-mat-custom"]);
+        set(".mm-unit", m["mm-unit"], true);
+        set(".mm-truck", m["mm-truck"], true);
+        set(".mm-qty", m["mm-qty"]);
+        set(".mm-price", m["mm-price"]);
+        set(".mm-haul", m["mm-haul"]);
+        set(".mm-env", m["mm-env"]);
+        set(".mm-minload", m["mm-minload"]);
+      });
+    }
+    if (typeof renderDemoRows === "function") renderDemoRows();
+    if (p.demo) {
+      var dtrs = document.querySelectorAll("#demoTbody tr");
+      p.demo.forEach(function (m, i) {
+        var tr = dtrs[i]; if (!tr) return;
+        Object.keys(m).forEach(function (cls) {
+          var e = tr.querySelector("." + cls); if (e) e.value = m[cls];
+        });
+      });
+    }
+    var qidEl = document.getElementById("qid");
+    if (qidEl && typeof qnum !== "undefined") qidEl.textContent = "QUOTE #" + qnum;
+    if (typeof calc === "function") calc();
+    if (typeof genQuote === "function") genQuote();
+  }
+
+  // ── Firestore quote numbering ────────────────────────────────────────
+  function nextQuoteNum() {
+    var ref = db.collection("meta").doc("quoteCounter");
+    return db.runTransaction(function (t) {
+      return t.get(ref).then(function (d) {
+        var c = (d.exists && d.data().count) || 0;
+        c++;
+        t.set(ref, { count: c }, { merge: true });
+        return c;
+      });
+    }).then(function (n) { return "Q-" + String(n).padStart(4, "0"); });
+  }
+
+  // ── save (create-or-update same id) ──────────────────────────────────
+  function saveQuote() {
+    if (!fbReady || !user || _saving) return Promise.resolve();
+    _saving = true;
+    var payload = serialize();
+    var newDoc = !_fsQuoteId;
+    var pre = newDoc ? nextQuoteNum() : Promise.resolve(null);
+    return pre.then(function (assignedNum) {
+      if (newDoc) {
+        _fsQuoteId = "quo_" + uid();
+        if (typeof qnum !== "undefined") qnum = assignedNum;
+        payload.state.qnum = assignedNum;
+        var qidEl = document.getElementById("qid"); if (qidEl) qidEl.textContent = "QUOTE #" + assignedNum;
+        var bp = document.getElementById("bpqn"); if (bp) bp.textContent = assignedNum;
+        var bpa = document.getElementById("bpqn_addr"); if (bpa) bpa.textContent = "Quote #" + assignedNum;
+        var bpqn2 = document.getElementById("bpqn2"); if (bpqn2) bpqn2.textContent = assignedNum;
+      }
+      var now = firebase.firestore.FieldValue.serverTimestamp();
+      var ref = db.collection("quotes").doc(_fsQuoteId);
+      var rec = {
+        quoteNum: (typeof qnum !== "undefined") ? qnum : "",
+        customer: payload.header.customer || "",
+        projname: payload.header.projname || "",
+        phone: payload.header.phone || "",
+        total: payload.total,
+        payload: payload,
+        lastModifiedBy: user.email,
+        lastModifiedAt: now
+      };
+      if (newDoc) { rec.createdBy = user.email; rec.createdAt = now; }
+      return ref.set(rec, { merge: true });
+    }).then(function () {
+      toast("Saved " + ((typeof qnum !== "undefined") ? qnum : ""), true);
+    }).catch(function (e) {
+      console.warn("Quote save failed", e);
+      toast("Save failed: " + (e && e.message || e), false);
+    }).then(function () { _saving = false; });
+  }
+
+  // ── auth UI bar (top-level only) ─────────────────────────────────────
+  function buildBar() {
+    var bar = document.createElement("div");
+    bar.id = "smAuthBar";
+    bar.style.cssText = "position:fixed;top:0;right:0;z-index:99998;display:flex;align-items:center;gap:8px;padding:6px 12px;background:#0f2747;color:#fff;font:600 12px system-ui,sans-serif;border-bottom-left-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);";
+    bar.innerHTML =
+      '<span id="smAuthStatus" style="opacity:.9;">Not signed in</span>' +
+      '<button id="smSignIn" style="cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#2a8a4a;color:#fff;">Sign in with Google</button>' +
+      '<button id="smSignOut" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#444;color:#fff;">Sign out</button>';
+    document.body.appendChild(bar);
+    document.getElementById("smSignIn").onclick = doSignIn;
+    document.getElementById("smSignOut").onclick = function () { auth.signOut(); };
+  }
+  function refreshBar() {
+    var st = document.getElementById("smAuthStatus");
+    var si = document.getElementById("smSignIn");
+    var so = document.getElementById("smSignOut");
+    if (!st) return;
+    if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; }
+    else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; }
+  }
+  function doSignIn() {
+    var provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: "select_account" });
+    auth.signInWithPopup(provider).catch(function (e) {
+      console.warn("Sign-in failed", e); toast("Sign-in failed: " + (e && e.message || e), false);
+    });
+  }
+
+  function init() {
+    if (!TOP) return; // embedded: leave current postMessage behavior alone
+    if (!window.firebase || !firebase.initializeApp) { console.warn("Firebase SDK not loaded"); return; }
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+      storage = firebase.storage();
+      fbReady = true;
+    } catch (e) { console.warn("Firebase init failed", e); return; }
+
+    buildBar();
+    auth.onAuthStateChanged(function (u) {
+      if (u && u.email && u.email.toLowerCase().indexOf("@" + ALLOWED_DOMAIN) === -1) {
+        toast("Only @" + ALLOWED_DOMAIN + " accounts allowed", false);
+        auth.signOut(); user = null; refreshBar(); return;
+      }
+      user = u || null;
+      refreshBar();
+    });
+
+    // public hooks for the generate flow + later steps
+    window._smOnGenerate = function () { if (user) saveQuote(); };
+    window._smNewQuote = function () { _fsQuoteId = null; };
+    window.SMQuoteStore = { save: saveQuote, restore: restore, serialize: serialize, getId: function () { return _fsQuoteId; } };
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();
 </script>
 </body>
