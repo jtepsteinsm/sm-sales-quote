@@ -4854,6 +4854,36 @@ function calcMilesManual() {
     if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; }
     else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; }
   }
+
+  // ── full-screen gate: hide the builder until a verified @domain user
+  //    is signed in (top-level only). Deterrent against public viewing;
+  //    client source is always inspectable to whoever can load the page.
+  function buildGate() {
+    var g = document.createElement("div");
+    g.id = "smGate";
+    g.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:#0f2747;color:#fff;font:400 14px system-ui,sans-serif;text-align:center;";
+    g.innerHTML =
+      '<div style="max-width:340px;padding:28px 26px;">' +
+      '<div style="font:800 22px system-ui,sans-serif;letter-spacing:.5px;margin-bottom:6px;">SM Sales Quote Builder</div>' +
+      '<div id="smGateMsg" style="opacity:.85;margin-bottom:22px;">Checking sign-in&hellip;</div>' +
+      '<button id="smGateBtn" style="display:none;cursor:pointer;border:0;border-radius:8px;padding:11px 20px;font:600 15px system-ui,sans-serif;background:#2a8a4a;color:#fff;">Sign in with Google</button>' +
+      '<div style="opacity:.6;font-size:12px;margin-top:18px;">Restricted to @' + ALLOWED_DOMAIN + ' accounts.</div>' +
+      '</div>';
+    document.body.appendChild(g);
+    document.getElementById("smGateBtn").onclick = doSignIn;
+  }
+  function showGate(mode) {
+    var g = document.getElementById("smGate"); if (!g) return;
+    g.style.display = "flex";
+    var msg = document.getElementById("smGateMsg");
+    var btn = document.getElementById("smGateBtn");
+    if (mode === "signin") { if (msg) msg.textContent = "Sign in to continue."; if (btn) btn.style.display = ""; }
+    else { if (msg) msg.innerHTML = "Checking sign-in&hellip;"; if (btn) btn.style.display = "none"; }
+  }
+  function hideGate() {
+    var g = document.getElementById("smGate"); if (g) g.style.display = "none";
+  }
+
   function doSignIn() {
     var provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: "select_account" });
@@ -4874,13 +4904,17 @@ function calcMilesManual() {
     } catch (e) { console.warn("Firebase init failed", e); return; }
 
     buildBar();
+    buildGate();
     auth.onAuthStateChanged(function (u) {
-      if (u && u.email && u.email.toLowerCase().indexOf("@" + ALLOWED_DOMAIN) === -1) {
-        toast("Only @" + ALLOWED_DOMAIN + " accounts allowed", false);
-        auth.signOut(); user = null; refreshBar(); return;
+      var validDomain = !!(u && u.email && u.emailVerified &&
+        u.email.toLowerCase().endsWith("@" + ALLOWED_DOMAIN));
+      if (u && !validDomain) {
+        toast("Only verified @" + ALLOWED_DOMAIN + " accounts allowed", false);
+        auth.signOut(); user = null; refreshBar(); showGate("signin"); return;
       }
       user = u || null;
       refreshBar();
+      if (user) hideGate(); else showGate("signin");
     });
 
     // public hooks for the generate flow + later steps
