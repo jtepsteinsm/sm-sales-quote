@@ -4843,21 +4843,24 @@ function calcMilesManual() {
     bar.innerHTML =
       '<span id="smAuthStatus" style="opacity:.9;">Not signed in</span>' +
       '<button id="smQuotesBtn" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#2a6ad0;color:#fff;">Quotes</button>' +
+      '<button id="smShareBtn" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#b8742a;color:#fff;">Share PDF</button>' +
       '<button id="smSignIn" style="cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#2a8a4a;color:#fff;">Sign in with Google</button>' +
       '<button id="smSignOut" style="display:none;cursor:pointer;border:0;border-radius:6px;padding:5px 10px;font:inherit;background:#444;color:#fff;">Sign out</button>';
     document.body.appendChild(bar);
     document.getElementById("smSignIn").onclick = doSignIn;
     document.getElementById("smSignOut").onclick = function () { auth.signOut(); };
     document.getElementById("smQuotesBtn").onclick = openPanel;
+    document.getElementById("smShareBtn").onclick = sharePdf;
   }
   function refreshBar() {
     var st = document.getElementById("smAuthStatus");
     var si = document.getElementById("smSignIn");
     var so = document.getElementById("smSignOut");
     var qb = document.getElementById("smQuotesBtn");
+    var shb = document.getElementById("smShareBtn");
     if (!st) return;
-    if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; if (qb) qb.style.display = ""; }
-    else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; if (qb) qb.style.display = "none"; }
+    if (user) { st.textContent = "✓ " + user.email; si.style.display = "none"; so.style.display = ""; if (qb) qb.style.display = ""; if (shb) shb.style.display = ""; }
+    else { st.textContent = "Sign in to save quotes"; si.style.display = ""; so.style.display = "none"; if (qb) qb.style.display = "none"; if (shb) shb.style.display = "none"; }
   }
 
   // ── full-screen gate: hide the builder until a verified @domain user
@@ -4998,6 +5001,94 @@ function calcMilesManual() {
     toast("Opened " + (hit.data && hit.data.quoteNum || ""), true);
   }
 
+  // ── share: render quote → PDF → Firebase Storage → shareable link ────
+  function pickArea() {
+    var areaBrk = document.getElementById("pareaBrk");
+    var area = document.getElementById("parea");
+    if (areaBrk && areaBrk.style.display === "block") return areaBrk;
+    if (area && area.classList.contains("show")) return area;
+    return null;
+  }
+  function quoteName() {
+    var cust = (typeof s === "function") ? s("customer") : "";
+    var proj = (typeof s === "function") ? (s("projname") || s("location")) : "";
+    var qn = (typeof qnum !== "undefined" && qnum) ? qnum : "";
+    var parts = [cust, proj, qn].filter(Boolean);
+    var n = parts.join("_").replace(/[^\w\-]+/g, "_").replace(/_+/g, "_") || "Quote";
+    return n;
+  }
+  function pdfBlob(el) {
+    return html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", imageTimeout: 8000, logging: false })
+      .then(function (canvas) {
+        var imgW = canvas.width / 2, imgH = canvas.height / 2;
+        var doc = new window.jspdf.jsPDF({ unit: "px", format: [imgW, imgH], orientation: imgH > imgW ? "portrait" : "landscape" });
+        doc.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, imgW, imgH);
+        return doc.output("blob");
+      });
+  }
+  function sharePdf() {
+    if (!fbReady || !user) return;
+    var el = pickArea();
+    if (!el) { toast("Generate a quote first.", false); return; }
+    var btn = document.getElementById("smShareBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "Building…"; }
+    var ensure = _fsQuoteId ? Promise.resolve() : saveQuote();
+    ensure.then(function () {
+      if (!_fsQuoteId) throw new Error("Save failed — cannot share.");
+      return pdfBlob(el);
+    }).then(function (blob) {
+      var name = quoteName() + ".pdf";
+      var ref = storage.ref().child("quotes/" + _fsQuoteId + "/" + name);
+      return ref.put(blob, { contentType: "application/pdf" }).then(function () {
+        return ref.getDownloadURL();
+      }).then(function (url) {
+        return db.collection("quotes").doc(_fsQuoteId).set({
+          pdfUrl: url, pdfName: name,
+          lastModifiedBy: user.email,
+          lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).then(function () { return url; });
+      });
+    }).then(function (url) {
+      showShareModal(url);
+    }).catch(function (e) {
+      console.warn("Share failed", e);
+      toast("Share failed: " + (e && e.message || e), false);
+    }).then(function () {
+      if (btn) { btn.disabled = false; btn.textContent = "Share PDF"; }
+    });
+  }
+  function showShareModal(url) {
+    var phone = (typeof s === "function") ? (s("phone") || "") : "";
+    var sms = "sms:" + phone.replace(/[^\d+]/g, "") + "?&body=" + encodeURIComponent("Here is your quote: " + url);
+    var m = document.getElementById("smShareModal");
+    if (m) m.remove();
+    m = document.createElement("div");
+    m.id = "smShareModal";
+    m.style.cssText = "position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(8,20,40,.55);";
+    m.innerHTML =
+      '<div style="background:#fff;border-radius:12px;padding:22px 22px 18px;width:min(460px,92%);font:14px system-ui;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.35);">' +
+      '<div style="font:800 18px system-ui;color:#0f2747;margin-bottom:4px;">Quote PDF ready</div>' +
+      '<div style="opacity:.7;margin-bottom:14px;">Anyone with this link can view the PDF.</div>' +
+      '<input id="smShareUrl" readonly value="' + esc(url) + '" style="width:100%;box-sizing:border-box;padding:9px 11px;font:13px system-ui;border:1.5px solid #b0c8e8;border-radius:7px;margin-bottom:12px;">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button id="smShareCopy" style="flex:1;min-width:120px;cursor:pointer;border:0;border-radius:8px;padding:11px;font:600 14px system-ui;background:#2a6ad0;color:#fff;">Copy link</button>' +
+      '<a id="smShareSms" href="' + esc(sms) + '" style="flex:1;min-width:120px;text-align:center;text-decoration:none;cursor:pointer;border-radius:8px;padding:11px;font:600 14px system-ui;background:#2a8a4a;color:#fff;">Text to customer</a>' +
+      '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="flex:1;min-width:120px;text-align:center;text-decoration:none;cursor:pointer;border-radius:8px;padding:11px;font:600 14px system-ui;background:#555;color:#fff;">Open PDF</a>' +
+      '</div>' +
+      '<button id="smShareClose" style="margin-top:12px;width:100%;cursor:pointer;border:0;border-radius:8px;padding:9px;font:600 13px system-ui;background:#e6ecf5;color:#333;">Close</button>' +
+      '</div>';
+    document.body.appendChild(m);
+    m.addEventListener("click", function (e) { if (e.target === m) m.remove(); });
+    document.getElementById("smShareClose").onclick = function () { m.remove(); };
+    document.getElementById("smShareCopy").onclick = function () {
+      var inp = document.getElementById("smShareUrl");
+      var done = function () { var b = document.getElementById("smShareCopy"); if (b) { b.textContent = "Copied ✓"; setTimeout(function () { b.textContent = "Copy link"; }, 1800); } };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { inp.select(); document.execCommand("copy"); done(); });
+      else { inp.select(); document.execCommand("copy"); done(); }
+    };
+    if (!phone) { var a = document.getElementById("smShareSms"); if (a) { a.style.opacity = ".5"; a.style.pointerEvents = "none"; a.textContent = "No phone on file"; } }
+  }
+
   function init() {
     if (!TOP) return; // embedded: leave current postMessage behavior alone
     if (!window.firebase || !firebase.initializeApp) { console.warn("Firebase SDK not loaded"); return; }
@@ -5026,7 +5117,7 @@ function calcMilesManual() {
     // public hooks for the generate flow + later steps
     window._smOnGenerate = function () { if (user && !_restoring) saveQuote(); };
     window._smNewQuote = function () { _fsQuoteId = null; };
-    window.SMQuoteStore = { save: saveQuote, restore: restore, serialize: serialize, openPanel: openPanel, getId: function () { return _fsQuoteId; } };
+    window.SMQuoteStore = { save: saveQuote, restore: restore, serialize: serialize, openPanel: openPanel, share: sharePdf, getId: function () { return _fsQuoteId; } };
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
