@@ -2023,11 +2023,15 @@ function minTons(actual) {
 }
 // Returns the default per-load minimum for a given unit + truck type
 function getDefaultMinPerLoad(unit, truckType) {
-  if(unit === 'cy')    return 17;
+  var cap = (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
+  // CY per load = truck tonnage capacity converted to CY (truck-aware, so a
+  // Super 10's 17t ≈ 11.56 CY, not a flat 17 CY). Flat 17 undercounted loads
+  // (and thus the per-load env fee) for anything smaller than a 25t truck.
+  if(unit === 'cy')    return parseFloat((cap / CY_TO_TONS).toFixed(2));
   if(unit === 'scoop') return 34;
   if(unit === 'load')  return 1;
   // tons — use truck cap
-  return (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
+  return cap;
 }
 // Apply a per-load minimum to a quantity (any unit)
 function applyMinPerLoad(qty, minPerLoad) {
