@@ -2963,9 +2963,12 @@ function saveCustomer() {
     custs.sort(function(a,b){ return a.customer.localeCompare(b.customer); });
   }
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
-  // Sync to the shared spreadsheet when embedded in DispatchHQ
+  // Sync to the shared spreadsheet when embedded in DispatchHQ,
+  // or to the shared Firestore store when standalone + signed in
   if(window.self !== window.top) {
     try { window.parent.postMessage({ type:"sm-upsert-customer", customer:data }, '*'); } catch(e) {}
+  } else if(window._smCustUpsert) {
+    try { window._smCustUpsert(data); } catch(e) {}
   }
   renderSavedCustSelect();
   // Select the just-saved customer
@@ -2989,9 +2992,12 @@ function deleteSavedCustomer() {
   if(!confirm("Delete saved customer \""+data.customer+"\"?")) return;
   custs.splice(parseInt(sel.value), 1);
   localStorage.setItem(CUST_KEY, JSON.stringify(custs));
-  // Sync deletion to the shared spreadsheet when embedded in DispatchHQ
+  // Sync deletion to the shared spreadsheet when embedded in DispatchHQ,
+  // or to the shared Firestore store when standalone + signed in
   if(window.self !== window.top) {
     try { window.parent.postMessage({ type:"sm-delete-customer", name:data.customer }, '*'); } catch(e) {}
+  } else if(window._smCustDelete) {
+    try { window._smCustDelete(data.customer); } catch(e) {}
   }
   sel.value = "";
   renderSavedCustSelect();
@@ -5093,6 +5099,58 @@ function calcMilesManual() {
     if (!phone) { var a = document.getElementById("smShareSms"); if (a) { a.style.opacity = ".5"; a.style.pointerEvents = "none"; a.textContent = "No phone on file"; } }
   }
 
+  // ── shared customers (Firestore `customers` collection) ─────────────
+  // Standalone-only: mirrors the embedded postMessage sync so saved
+  // customers are shared across all @smsalesinc.com users. Doc id is the
+  // encoded lowercase name so upserts are idempotent.
+  var _custSynced = false;
+  function custDocId(name) {
+    return encodeURIComponent(String(name || "").trim().toLowerCase());
+  }
+  function custUpsert(data) {
+    if (!user || !db || !data || !String(data.customer || "").trim()) return;
+    var doc = { updatedBy: user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    CUST_FIELDS.forEach(function (f) { doc[f] = data[f] || ""; });
+    db.collection("customers").doc(custDocId(data.customer)).set(doc, { merge: true })
+      .catch(function (e) { toast("Customer sync failed: " + e.message, false); });
+  }
+  function custDelete(name) {
+    if (!user || !db || !String(name || "").trim()) return;
+    db.collection("customers").doc(custDocId(name)).delete()
+      .catch(function (e) { toast("Customer delete sync failed: " + e.message, false); });
+  }
+  // On sign-in: pull the shared list (shared wins per name), push up any
+  // browser-local-only customers, save the merged set locally, re-render.
+  function syncCustomers() {
+    if (_custSynced || !user || !db) return;
+    _custSynced = true;
+    db.collection("customers").get().then(function (snap) {
+      var local = (typeof getSavedCustomers === "function") ? getSavedCustomers() : [];
+      var byName = {};
+      local.forEach(function (c) {
+        var k = String(c.customer || "").trim().toLowerCase();
+        if (k) byName[k] = { c: c, remote: false };
+      });
+      snap.forEach(function (d) {
+        var r = d.data() || {};
+        var k = String(r.customer || "").trim().toLowerCase();
+        if (!k) return;
+        var c = {};
+        CUST_FIELDS.forEach(function (f) { c[f] = r[f] || ""; });
+        byName[k] = { c: c, remote: true };
+      });
+      var merged = [], toPush = [];
+      Object.keys(byName).forEach(function (k) {
+        merged.push(byName[k].c);
+        if (!byName[k].remote) toPush.push(byName[k].c);
+      });
+      merged.sort(function (a, b) { return String(a.customer).localeCompare(String(b.customer)); });
+      try { localStorage.setItem(CUST_KEY, JSON.stringify(merged)); } catch (e) {}
+      if (typeof renderSavedCustSelect === "function") renderSavedCustSelect();
+      toPush.forEach(custUpsert); // one-time migration of local-only customers
+    }).catch(function (e) { console.warn("customer sync failed", e); });
+  }
+
   function init() {
     if (!TOP) return; // embedded: leave current postMessage behavior alone
     if (!window.firebase || !firebase.initializeApp) { console.warn("Firebase SDK not loaded"); return; }
@@ -5115,8 +5173,12 @@ function calcMilesManual() {
       }
       user = u || null;
       refreshBar();
-      if (user) hideGate(); else showGate("signin");
+      if (user) { hideGate(); syncCustomers(); } else showGate("signin");
     });
+
+    // shared-customer hooks used by saveCustomer/deleteSavedCustomer
+    window._smCustUpsert = custUpsert;
+    window._smCustDelete = custDelete;
 
     // public hooks for the generate flow + later steps
     window._smOnGenerate = function () { if (user && !_restoring) saveQuote(); };
