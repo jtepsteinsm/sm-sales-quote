@@ -4365,6 +4365,15 @@ function clearAll() {
   document.getElementById("zoneBadge").classList.remove("show");
   document.getElementById("formulaBox").style.display="none";
   document.querySelectorAll(".tc").forEach(c=>c.classList.remove("on"));
+  // Rebuild the material/demo tables from scratch — renderMMRows/renderDemoRows
+  // preserve existing rows, and the generic select reset above lands rows on the
+  // FIRST plant/material option (not blank), so wipe the tbodies first.
+  var bmc=document.getElementById("brkMatCount"); if(bmc) bmc.value="3";
+  var mtb=document.getElementById("mmTbody"); if(mtb) mtb.innerHTML="";
+  if(typeof renderMMRows==="function") renderMMRows();
+  var dic=document.getElementById("demoItemCount"); if(dic) dic.value="3";
+  var dtb=document.getElementById("demoTbody"); if(dtb) dtb.innerHTML="";
+  if(typeof renderDemoRows==="function") renderDemoRows();
   qnum="Q"+Date.now().toString().slice(-6);
   document.getElementById("qid").textContent="QUOTE #"+qnum;
   document.getElementById("qdate").value=new Date().toISOString().split("T")[0];
