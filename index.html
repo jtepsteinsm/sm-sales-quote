@@ -1408,7 +1408,6 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
         <thead>
           <tr style="background:#1a3a6b;color:#fff;">
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;width:28px;">#</th>
-            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Plant</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Material</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Qty / Unit</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:90px;">Price ($/ton)</th>
@@ -1416,6 +1415,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:80px;">Env Fee ($)</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:100px;">Truck</th>
             <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;min-width:70px;">Min/Load</th>
+            <th style="padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;min-width:160px;">Plant (auto)</th>
           </tr>
         </thead>
         <tbody id="mmTbody"></tbody>
@@ -2326,6 +2326,11 @@ function onMMMatSelect(sel) {
     if(truckEl) truckEl.value = HOURLY_MAT[sel.value];
   }
   calcMM();
+  // Auto-pick the lowest delivered-cost plant for this material
+  if(tr && sel.value && sel.value !== '__other__' && typeof mmAutoSource === 'function') {
+    var trs = document.getElementById('mmTbody').querySelectorAll('tr');
+    mmAutoSource(Array.prototype.indexOf.call(trs, tr));
+  }
 }
 
 function calc() {
@@ -3518,7 +3523,6 @@ function renderMMRows() {
 
     html += '<tr style="border-bottom:1px solid #dce8f5;">'
       + '<td style="text-align:center;color:#4a7cc7;font-weight:700;font-size:12px;padding:6px 8px;width:28px;">' + (i+1) + '</td>'
-      + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + mSel + '</td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + 'margin-bottom:3px;"><select class="mm-unit" data-prevunit="' + unitVal + '" onchange="onMMUnitChange(this,' + i + ')" style="' + inStyle + 'font-size:10px;padding:3px 4px;">' + unitOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
@@ -3526,6 +3530,7 @@ function renderMMRows() {
       + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:100px;"><select class="mm-truck" onchange="onMMTruckChange(this,' + i + ')" style="' + inStyle + '">' + truckOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:70px;"><input type="number" class="mm-minload" placeholder="' + minLoadDef + '" min="1" step="1" value="' + minLoadVal + '" oninput="calcMM()" title="Min per load — auto-filled, manually overridable" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
       + '</tr>';
   }
   tbody.innerHTML = html;
@@ -3612,9 +3617,15 @@ function mmRefreshHaulRates() {
   var tbody = document.getElementById("mmTbody");
   if(!tbody || (!locPid && !locLat)) return;
   tbody.querySelectorAll("tr").forEach(function(tr, i) {
+    var sel = tr.querySelector(".mm-plant");
+    var matEl = tr.querySelector(".mm-mat");
+    // No plant picked but a material is chosen → auto-pick lowest delivered cost
+    if(sel && !sel.value && matEl && matEl.value && matEl.value !== "__other__" && typeof mmAutoSource === "function") {
+      mmAutoSource(i);
+      return;
+    }
     var haulEl = tr.querySelector(".mm-haul");
     if(!haulEl || haulEl.value) return;
-    var sel = tr.querySelector(".mm-plant");
     if(sel && sel.value && sel.value !== "__other__") { onMMPlant(sel, i); return; }
     var custom = tr.querySelector(".mm-plant-custom-addr");
     if(custom && custom.value.trim().length >= 6) onMMCustomAddr(custom, i);
@@ -3622,6 +3633,10 @@ function mmRefreshHaulRates() {
 }
 
 function onMMPlantSelect(sel, rowIndex) {
+  // A hand-picked plant always wins: drop the auto flag so it's not re-assigned
+  sel.dataset.auto = "";
+  sel.style.borderColor = "";
+  sel.title = "";
   var cell = sel.parentNode;
   var wrap = cell ? cell.querySelector('.mm-plant-custom-wrap') : null;
   if(wrap) wrap.style.display = sel.value === '__other__' ? 'block' : 'none';
@@ -4628,6 +4643,74 @@ function pmApply(line, idx){
   const outEl = document.getElementById(cfg.out);
   if(outEl) outEl.querySelectorAll("tr[data-bs]").forEach(function(tr){ tr.classList.toggle("bs-on", +tr.dataset.bs === idx); });
   if(typeof calc === "function") calc();
+}
+
+// ── AUTO-SOURCE for multi-material rows: pick the lowest delivered-cost plant
+// as soon as a material and the job site are known. A plant the associate
+// picked by hand is never overridden (only empty or auto-picked selections
+// are re-assigned); choosing a different plant manually is the override.
+function mmAutoSource(i) {
+  var tbody = document.getElementById("mmTbody");
+  var tr = tbody ? tbody.querySelectorAll("tr")[i] : null;
+  if(!tr) return;
+  if(typeof locPid === "undefined" || (!locPid && !locLat)) return;
+  var sel = tr.querySelector(".mm-plant");
+  if(!sel || (sel.value && sel.dataset.auto !== "1")) return;   // manual pick wins
+  var matEl = tr.querySelector(".mm-mat");
+  var matName = matEl ? matEl.value : "";
+  if(!matName || matName === "__other__") return;
+  if(typeof google === "undefined" || !google.maps) return;
+  var hits = pmMatchEntries(matName).filter(function(e){ return e.um === "ton"; }).slice(0, 25);
+  if(!hits.length) return;
+  var dest = locPid ? {placeId: locPid} : {lat: locLat, lng: locLng};
+  new google.maps.DistanceMatrixService().getDistanceMatrix({
+    origins: hits.map(function(e){ return e.a; }),
+    destinations: [dest],
+    travelMode: google.maps.TravelMode.DRIVING,
+    unitSystem: google.maps.UnitSystem.IMPERIAL,
+    avoidTolls: true
+  }, function(resp, st) {
+    if(st !== "OK") return;
+    // Async safety: the user may have acted while the request was in flight.
+    // A manual plant pick, a material change, or a re-rendered table must not
+    // be overwritten by this (now stale) result.
+    var trsNow = document.getElementById("mmTbody");
+    trsNow = trsNow ? trsNow.querySelectorAll("tr")[i] : null;
+    if(!trsNow) return;
+    var selNow = trsNow.querySelector(".mm-plant");
+    var matNow = trsNow.querySelector(".mm-mat");
+    if(!selNow || (selNow.value && selNow.dataset.auto !== "1")) return;
+    if(!matNow || matNow.value !== matName) return;
+    var best = null;
+    resp.rows.forEach(function(r, k) {
+      var el = r.elements[0];
+      if(!el || el.status !== "OK") return;
+      var haul = calcHaulRate(el.distance.value / 1609.344);
+      var total = hits[k].pr + haul;
+      if(!best || total < best.total) best = {e: hits[k], haul: haul, total: total};
+    });
+    if(!best) return;
+    var matched = false;
+    for(var k = 0; k < selNow.options.length; k++) {
+      if((selNow.options[k].dataset && selNow.options[k].dataset.name) === best.e.p) { selNow.value = selNow.options[k].value; matched = true; break; }
+    }
+    if(!matched) return;
+    selNow.dataset.auto = "1";
+    selNow.style.borderColor = "#2a8a4a";
+    selNow.title = "Auto-selected: lowest delivered cost — " + best.e.p + " ($" + best.total.toFixed(2) + "/t delivered). Pick a different plant to override.";
+    var haulEl = trsNow.querySelector(".mm-haul");
+    if(haulEl && (!haulEl.value || haulEl.dataset.auto === "1")) {
+      haulEl.value = best.haul.toFixed(2); haulEl.dataset.auto = "1";
+      haulEl.style.borderColor = "#2a8a4a";
+    }
+    var unitEl = trsNow.querySelector(".mm-unit");
+    var priceEl = trsNow.querySelector(".mm-price");
+    if(priceEl && (unitEl ? unitEl.value : "tons") === "tons" && (!priceEl.value || priceEl.dataset.auto === "1")) {
+      priceEl.value = best.e.pr.toFixed(2); priceEl.dataset.auto = "1";
+      priceEl.style.borderColor = "#2a8a4a";
+    }
+    if(typeof calcMM === "function") calcMM();
+  });
 }
 
 // ── Add price-matrix plants missing from the static plant dropdowns ──
