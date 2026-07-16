@@ -487,6 +487,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option><option value="35.798644,-114.313162" data-name="Rock Pros USA — White Hills Quarry">Rock Pros USA — White Hills Quarry</option><option value="33.181630,-111.244875" data-name="Rock Pros USA — Mineral Mountain">Rock Pros USA — Mineral Mountain</option><option value="37.000142,-116.754207" data-name="Rock Pros USA — Beatty">Rock Pros USA — Beatty</option><option value="35.373100,-113.690859" data-name="Rock Pros USA — Valentine">Rock Pros USA — Valentine</option><option value="32.731806,-111.133217" data-name="Rock Pros USA — Broccoli">Rock Pros USA — Broccoli</option><option value="31150 Boyer Gap Rd, Quartzsite, AZ 85346" data-name="Rock Pros USA — Boyer Gap">Rock Pros USA — Boyer Gap</option><option value="33.254675,-111.095163" data-name="Rock Pros USA — Superior">Rock Pros USA — Superior</option><option value="32.389320,-111.451640" data-name="Rock Pros USA — Silverbell">Rock Pros USA — Silverbell</option><option value="CRH2+53, Chloride, AZ" data-name="Rock Pros USA — Chloride">Rock Pros USA — Chloride</option><option value="14900 AZ-169, Dewey, AZ 86327" data-name="MDI Rock (Dewey Quarry)">MDI Rock (Dewey Quarry)</option><option value="PXFF+RQ Wickenburg, AZ 85390" data-name="West Valley Rock — Big Horn Pit">West Valley Rock — Big Horn Pit</option><option value="RMW7+XG, Peoria, AZ 85342" data-name="West Valley Rock — KB1 Pit">West Valley Rock — KB1 Pit</option><option value="M4W3+M6 Wickenburg, AZ 85390" data-name="West Valley Rock — Belmont Gold Pit">West Valley Rock — Belmont Gold Pit</option><option value="46211 N Old Black Canyon Hwy, New River, AZ 85087" data-name="West Valley Rock — NR1 Pit">West Valley Rock — NR1 Pit</option><option value="26350 W Tonopah Salome Hwy, Buckeye, AZ 85396" data-name="West Valley Rock — Turner North Pit">West Valley Rock — Turner North Pit</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa1" placeholder="Address for auto-miles"></div>
+        <div class="field" style="grid-column:1/-1"><label>Best Source</label><button type="button" class="bs-btn" onclick="findBestSource(1)">&#9889; Find lowest delivered cost</button><div id="bsOut1" class="bs-out"></div></div>
         <div class="field"><label>Material</label><select id="mat1" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
 <option value="1&quot; Del Rio">1" Del Rio</option>
@@ -730,6 +731,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <option value="6029 Vineyard Avenue, Oxnard, CA 93030" data-name="Vulcan Materials (Saticoy)">Vulcan Materials (Saticoy)</option>
 <option value="9455 Buena Vista St., Moorpark, CA 93021" data-name="Wayne J Sand & Gravel">Wayne J Sand & Gravel</option><option value="35.798644,-114.313162" data-name="Rock Pros USA — White Hills Quarry">Rock Pros USA — White Hills Quarry</option><option value="33.181630,-111.244875" data-name="Rock Pros USA — Mineral Mountain">Rock Pros USA — Mineral Mountain</option><option value="37.000142,-116.754207" data-name="Rock Pros USA — Beatty">Rock Pros USA — Beatty</option><option value="35.373100,-113.690859" data-name="Rock Pros USA — Valentine">Rock Pros USA — Valentine</option><option value="32.731806,-111.133217" data-name="Rock Pros USA — Broccoli">Rock Pros USA — Broccoli</option><option value="31150 Boyer Gap Rd, Quartzsite, AZ 85346" data-name="Rock Pros USA — Boyer Gap">Rock Pros USA — Boyer Gap</option><option value="33.254675,-111.095163" data-name="Rock Pros USA — Superior">Rock Pros USA — Superior</option><option value="32.389320,-111.451640" data-name="Rock Pros USA — Silverbell">Rock Pros USA — Silverbell</option><option value="CRH2+53, Chloride, AZ" data-name="Rock Pros USA — Chloride">Rock Pros USA — Chloride</option><option value="14900 AZ-169, Dewey, AZ 86327" data-name="MDI Rock (Dewey Quarry)">MDI Rock (Dewey Quarry)</option><option value="PXFF+RQ Wickenburg, AZ 85390" data-name="West Valley Rock — Big Horn Pit">West Valley Rock — Big Horn Pit</option><option value="RMW7+XG, Peoria, AZ 85342" data-name="West Valley Rock — KB1 Pit">West Valley Rock — KB1 Pit</option><option value="M4W3+M6 Wickenburg, AZ 85390" data-name="West Valley Rock — Belmont Gold Pit">West Valley Rock — Belmont Gold Pit</option><option value="46211 N Old Black Canyon Hwy, New River, AZ 85087" data-name="West Valley Rock — NR1 Pit">West Valley Rock — NR1 Pit</option><option value="26350 W Tonopah Salome Hwy, Buckeye, AZ 85396" data-name="West Valley Rock — Turner North Pit">West Valley Rock — Turner North Pit</option></select></div>
         <div class="field"><label>Or type plant address</label><input type="text" id="pa2" placeholder="Plant address"></div>
+        <div class="field" style="grid-column:1/-1"><label>Best Source</label><button type="button" class="bs-btn" onclick="findBestSource(2)">&#9889; Find lowest delivered cost</button><div id="bsOut2" class="bs-out"></div></div>
         <div class="field"><label>Plant 2 Miles <span class="ms" id="m2ms"></span></label><input type="number" id="mi2" placeholder="Auto-calc" min="0" oninput="calc()"></div>
         <div class="field"><label>Material</label><select id="mat2" onchange="onMatSelect(this)"><option value="">— Select material —</option><option value="1&quot; Gravel">1" Gravel</option>
 <option value="1&quot; Crushed Rock">1" Crushed Rock</option>
@@ -2028,7 +2030,7 @@ function getDefaultMinPerLoad(unit, truckType) {
   // Super 10's 17t ≈ 11.56 CY, not a flat 17 CY). Flat 17 undercounted loads
   // (and thus the per-load env fee) for anything smaller than a 25t truck.
   if(unit === 'cy')    return parseFloat((cap / CY_TO_TONS).toFixed(2));
-  if(unit === 'scoop') return 34;
+  if(unit === 'scoop') return parseFloat((cap / SCOOP_TO_TONS).toFixed(2));
   if(unit === 'load')  return 1;
   // tons — use truck cap
   return cap;
@@ -2261,8 +2263,8 @@ function clearSurchargeBadge(suffix) {
 
 // -- QUANTITY UNIT TOGGLE --
 var qtyUnits = {qty1:'tons', qty2:'tons', htons:'tons', ftons:'tons', dtons:'tons'};
-var CY_TO_TONS    = 25/17;  // 17 CY = 25 tons
-var SCOOP_TO_TONS = 2;      // 1 scoop ≈ 2 tons (default)
+var CY_TO_TONS    = 25/16.5;  // 16.5 CY = 25 tons (Jason, 2026-07-16)
+var SCOOP_TO_TONS = 25/33;    // 1 scoop = 0.5 CY → 33 scoops = 25 tons (Jason, 2026-07-16)
 
 function unitToTons(val, unit) {
   if(unit === 'cy')    return parseFloat((val * CY_TO_TONS).toFixed(4));
@@ -2520,6 +2522,7 @@ function initMaps() {
       fetchTax(locLat, locLng, county);
       autoAssignZone(p.address_components, locLat, locLng);
     }
+    if(typeof mmRefreshHaulRates === "function") mmRefreshHaulRates();
   });
 
   // Demo site
@@ -3560,8 +3563,9 @@ function calcMM() {
   var grand = 0;
   var sumH = "";
   var rows = getMMData().filter(function(r){ return r.qty > 0; });
+  var mmShared = mmComputeShared(rows);
   rows.forEach(function(row, idx) {
-    var c = computeMMRow(row, txr);
+    var c = computeMMRow(row, txr, mmShared[idx]);
     grand += c.rowTotal;
     var label = "MATERIAL " + (idx + 1) + (row.desc ? " \u2014 " + row.desc : "");
     if(idx > 0) sumH += '<hr class="div">';
@@ -3573,9 +3577,9 @@ function calcMM() {
     }
     if(c.tax > 0) sumH += tr2("Sales Tax (" + v("taxr") + "%)", fmt(c.tax));
     if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " @ " + fmt(row.haul) + "/load)", fmt(c.haulBase)); }
-    else if(c.mode === 'ton') sumH += tr2("Haul (" + c.effTons.toFixed(2) + "t @ " + fmt(row.haul) + "/ton)", fmt(c.haulBase));
+    else if(c.mode === 'ton') sumH += tr2("Haul (" + c.effTons.toFixed(2) + "t @ " + fmt(row.haul) + "/ton)" + (c.shared ? " — shared load" : ""), fmt(c.haulBase));
     if(c.scAmt > 0) sumH += tr2("Fuel Surcharge", fmt(c.scAmt));
-    if(c.efTotal > 0) sumH += tr2("Env Fee (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " x " + fmt(row.env) + ")", fmt(c.efTotal));
+    if(c.efTotal > 0) sumH += tr2("Env Fee (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " x " + fmt(row.env) + ")" + (c.shared ? " — shared" : ""), fmt(c.efTotal));
     if(c.efTax > 0) sumH += tr2("Env Fee Tax", fmt(c.efTax));
   });
   var cc = grand * 0.04;
@@ -3601,6 +3605,22 @@ function autoFillHaul() {
   });
   calcMM();
 }
+// Fill haul rates for MM rows whose plant was picked BEFORE the job site was
+// set (the rate silently stayed empty → $0 haul). Runs when the job site is
+// chosen; only touches rows with an empty haul field.
+function mmRefreshHaulRates() {
+  var tbody = document.getElementById("mmTbody");
+  if(!tbody || (!locPid && !locLat)) return;
+  tbody.querySelectorAll("tr").forEach(function(tr, i) {
+    var haulEl = tr.querySelector(".mm-haul");
+    if(!haulEl || haulEl.value) return;
+    var sel = tr.querySelector(".mm-plant");
+    if(sel && sel.value && sel.value !== "__other__") { onMMPlant(sel, i); return; }
+    var custom = tr.querySelector(".mm-plant-custom-addr");
+    if(custom && custom.value.trim().length >= 6) onMMCustomAddr(custom, i);
+  });
+}
+
 function onMMPlantSelect(sel, rowIndex) {
   var cell = sel.parentNode;
   var wrap = cell ? cell.querySelector('.mm-plant-custom-wrap') : null;
@@ -3794,7 +3814,43 @@ function getMMData() {
 //   ton  (tons/cy/scoop) -> Price & Haul are $/ton; haul billed on tonnage
 //   load                 -> Price & Haul are $/load; haul billed per load (direct)
 //   hour                 -> Price is $/hr; charge = hours x rate, no haul/env
-function computeMMRow(row, txr) {
+// Group MM rows that ride the same truck from the same plant so the per-load
+// (truck-cap) minimum applies ONCE to the combined quantity instead of per
+// material — 8 scoops + 3 scoops on one truck = one 25t-min load, not two
+// minimums. Hourly/per-load rows and rows with a manually overridden min/load
+// keep their own row-level math. Env fee is charged once per group (on its
+// first row) from the group's load count.
+function mmComputeShared(rows) {
+  var groups = {};
+  rows.forEach(function(row, i) {
+    var rowUnit = row.unit || "tons";
+    // The min/load field auto-fills with the unit default, so only a value
+    // that DIFFERS from the default counts as a manual override.
+    var custom = row.minload > 0 && row.minload !== getDefaultMinPerLoad(rowUnit, row.truck);
+    var solo = rowUnit === 'load' || rowUnit === 'hour' || custom;
+    var key = solo ? ("solo" + i) : ((row.truck || "") + "|" + (row.plant || ""));
+    (groups[key] = groups[key] || []).push(i);
+  });
+  var out = rows.map(function(){ return {}; });
+  Object.keys(groups).forEach(function(key) {
+    var idxs = groups[key];
+    if(key.indexOf("solo") === 0) { out[idxs[0]] = null; return; }  // row-level math
+    var first = rows[idxs[0]];
+    var cap = (first.truck && TRUCK_RATES[first.truck]) ? TRUCK_RATES[first.truck].cap : 25;
+    var actual = 0;
+    idxs.forEach(function(i){ actual += unitToTons(rows[i].qty, rows[i].unit || "tons"); });
+    var billTons = actual > 0 ? Math.ceil(actual / cap) * cap : 0;
+    var loads = actual > 0 ? Math.ceil(billTons / cap) : 0;
+    idxs.forEach(function(i, k) {
+      var rowTons = unitToTons(rows[i].qty, rows[i].unit || "tons");
+      out[i] = {billTons: actual > 0 ? billTons * rowTons / actual : 0, loads: loads,
+                envHere: k === 0, shared: idxs.length > 1, minHit: billTons > actual};
+    });
+  });
+  return out;
+}
+
+function computeMMRow(row, txr, shr) {
   var unit = row.unit || "tons";
   var mode = (unit === 'hour') ? 'hour' : (unit === 'load') ? 'load' : 'ton';
   var matCost = row.qty * row.price;
@@ -3811,6 +3867,15 @@ function computeMMRow(row, txr) {
     haul = (row.haul + sc) * row.qty;
     efTotal = loads * row.env;
     efTax = efTotal * txr;
+  } else if(shr) {
+    // shared-load group math (see mmComputeShared)
+    effTons = shr.billTons;
+    loads = shr.envHere ? shr.loads : 0;
+    sc = getMmFuelSurcharge(row.haul);
+    haulBase = row.haul * effTons;
+    haul = (row.haul + sc) * effTons;
+    efTotal = loads * row.env;
+    efTax = efTotal * txr;
   } else {
     var rowMin = row.minload > 0 ? row.minload : getDefaultMinPerLoad(unit, row.truck);
     effQtyUnit = applyMinPerLoad(row.qty, rowMin);
@@ -3825,7 +3890,9 @@ function computeMMRow(row, txr) {
   var rowTotal = matCost + tax + haul + efTotal + efTax;
   return { mode:mode, matCost:matCost, tax:tax, sc:sc, scAmt:(haul-haulBase),
            haulBase:haulBase, haul:haul, effTons:effTons, effQtyUnit:effQtyUnit,
-           loads:loads, efTotal:efTotal, efTax:efTax, rowTotal:rowTotal };
+           loads:loads, efTotal:efTotal, efTax:efTax, rowTotal:rowTotal,
+           shared: shr ? shr.shared : false,
+           minHit: shr ? shr.minHit : (mode === 'ton' && effQtyUnit > row.qty) };
 }
 
 // ── DEMO MULTI-ROW ────────────────────────────────────────────────────────────
@@ -4077,10 +4144,11 @@ function genBreakdownQuote() {
   const mmRows = getMMData().filter(function(r){ return r.qty > 0; });
 
   if(mmRows.length > 0) {
-    // Multi-material mode
+    // Multi-material mode — shared-load grouping must match calcMM
+    const mmSharedB = mmComputeShared(mmRows);
     mmRows.forEach(function(row, idx) {
       const rowUnit  = row.unit || "tons";
-      const c = computeMMRow(row, txr);
+      const c = computeMMRow(row, txr, mmSharedB[idx]);
       grandTotal += c.rowTotal;
       const unitLabel = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoop' : rowUnit === 'load' ? 'load' : rowUnit === 'hour' ? 'hr' : 'ton';
       const unitLabelPlural = rowUnit === 'cy' ? 'CY' : rowUnit === 'scoop' ? 'scoops' : rowUnit === 'load' ? 'loads' : rowUnit === 'hour' ? 'hrs' : 'tons';
@@ -4091,9 +4159,9 @@ function genBreakdownQuote() {
       if(row.price > 0) sumH += tr2(c.mode==='hour' ? "Service" : "Material", fmt(c.matCost));
       if(c.tax > 0) sumH += tr2("Sales Tax ("+v("taxr")+"%)", fmt(c.tax));
       if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul ("+c.loads+" load"+(c.loads!==1?"s":"")+" @ "+fmt(row.haul)+"/load)", fmt(c.haulBase)); }
-      else if(c.mode === 'ton') sumH += tr2("Haul ("+c.effTons.toFixed(2)+"t @ "+fmt(row.haul)+"/ton)", fmt(c.haulBase));
+      else if(c.mode === 'ton') sumH += tr2("Haul ("+c.effTons.toFixed(2)+"t @ "+fmt(row.haul)+"/ton)"+(c.shared?" — shared load":""), fmt(c.haulBase));
       if(c.scAmt > 0) sumH += tr2("Fuel Surcharge", fmt(c.scAmt));
-      if(c.efTotal > 0) sumH += tr2("Env Fee ("+c.loads+" load"+(c.loads!==1?"s":"")+" x "+fmt(row.env)+")", fmt(c.efTotal));
+      if(c.efTotal > 0) sumH += tr2("Env Fee ("+c.loads+" load"+(c.loads!==1?"s":"")+" x "+fmt(row.env)+")"+(c.shared?" — shared":""), fmt(c.efTotal));
       if(c.efTax > 0) sumH += tr2("Env Fee Tax", fmt(c.efTax));
       // Build main breakdown card section
       let sec = '<div class="brk-mat-section">';
@@ -4119,10 +4187,10 @@ function genBreakdownQuote() {
       } else {
         sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/'+unitLabel, c.matCost);
         if(c.tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', c.tax);
-        const haulMinNote = c.effQtyUnit > row.qty ? ' (min '+c.effQtyUnit+' '+unitLabelPlural+')' : '';
-        sec += brkLine('Haul ('+c.effQtyUnit+' '+unitLabelPlural+' \u2192 '+c.effTons.toFixed(2)+'t @ '+fmt(row.haul)+'/ton)'+haulMinNote, c.haulBase);
+        const haulMinNote = c.minHit ? ' (min load applied'+(c.shared?' \u2014 shared load':'')+')' : (c.shared ? ' (shared load)' : '');
+        sec += brkLine('Haul ('+row.qty+' '+unitLabelPlural+' \u2192 '+c.effTons.toFixed(2)+'t @ '+fmt(row.haul)+'/ton)'+haulMinNote, c.haulBase);
         if(c.scAmt > 0) sec += brkLine('Fuel/COL Surcharge', c.scAmt);
-        sec += brkLine('Environmental Fee (' + c.loads + ' load' + (c.loads!==1?'s':'') + ' x ' + fmt(row.env) + ')', c.efTotal);
+        if(c.efTotal > 0) sec += brkLine('Environmental Fee (' + c.loads + ' load' + (c.loads!==1?'s':'') + ' x ' + fmt(row.env) + ')' + (c.shared?' \u2014 shared':''), c.efTotal);
         if(c.efTax > 0) sec += brkLine('Env Fee Tax', c.efTax);
       }
       sec += '<div class="brk-line" style="border-top:1.5px solid #1a3a6b;margin-top:5px;padding-top:5px;font-weight:700;font-size:11.5px;"><span>'+secLabel.charAt(0)+secLabel.slice(1).toLowerCase()+' '+(idx+1)+' Subtotal</span><span>'+fmt(c.rowTotal)+'</span></div>';
@@ -4415,6 +4483,7 @@ function calcMilesManual() {
 
     // Update the input with formatted address
     document.getElementById("location").value = place.formatted_address;
+    if(typeof mmRefreshHaulRates === "function") setTimeout(mmRefreshHaulRates, 0);
 
     // Extract county for tax lookup
     let county = "";
@@ -4434,6 +4503,179 @@ function calcMilesManual() {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+.bs-btn{background:#0b5394;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600}
+.bs-btn:hover{background:#1668b8}
+.bs-out{margin-top:6px}
+.bs-out table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:4px}
+.bs-out th,.bs-out td{padding:4px 8px;text-align:left;border-bottom:1px solid rgba(128,128,128,.25)}
+.bs-out tr[data-bs]{cursor:pointer}
+.bs-out tr[data-bs]:hover{background:rgba(0,191,255,.10)}
+.bs-out tr.bs-on{background:rgba(0,191,255,.18);outline:1px solid rgba(0,191,255,.5)}
+.bs-badge{background:#1a8f3c;color:#fff;border-radius:4px;padding:1px 6px;font-size:.7rem;font-weight:700;margin-left:6px}
+.bs-note{font-size:.75rem;opacity:.75;margin-top:4px}
+#jtReviewBanner{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#8a1f1f;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-size:.95rem;box-shadow:0 -2px 10px rgba(0,0,0,.4)}
+</style>
+<script>
+// ═══ BEST SOURCE — auto-pick lowest delivered cost (added 2026-07-15) ═══
+// System selects the cheapest (material sell price + calculated haul) plant for
+// the chosen material; associates can click any other row to override.
+// ── PRICE MATRIX (sell prices; generated from Price Matrix - FINAL.xlsx, 2026-07-15; regenerate with gen_pm_embed.py) ──
+const PRICE_MATRIX = [{"m":"1 1/2\" Crushed Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":25.0,"um":"ton"},{"m":"1 1/2\" Gravel","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":25.0,"um":"ton"},{"m":"1 1/2\" White Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":100.0,"um":"scoop"},{"m":"1\" Gravel","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":20.0,"um":"ton"},{"m":"1.5\" - 3\" Arizona River Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"1/2\" - 3/4\" Arizona River Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"3\" - 6\" Red River Cobble","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"3\" Crushed Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":35.0,"um":"ton"},{"m":"3\"-8+\" Crushed Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":40.0,"um":"ton"},{"m":"3/4\"  50-50 Mix (C-Mix)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":25.0,"um":"ton"},{"m":"3/4\" - 1.5\" Arizona River Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"3/4\" Cal Gold Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":134.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":20.0,"um":"ton"},{"m":"3/4\" Gravel","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":20.0,"um":"ton"},{"m":"3/4\" Handley Gold","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":200.0,"um":"ton"},{"m":"3/4\" Rainbow","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":70.0,"um":"ton"},{"m":"3/4\" White Rock (Per Scoop)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"3/8\"  50-50 Mix (C-Mix)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":26.0,"um":"ton"},{"m":"3/8\" Arizona River Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":120.0,"um":"scoop"},{"m":"3/8\" Cal Gold Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":134.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":30.0,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":25.0,"um":"ton"},{"m":"3/8\" Red River Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":140.0,"um":"ton"},{"m":"4 \"- 8\" Cobble","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":50.0,"um":"ton"},{"m":"6\" - 12\" scoop","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":40.0,"um":"scoop"},{"m":"Asphalt Grindings","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":18.0,"um":"ton"},{"m":"Black Lava Rock - Sold Per Scoop","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":45.0,"um":"scoop"},{"m":"Boulders Oversized","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":80.0,"um":"ton"},{"m":"Burgundy Lava Rock","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":45.0,"um":"scoop"},{"m":"Burgundy Lava Rock - Sold Per Scoop","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":70.0,"um":"scoop"},{"m":"Class II Base / CMB","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":8.0,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":8.0,"um":"ton"},{"m":"Decomposed Granite (DG)","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":30.0,"um":"ton"},{"m":"Dry Concrete Sand","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":20.0,"um":"ton"},{"m":"Fill Dirt","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":8.0,"um":"ton"},{"m":"Fill Sand","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":12.0,"um":"ton"},{"m":"Stabilized DG","p":"75th Street Quarry and Recycling","a":"38050 75th Street East, Palmdale, CA","pr":60.0,"um":"ton"},{"m":"Class II Base / CMB","p":"AMH Recycling","a":"11230 Roscoe Blvd, Sun Valley, CA 91352","pr":5.5,"um":"ton"},{"m":"Fill Sand","p":"AMH Recycling","a":"11230 Roscoe Blvd, Sun Valley, CA 91352","pr":12.0,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Arcosa (Crushed Concrete / Aggregates) - Beaumont","a":"861 W 4th Street, Beaumont, CA 92223","pr":400.0,"um":"load"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Arcosa (Crushed Concrete / Aggregates) - Escondido","a":"8354 Nelson Way, Escondido, CA 92026","pr":7.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Arcosa (Crushed Concrete / Aggregates) - Rialto","a":"250 E Santa Ana Ave, Rialto, CA 92316","pr":10.0,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Arcosa (Crushed Concrete / Aggregates) - Rialto","a":"250 E Santa Ana Ave, Rialto, CA 92316","pr":12.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Arcosa (Crushed Concrete / Aggregates) - Sun Valley","a":"9005 Bradley Ave, Sun Valley, CA 91352","pr":5.5,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Arcosa (Crushed Concrete / Aggregates) - Sun Valley","a":"9005 Bradley Ave, Sun Valley, CA 91352","pr":5.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Arrow Construction Company","a":"507 E Ave L 12, Lancaster, CA 93535","pr":7.5,"um":"ton"},{"m":"Class II Base / CMB","p":"Bradley Recycling(Security Paving)","a":"8960 Bradley Ave, Sun Valley, CA 91352","pr":5.5,"um":"ton"},{"m":"Class II Base / CMB","p":"Bradley Recycling(Security Paving)","a":"8960 Bradley Ave, Sun Valley, CA 91352","pr":5.5,"um":"ton"},{"m":"1 1/2\" Cal Gold Rock","p":"Brubaker-Mann Inc","a":"36011 Soapmine Rd, Barstow, CA 92311","pr":65.0,"um":"ton"},{"m":"2' - 3' Boulders","p":"Brubaker-Mann Inc","a":"36011 Soapmine Rd, Barstow, CA 92311","pr":300.0,"um":"ton"},{"m":"3/4\" California Gold","p":"Brubaker-Mann Inc","a":"36011 Soapmine Rd, Barstow, CA 92311","pr":65.0,"um":"ton"},{"m":"3/8\" California Gold Rock","p":"Brubaker-Mann Inc","a":"36011 Soapmine Rd, Barstow, CA 92311","pr":65.0,"um":"ton"},{"m":"50/50 Planter Mix","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":30.0,"um":"CY"},{"m":"50/50 Topsoil Mix","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":27.0,"um":"CY"},{"m":"70/30 Compost Topsoil Mix (Cubic Yards)","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":30.0,"um":"CY"},{"m":"70/30 Topsoil Compost Mix (Cubic Yards)","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":30.0,"um":"CY"},{"m":"Bioswale (Cubic Yards)","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":60.0,"um":"CY"},{"m":"Sandy Loam Topsoil (Invoiced in Cubic Yards)","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":25.0,"um":"CY"},{"m":"Walk On Bark","p":"C&M Topsoil (Sylmar)","a":"12087 Lopez Canyon Rd, Sylmar, CA 91342","pr":65.0,"um":"CY"},{"m":"3/4\" Crushed Rock","p":"CalPortland (Fillmore)","a":"3500 Grimes Canyon Road, Fillmore, CA 93021","pr":17.4,"um":"ton"},{"m":"Fill Sand","p":"CalPortland (Fillmore)","a":"3500 Grimes Canyon Road, Fillmore, CA 93021","pr":13.4,"um":"ton"},{"m":"1 1/2\" Crushed Rock","p":"Cemex (Bell Terminal)","a":"5091 Rickenbacker Rd, Bell, CA 90201","pr":32.5,"um":"ton"},{"m":"1\" Crushed Rock","p":"Cemex (Bell Terminal)","a":"5091 Rickenbacker Rd, Bell, CA 90201","pr":32.5,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Cemex (Bell Terminal)","a":"5091 Rickenbacker Rd, Bell, CA 90201","pr":32.5,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Cemex (Bell Terminal)","a":"5091 Rickenbacker Rd, Bell, CA 90201","pr":33.75,"um":"ton"},{"m":"1\"-1 1/2\"  Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.25,"um":"ton"},{"m":"1-4 Gravel","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.25,"um":"ton"},{"m":"1/2\" Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":65.0,"um":"ton"},{"m":"2\" x 4\" Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.25,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":29.5,"um":"ton"},{"m":"3/4\"-1\" Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.25,"um":"ton"},{"m":"3/8\" Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.25,"um":"ton"},{"m":"4\" x 8\" Noiyo Pebbles","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":73.5,"um":"ton"},{"m":"Washed Plaster Sand","p":"Cemex (Friant)","a":"13475 N Friant Rd, Friant, CA 93626","pr":31.25,"um":"ton"},{"m":"1 1/2\" Gravel","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":33.0,"um":"ton"},{"m":"1\" Gravel","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":27.5,"um":"ton"},{"m":"1/2\" C Mix","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":32.75,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":29.75,"um":"ton"},{"m":"3/4\" C-Mix","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":31.25,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":24.0,"um":"ton"},{"m":"3/8\" C-Mix","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":31.25,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":31.25,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":32.5,"um":"ton"},{"m":"Birdseye","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":12.0,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":26.0,"um":"ton"},{"m":"Rock Dus","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":18.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":39.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Cemex (Lytle Creek)","a":"3221 N Riverside Ave, Rialto, CA 92376","pr":34.5,"um":"ton"},{"m":"1\" Gravel","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":49.5,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":49.25,"um":"ton"},{"m":"C Mix 3/8","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":40.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":8.0,"um":"ton"},{"m":"Fill Sand","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":16.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":26.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Cemex (Moorpark)","a":"9035 Roseland Ave, Moorpark, CA 93021","pr":27.0,"um":"ton"},{"m":"1\" Gravel","p":"Cemex (Redlands)","a":"8731 Orange St, Redlands, CA 92374","pr":27.75,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Cemex (Redlands)","a":"8731 Orange St, Redlands, CA 92374","pr":32.5,"um":"ton"},{"m":"Washed Concrete Sand","p":"Cemex (Redlands)","a":"8731 Orange St, Redlands, CA 92374","pr":31.0,"um":"ton"},{"m":"1 1/2\" Crushed Rock","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":21.75,"um":"ton"},{"m":"1\" Crushed Rock","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":20.5,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":20.5,"um":"ton"},{"m":"1/4 Ton Rip Rap 18\" - 24\"","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":26.5,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":18.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":19.75,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":12.0,"um":"ton"},{"m":"Rock Dust","p":"Cemex (White Mountain)","a":"24724 Quarry Rd, Apple Valley, CA 92307","pr":10.75,"um":"ton"},{"m":"1\" Gravel","p":"Coast Aggregates (Palmdale)","a":"13114 E Avenue T, Palmdale, CA 93543","pr":25.8,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Coast Aggregates (Palmdale)","a":"13114 E Avenue T, Palmdale, CA 93543","pr":30.5,"um":"ton"},{"m":"Gas Sand","p":"FST Sand & Gravel","a":"21780 Temescal Canyon Road, Corona, CA 92883","pr":14.0,"um":"ton"},{"m":"50/50 Planter Mix (Per Cubic Yard)","p":"Foothill Soils (Coltrane Yard)","a":"22925 Coltrane Avenue, Newhall, CA 91321","pr":30.0,"um":"CY"},{"m":"70/30 Planter Mix","p":"Foothill Soils (Coltrane Yard)","a":"22925 Coltrane Avenue, Newhall, CA 91321","pr":42.0,"um":"CY"},{"m":"Forest Floor Mulch (Per Cubic Yard)","p":"Foothill Soils (Coltrane Yard)","a":"22925 Coltrane Avenue, Newhall, CA 91321","pr":30.0,"um":"ton"},{"m":"Sandy Loam Topsoil (Invoiced in Cubic Yards)","p":"Foothill Soils (Coltrane Yard)","a":"22925 Coltrane Avenue, Newhall, CA 91321","pr":40.0,"um":"CY"},{"m":"#30 Silica Sand","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":106.3,"um":"ton"},{"m":"1\" Gravel","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":49.0,"um":"ton"},{"m":"3/8\"  50-50 Mix (C-Mix)","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":39.0,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":48.0,"um":"ton"},{"m":"Fill Sand","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":12.0,"um":"ton"},{"m":"Fine Arena Sand (Equifina)","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":69.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":40.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Gillibrand Industrial Sands (Simi Valley)","a":"5810 Bennett Road, Simi Valley, CA 93062","pr":38.5,"um":"ton"},{"m":"1 1/2\" Gravel","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":25.5,"um":"ton"},{"m":"1\" Gravel","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":19.5,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":29.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":23.0,"um":"ton"},{"m":"3/8\"  50-50 Mix (C-Mix)","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":39.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":33.5,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":30.5,"um":"ton"},{"m":"Birdseye","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":30.0,"um":"ton"},{"m":"Class 2 Natural Base","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":19.0,"um":"ton"},{"m":"Class II Permeable Base","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":29.0,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":20.5,"um":"ton"},{"m":"Fill Sand","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":18.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":20.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Granite Construction (Big Rock)","a":"34809 155th Street East, Llano, CA 93544","pr":20.0,"um":"ton"},{"m":"3/4\" Handley Gold","p":"Granite Construction (Handley Ranch)","a":"25485 Iverson Road, Gonzales, CA 93926","pr":60.0,"um":"ton"},{"m":"3/8\" Handley Gold","p":"Granite Construction (Handley Ranch)","a":"25485 Iverson Road, Gonzales, CA 93926","pr":60.0,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Hi-Grade Materials (Lancaster)","a":"411 W Avenue H6, Lancaster, CA 93534","pr":10.0,"um":"ton"},{"m":"1 1/2\" Gravel","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":25.5,"um":"ton"},{"m":"1\" Gravel","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":25.5,"um":"ton"},{"m":"3/4\"  50-50 Mix (C-Mix)","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":26.1,"um":"ton"},{"m":"3/8\"  50-50 Mix (C-Mix)","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":36.9,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":36.3,"um":"ton"},{"m":"Class 2 Natural Base","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":20.4,"um":"ton"},{"m":"Crushed Miscellaneous Base (CMB)","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":10.0,"um":"ton"},{"m":"Fill Sand","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":15.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":23.5,"um":"ton"},{"m":"Washed Plaster Sand","p":"Hi-Grade Materials (Littlerock)","a":"6500 E Avenue T, Littlerock, CA 93552","pr":26.25,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Hi-Grade Materials (Lucerne)","a":"8701 Meridian Road, Lucerne Valley, CA 92356","pr":12.0,"um":"ton"},{"m":"3/4\" Crushed Rainbow","p":"Las Vegas Rock","a":"2 Prison Road, Jean, NV 89019","pr":25.5,"um":"ton"},{"m":"1 Ton Rip Rap","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":68.0,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":48.0,"um":"ton"},{"m":"1/4 Ton Rip Rap","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":52.0,"um":"ton"},{"m":"2\"-4\" Cobble","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":52.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":29.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":45.0,"um":"ton"},{"m":"4\" - 8\" Rip Rap","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":52.0,"um":"ton"},{"m":"8\" - 18\" Rip Rap","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":52.0,"um":"ton"},{"m":"Class II Base / CMB","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":15.5,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":36.0,"um":"ton"},{"m":"Fill Sand","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":12.0,"um":"ton"},{"m":"Rock Dust","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":16.0,"um":"ton"},{"m":"Sespi Cobble 4\"-12\" Bulk..","p":"MRC Rock & Sand","a":"1565 Ventura St, Fillmore, CA 93015","pr":65.0,"um":"ton"},{"m":"1 1/2\" Aggregate Base","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":16.0,"um":"ton"},{"m":"1 1/2\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":24.0,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":24.0,"um":"ton"},{"m":"1/4 Ton Gold Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":52.0,"um":"ton"},{"m":"2\" - 4\" Mojave Gold Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":41.0,"um":"ton"},{"m":"2\"-4\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":44.0,"um":"ton"},{"m":"2' - 3' Mojave Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":39.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":20.5,"um":"ton"},{"m":"3/4\" Gold Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":35.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":24.0,"um":"ton"},{"m":"3/8\" Desert Gold Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":35.0,"um":"ton"},{"m":"4\" - 12\" Crushed Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"4\" - 8\" Mojave Gold Rock","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"4\" - 8\" Mojave Rubble","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"4' Mojave Boulders","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":90.0,"um":"ton"},{"m":"5' Mojave Boulders","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":90.0,"um":"ton"},{"m":"700 lb Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"8\" - 12\" Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"8\" - 18\" Mojave Rubble","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Class 1 Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Class 2 Natural Base","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":12.0,"um":"ton"},{"m":"Class 2 Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Class 4 Rip Rap (300 lb)","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Class V Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Gold DG","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":28.0,"um":"ton"},{"m":"Light Class Rip Rap","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Red 1 1/2\" CR","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":44.0,"um":"ton"},{"m":"Red 3/4\" CR","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":35.0,"um":"ton"},{"m":"Red 3/8\" CR","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":36.0,"um":"ton"},{"m":"Red DG","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":28.0,"um":"ton"},{"m":"Red Fines","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":28.0,"um":"ton"},{"m":"Rock Dust","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":10.0,"um":"ton"},{"m":"Shoulder Backing","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":14.0,"um":"ton"},{"m":"Stabilized Gold DG","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"Stabilized Red DG","p":"MRC Rock (Mojave)","a":"10618 Mojave-Tropico Road, Mojave, CA 93501","pr":48.0,"um":"ton"},{"m":"2' - 4' Rip Rap","p":"MRC Rock (Ojai)","a":"15558 Maricopa Hwy, Ojai, CA 93023","pr":68.0,"um":"ton"},{"m":"6\" - 12\" Rip Rap","p":"MRC Rock (Ojai)","a":"15558 Maricopa Hwy, Ojai, CA 93023","pr":68.0,"um":"ton"},{"m":"#57 Rock (1\" Crushed Rock)","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":29.5,"um":"ton"},{"m":"1 1/2\" Crushed Rock","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":31.25,"um":"ton"},{"m":"1\" Crushed Rock","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":28.25,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":31.5,"um":"ton"},{"m":"1/4 Ton Rip Rap","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":60.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":27.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":27.0,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":27.5,"um":"ton"},{"m":"AREMA #4 - 1 1/2\" Ballast","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":33.25,"um":"ton"},{"m":"AREMA #4A - 2 1/2\" Ballast","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":33.25,"um":"ton"},{"m":"AREMA #5 - 1\" Ballast","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":33.25,"um":"ton"},{"m":"Class 2 Natural Base","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":18.0,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":24.0,"um":"ton"},{"m":"Fill Sand","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":10.0,"um":"ton"},{"m":"Rock Dust Type II","p":"Martin Marietta (Eagle Valley / Corona)","a":"19494 River Rock Road, Corona, CA 91718","pr":26.0,"um":"ton"},{"m":"Class 2 Base/ CMB","p":"Martin Marietta (Garfield Recycle - Long Beach)","a":"6956 Cherry Ave, Long Beach, CA 90805","pr":8.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":34.0,"um":"ton"},{"m":"3/4\" Gravel","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":38.0,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":37.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":8.0,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":28.0,"um":"ton"},{"m":"Fill Sand","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":15.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":38.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Martin Marietta (Irwindale)","a":"13550 Live Oak Avenue, Irwindale, CA 91706","pr":32.0,"um":"ton"},{"m":"1 1/2\" White Rock","p":"Panamint Valley Limestone","a":"82700 Trona Road, Trona, CA 93592","pr":55.0,"um":"ton"},{"m":"18 x 30 Limestone","p":"Panamint Valley Limestone","a":"82700 Trona Road, Trona, CA 93592","pr":72.0,"um":"ton"},{"m":"3/4\" White Rock","p":"Panamint Valley Limestone","a":"82700 Trona Road, Trona, CA 93592","pr":55.0,"um":"ton"},{"m":"3/8\" White Rock","p":"Panamint Valley Limestone","a":"82700 Trona Road, Trona, CA 93592","pr":55.0,"um":"ton"},{"m":"3/4\" Gold Rock","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":58.0,"um":"scoop"},{"m":"3/4\" Premium White Rock","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":120.0,"um":"scoop"},{"m":"3/8\" Crushed Rock","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":50.0,"um":"scoop"},{"m":"Class II Base / CMB","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":20.0,"um":"scoop"},{"m":"Crushed Miscellaneous Base (CMB)","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":20.0,"um":"scoop"},{"m":"Decomposed Granite","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":43.0,"um":"scoop"},{"m":"Washed Plaster Sand","p":"SM Sales Yard","a":"17524 Sierra Hwy, Santa Clarita, CA 91351","pr":35.0,"um":"scoop"},{"m":"1 1/2\" Premium White Rock","p":"SMI","a":"6565 Meridian Ave, Lucerne Valley, CA 92356","pr":70.0,"um":"ton"},{"m":"3/8\" Premium White Rock","p":"SMI","a":"6565 Meridian Ave, Lucerne Valley, CA 92356","pr":70.0,"um":"ton"},{"m":"1/4 Ton Rip Rap","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":60.0,"um":"ton"},{"m":"12\"-24\" Rip Rap","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":60.0,"um":"ton"},{"m":"3\" Crushed Rock","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":48.0,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":48.0,"um":"ton"},{"m":"3/4\" Crushed Topanga Rock","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":70.0,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":46.0,"um":"ton"},{"m":"4\" - 8\" Rip Rap","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":60.0,"um":"ton"},{"m":"4\" Minus Rock","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":45.0,"um":"ton"},{"m":"4\"-8\" Cobble","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":52.0,"um":"ton"},{"m":"6\"-12\" Rip Rap","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":60.0,"um":"ton"},{"m":"Class II Base / CMB","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":16.5,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":36.0,"um":"ton"},{"m":"Fill Sand","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":12.0,"um":"ton"},{"m":"Rock Dust","p":"Santa Paula Materials","a":"1224 East Santa Clara Street, Santa Paula, CA 93060","pr":16.0,"um":"ton"},{"m":"3/4\" Burgundy Lava Rock - Medium Landscape Cinder","p":"Twin Mountain Rock Venture","a":"1000 Cinder Rd, Little Lake, CA 93542","pr":90.0,"um":"ton"},{"m":"1 1/2\" Crushed Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"1 1/2\" Gravel","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":33.9,"um":"ton"},{"m":"1\" Gravel","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":33.9,"um":"ton"},{"m":"1/2\" Crushed Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"3\" Crushed Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":44.1,"um":"ton"},{"m":"3/4\"  50-50 Mix (C-Mix)","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":32.7,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"3/8\" Crushed Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"3/8\" Gravel (Pea Gravel)","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"Class II Base / CMB","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":8.6,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"RCA #3 (#57 - 1inch) - Recycled Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":19.2,"um":"ton"},{"m":"RCA #4 (3/8\" Pea Gravel) - Recycled Rock","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":20.4,"um":"ton"},{"m":"RCA Sand/Fines - Recycled Sand","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":20.4,"um":"ton"},{"m":"Rock Dust","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":26.1,"um":"ton"},{"m":"Type I Slurry Dust","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":36.3,"um":"ton"},{"m":"Type II Slurry Dust","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":36.3,"um":"ton"},{"m":"Type III Slurry Dust","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":36.3,"um":"ton"},{"m":"Washed Concrete Sand","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"Washed Plaster Sand","p":"United Rock Products","a":"1245 East Arrow Highway, Irwindale, CA 91706","pr":35.1,"um":"ton"},{"m":"1\" Gravel","p":"Vulcan Materials (Durbin)","a":"5050 N. Irwindale Avenue, Irwindale, CA 91702","pr":40.8,"um":"ton"},{"m":"Fill Sand","p":"Vulcan Materials (Durbin)","a":"5050 N. Irwindale Avenue, Irwindale, CA 91702","pr":14.4,"um":"ton"},{"m":"Washed Concrete Sand","p":"Vulcan Materials (Durbin)","a":"5050 N. Irwindale Avenue, Irwindale, CA 91702","pr":37.5,"um":"ton"},{"m":"Washed Plaster Sand","p":"Vulcan Materials (Durbin)","a":"5050 N. Irwindale Avenue, Irwindale, CA 91702","pr":36.0,"um":"ton"},{"m":"1\" Gravel","p":"Vulcan Materials (Palmdale)","a":"6851 E Avenue T, Palmdale, CA 93552","pr":28.75,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Vulcan Materials (Palmdale)","a":"6851 E Avenue T, Palmdale, CA 93552","pr":30.0,"um":"ton"},{"m":"Cold Mix 3/8 SC8","p":"Vulcan Materials (Palmdale)","a":"6851 E Avenue T, Palmdale, CA 93552","pr":155.0,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Vulcan Materials (Palmdale)","a":"6851 E Avenue T, Palmdale, CA 93552","pr":21.75,"um":"ton"},{"m":"3/4\" Crushed Rock","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":31.0,"um":"ton"},{"m":"Class 2 Natural Base","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":25.8,"um":"ton"},{"m":"Class II Permeable Base","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":35.5,"um":"ton"},{"m":"Crushed Aggregate Base (CAB)","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":27.6,"um":"ton"},{"m":"Fill Sand","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":18.0,"um":"ton"},{"m":"Rock Dust","p":"Vulcan Materials (Reliance)","a":"16001 E Foothill Blvd, Irwindale, CA 91702","pr":16.2,"um":"ton"},{"m":"3/4\" Del Rio","p":"Wayne J Sand & Gravel","a":"9455 Buena Vista St., Moorpark, CA 93021","pr":41.76,"um":"ton"},{"m":"Cyclone Sand","p":"Wayne J Sand & Gravel","a":"9455 Buena Vista St., Moorpark, CA 93021","pr":16.0,"um":"ton"},{"m":"Washed Concrete Sand","p":"Wayne J Sand & Gravel","a":"9455 Buena Vista St., Moorpark, CA 93021","pr":25.0,"um":"ton"},{"m":"Washed Plaster Sand","p":"Wayne J Sand & Gravel","a":"9455 Buena Vista St., Moorpark, CA 93021","pr":25.0,"um":"ton"}];
+const PM_PLANT_ADDR = {"75th Street Quarry and Recycling":"38050 75th Street East, Palmdale, CA","SM Sales Yard":"17524 Sierra Hwy, Santa Clarita, CA 91351","United Rock Products":"1245 East Arrow Highway, Irwindale, CA 91706","Cemex (Lytle Creek)":"3221 N Riverside Ave, Rialto, CA 92376","Cemex (Redlands)":"8731 Orange St, Redlands, CA 92374","Cemex (Friant)":"13475 N Friant Rd, Friant, CA 93626","Cemex (Moorpark)":"9035 Roseland Ave, Moorpark, CA 93021","Cemex (Bell Terminal)":"5091 Rickenbacker Rd, Bell, CA 90201","Cemex (White Mountain)":"24724 Quarry Rd, Apple Valley, CA 92307","Granite Construction (Big Rock)":"34809 155th Street East, Llano, CA 93544","Granite Construction (Handley Ranch)":"25485 Iverson Road, Gonzales, CA 93926","Hi-Grade Materials (Littlerock)":"6500 E Avenue T, Littlerock, CA 93552","Hi-Grade Materials (Lucerne)":"8701 Meridian Road, Lucerne Valley, CA 92356","Hi-Grade Materials (Lancaster)":"411 W Avenue H6, Lancaster, CA 93534","Martin Marietta (Eagle Valley / Corona)":"19494 River Rock Road, Corona, CA 91718","Martin Marietta (Irwindale)":"13550 Live Oak Avenue, Irwindale, CA 91706","Martin Marietta (Garfield Recycle - Long Beach)":"6956 Cherry Ave, Long Beach, CA 90805","Martin Marietta (Long Beach Recycle)":"2850 California Ave, Long Beach, CA 90755","MRC Rock (Mojave)":"10618 Mojave-Tropico Road, Mojave, CA 93501","MRC Rock (Ojai)":"15558 Maricopa Hwy, Ojai, CA 93023","MRC Rock & Sand":"1565 Ventura St, Fillmore, CA 93015","Gillibrand Industrial Sands (Simi Valley)":"5810 Bennett Road, Simi Valley, CA 93062","Vulcan Materials (Durbin)":"5050 N. Irwindale Avenue, Irwindale, CA 91702","Vulcan Materials (Reliance)":"16001 E Foothill Blvd, Irwindale, CA 91702","Vulcan Materials (Palmdale)":"6851 E Avenue T, Palmdale, CA 93552","Coast Aggregates (Palmdale)":"13114 E Avenue T, Palmdale, CA 93543","Wayne J Sand & Gravel":"9455 Buena Vista St., Moorpark, CA 93021","CalPortland (Fillmore)":"3500 Grimes Canyon Road, Fillmore, CA 93021","Arcosa (Crushed Concrete / Aggregates) - Sun Valley":"9005 Bradley Ave, Sun Valley, CA 91352","Arcosa (Crushed Concrete / Aggregates) - Rialto":"250 E Santa Ana Ave, Rialto, CA 92316","Arcosa (Crushed Concrete / Aggregates) - Escondido":"8354 Nelson Way, Escondido, CA 92026","Arcosa (Crushed Concrete / Aggregates) - Beaumont":"861 W 4th Street, Beaumont, CA 92223","AMH Recycling":"11230 Roscoe Blvd, Sun Valley, CA 91352","Bradley Recycling(Security Paving)":"8960 Bradley Ave, Sun Valley, CA 91352","Arrow Construction Company":"507 E Ave L 12, Lancaster, CA 93535","Brubaker-Mann Inc":"36011 Soapmine Rd, Barstow, CA 92311","Panamint Valley Limestone":"82700 Trona Road, Trona, CA 93592","C&M Topsoil (Sylmar)":"12087 Lopez Canyon Rd, Sylmar, CA 91342","Foothill Soils (Coltrane Yard)":"22925 Coltrane Avenue, Newhall, CA 91321","Twin Mountain Rock Venture":"1000 Cinder Rd, Little Lake, CA 93542","Las Vegas Rock":"2 Prison Road, Jean, NV 89019","SMI":"6565 Meridian Ave, Lucerne Valley, CA 92356","FST Sand & Gravel":"21780 Temescal Canyon Road, Corona, CA 92883","Santa Paula Materials":"1224 East Santa Clara Street, Santa Paula, CA 93060"};
+
+const PM_LINES = {
+  1: {mat:"mat1", ps:"ps1", pa:"pa1", mi:"mi1", hr:"hr1", pr:"pr1", out:"bsOut1", full:true},
+  2: {mat:"mat2", ps:"ps2", pa:"pa2", mi:null,  hr:null,  pr:"pr2", out:"bsOut2", full:false}
+};
+let pmLast = {};
+
+function pmEsc(x){ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function pmMsg(t){ return '<div class="bs-note">'+pmEsc(t)+'</div>'; }
+function pmNorm(x){ return String(x||"").toLowerCase().replace(/&quot;/g,'"').replace(/[^a-z0-9]/g,""); }
+
+function pmMatchEntries(matName){
+  const key = pmNorm(matName);
+  if(!key) return [];
+  let hits = PRICE_MATRIX.filter(e => pmNorm(e.m) === key);
+  if(!hits.length) hits = PRICE_MATRIX.filter(e => { const k = pmNorm(e.m); return k.indexOf(key) === 0 || key.indexOf(k) === 0; });
+  return hits;
+}
+
+function findBestSource(line){
+  const cfg = PM_LINES[line]; if(!cfg) return;
+  const out = document.getElementById(cfg.out); if(!out) return;
+  const matName = getMatName(cfg.mat);
+  if(!matName){ out.innerHTML = pmMsg("Pick a material first."); return; }
+  const hits = pmMatchEntries(matName);
+  if(!hits.length){ out.innerHTML = pmMsg('No price-matrix entries for "'+matName+'" — enter the price manually.'); return; }
+  let dest = null;
+  if(typeof locPid !== "undefined" && locPid) dest = {placeId: locPid};
+  else if(typeof locLat !== "undefined" && locLat && locLng) dest = {lat: locLat, lng: locLng};
+  else { const a = s("location") || s("address"); if(a) dest = a; }
+  if(!dest){ out.innerHTML = pmMsg("Set the delivery location first, then try again."); return; }
+  const tonHits = hits.filter(e => e.um === "ton").slice(0, 25);
+  const otherHits = hits.filter(e => e.um !== "ton");
+  if(!tonHits.length){ out.innerHTML = pmRenderOther(otherHits) + pmMsg("These items are priced per " + otherHits[0].um + " — no per-ton comparison; pick manually."); return; }
+  if(typeof google === "undefined" || !google.maps){ out.innerHTML = pmMsg("Google Maps not loaded — check connection and retry."); return; }
+  out.innerHTML = pmMsg("Comparing " + tonHits.length + " plant" + (tonHits.length !== 1 ? "s" : "") + "…");
+  new google.maps.DistanceMatrixService().getDistanceMatrix({
+    origins: tonHits.map(e => e.a),
+    destinations: [dest],
+    travelMode: google.maps.TravelMode.DRIVING,
+    unitSystem: google.maps.UnitSystem.IMPERIAL,
+    avoidTolls: true
+  }, function(resp, st){
+    if(st !== "OK"){ out.innerHTML = pmMsg("Distance lookup failed (" + st + ") — pick the plant manually."); return; }
+    const rows = [];
+    resp.rows.forEach(function(r, i){
+      const el = r.elements[0];
+      if(!el || el.status !== "OK") return;
+      const miles = el.distance.value / 1609.344;
+      const haul = calcHaulRate(miles);
+      rows.push({e: tonHits[i], miles: miles, haul: haul, total: tonHits[i].pr + haul});
+    });
+    if(!rows.length){ out.innerHTML = pmMsg("No drivable routes found — pick the plant manually."); return; }
+    rows.sort(function(a, b){ return a.total - b.total; });
+    pmLast[line] = rows;
+    out.innerHTML = pmRenderTable(line, rows, otherHits);
+    pmApply(line, 0);
+  });
+}
+
+function pmRenderTable(line, rows, otherHits){
+  let h = '<table><tr><th>Plant</th><th>Sell $/t</th><th>Miles</th><th>Haul $/t</th><th>Delivered $/t</th></tr>';
+  rows.forEach(function(r, i){
+    h += '<tr data-bs="' + i + '" onclick="pmApply(' + line + ',' + i + ')"><td>' + pmEsc(r.e.p) +
+         (i === 0 ? '<span class="bs-badge">LOWEST</span>' : '') + '</td><td>$' + r.e.pr.toFixed(2) +
+         '</td><td>' + r.miles.toFixed(1) + '</td><td>$' + r.haul.toFixed(2) +
+         '</td><td><b>$' + r.total.toFixed(2) + '</b></td></tr>';
+  });
+  h += '</table>';
+  if(otherHits && otherHits.length) h += pmRenderOther(otherHits);
+  h += '<div class="bs-note">Lowest delivered cost auto-applied — click any row to override. Haul uses the current zone/access settings' + (PM_LINES[line].full ? '' : ' (price + plant applied; haul fields are on Material 1') + (PM_LINES[line].full ? '.' : ').') + '</div>';
+  return h;
+}
+
+function pmRenderOther(otherHits){
+  if(!otherHits || !otherHits.length) return "";
+  let h = '<div class="bs-note">Also priced (not per-ton): ';
+  h += otherHits.map(function(e){ return pmEsc(e.p) + " $" + e.pr.toFixed(2) + "/" + pmEsc(e.um); }).join(" · ");
+  return h + '</div>';
+}
+
+function pmApply(line, idx){
+  const cfg = PM_LINES[line];
+  const row = (pmLast[line] || [])[idx];
+  if(!cfg || !row) return;
+  const psEl = document.getElementById(cfg.ps);
+  if(psEl){
+    let matched = false;
+    for(let i = 0; i < psEl.options.length; i++){
+      const o = psEl.options[i];
+      if((o.dataset && o.dataset.name) === row.e.p){ psEl.value = o.value; matched = true; break; }
+    }
+    if(!matched) psEl.value = "";
+  }
+  const paEl = document.getElementById(cfg.pa); if(paEl) paEl.value = row.e.a;
+  if(cfg.mi){ const miEl = document.getElementById(cfg.mi); if(miEl) miEl.value = row.miles.toFixed(1); }
+  if(cfg.full){
+    currentMiles = row.miles;
+    if(typeof updateFormulaBox === "function") updateFormulaBox(row.miles);
+  }
+  if(cfg.hr){ const hrEl = document.getElementById(cfg.hr); if(hrEl){ hrEl.value = row.haul.toFixed(2); hrEl.style.borderColor = "rgba(0,191,255,.5)"; } }
+  if(cfg.pr){ const prEl = document.getElementById(cfg.pr); if(prEl){ prEl.value = row.e.pr.toFixed(2); prEl.style.borderColor = "rgba(0,191,255,.5)"; } }
+  const outEl = document.getElementById(cfg.out);
+  if(outEl) outEl.querySelectorAll("tr[data-bs]").forEach(function(tr){ tr.classList.toggle("bs-on", +tr.dataset.bs === idx); });
+  if(typeof calc === "function") calc();
+}
+
+// ── Add price-matrix plants missing from the static plant dropdowns ──
+(function(){
+  const selIds = ["ps1", "ps2", "hps", "fps"];
+  let extraOpts = "";
+  Object.keys(PM_PLANT_ADDR).forEach(function(name){
+    const addr = PM_PLANT_ADDR[name];
+    selIds.forEach(function(id){
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      for(let i = 0; i < sel.options.length; i++){ if((sel.options[i].dataset && sel.options[i].dataset.name) === name) return; }
+      const o = document.createElement("option");
+      o.value = addr; o.textContent = name; o.dataset.name = name;
+      sel.appendChild(o);
+    });
+    if(typeof MM_PLANT_OPTS === "string" && MM_PLANT_OPTS.indexOf('data-name="' + name + '"') === -1){
+      extraOpts += '<option value="' + pmEsc(addr) + '" data-name="' + pmEsc(name) + '">' + pmEsc(name) + '</option>';
+    }
+  });
+  if(extraOpts && typeof MM_PLANT_OPTS === "string") MM_PLANT_OPTS += extraOpts;
+})();
+
+// ── >10,000-ton quotes require Jason Tepstein's review (policy 2026-07-15) ──
+(function(){
+  const b = document.createElement("div");
+  b.id = "jtReviewBanner";
+  b.textContent = "⚠ QUOTE OVER 10,000 TONS — REQUIRES JASON TEPSTEIN'S REVIEW BEFORE SENDING";
+  document.body.appendChild(b);
+  function pmQ(id){
+    try{ return (typeof qtyToTons === "function") ? (qtyToTons(id) || 0) : (parseFloat(s(id)) || 0); }
+    catch(e){ return parseFloat(s(id)) || 0; }
+  }
+  window.pmReviewCheck = function(){
+    let t = 0;
+    try{
+      if(typeof qt !== "undefined"){
+        if(qt === "std" || qt === "split"){ t += pmQ("qty1"); if(qt === "split") t += pmQ("qty2"); }
+        else if(qt === "haul") t += pmQ("htons");
+        else if(qt === "freight") t += pmQ("ftons");
+      }
+    }catch(e){}
+    b.style.display = t > 10000 ? "block" : "none";
+  };
+  const origCalc = calc;
+  calc = function(){ origCalc.apply(this, arguments); try{ pmReviewCheck(); }catch(e){} };
+})();
+</script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0&libraries=places,drawing&callback=initMaps&onerror=mapsLoadError" async defer></script>
 
 <!-- ── DispatchHQ Integration ──────────────────────────────────── -->
