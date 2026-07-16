@@ -4540,10 +4540,11 @@ const PRICE_MATRIX = [{"m":"1 1/2\" Crushed Rock","p":"75th Street Quarry and Re
 const PM_PLANT_ADDR = {"75th Street Quarry and Recycling":"38050 75th Street East, Palmdale, CA","SM Sales Yard":"17524 Sierra Hwy, Santa Clarita, CA 91351","United Rock Products":"1245 East Arrow Highway, Irwindale, CA 91706","Cemex (Lytle Creek)":"3221 N Riverside Ave, Rialto, CA 92376","Cemex (Redlands)":"8731 Orange St, Redlands, CA 92374","Cemex (Friant)":"13475 N Friant Rd, Friant, CA 93626","Cemex (Moorpark)":"9035 Roseland Ave, Moorpark, CA 93021","Cemex (Bell Terminal)":"5091 Rickenbacker Rd, Bell, CA 90201","Cemex (White Mountain)":"24724 Quarry Rd, Apple Valley, CA 92307","Granite Construction (Big Rock)":"34809 155th Street East, Llano, CA 93544","Granite Construction (Handley Ranch)":"25485 Iverson Road, Gonzales, CA 93926","Hi-Grade Materials (Littlerock)":"6500 E Avenue T, Littlerock, CA 93552","Hi-Grade Materials (Lucerne)":"8701 Meridian Road, Lucerne Valley, CA 92356","Hi-Grade Materials (Lancaster)":"411 W Avenue H6, Lancaster, CA 93534","Martin Marietta (Eagle Valley / Corona)":"19494 River Rock Road, Corona, CA 91718","Martin Marietta (Irwindale)":"13550 Live Oak Avenue, Irwindale, CA 91706","Martin Marietta (Garfield Recycle - Long Beach)":"6956 Cherry Ave, Long Beach, CA 90805","Martin Marietta (Long Beach Recycle)":"2850 California Ave, Long Beach, CA 90755","MRC Rock (Mojave)":"10618 Mojave-Tropico Road, Mojave, CA 93501","MRC Rock (Ojai)":"15558 Maricopa Hwy, Ojai, CA 93023","MRC Rock & Sand":"1565 Ventura St, Fillmore, CA 93015","Gillibrand Industrial Sands (Simi Valley)":"5810 Bennett Road, Simi Valley, CA 93062","Vulcan Materials (Durbin)":"5050 N. Irwindale Avenue, Irwindale, CA 91702","Vulcan Materials (Reliance)":"16001 E Foothill Blvd, Irwindale, CA 91702","Vulcan Materials (Palmdale)":"6851 E Avenue T, Palmdale, CA 93552","Coast Aggregates (Palmdale)":"13114 E Avenue T, Palmdale, CA 93543","Wayne J Sand & Gravel":"9455 Buena Vista St., Moorpark, CA 93021","CalPortland (Fillmore)":"3500 Grimes Canyon Road, Fillmore, CA 93021","CalPortland (Apple Valley)":"18400 Falchion Rd, Apple Valley, CA 92307","Grimes Rock, Inc.":"3500 Grimes Canyon Road, Fillmore, CA 93021","Arcosa (Crushed Concrete / Aggregates) - Sun Valley":"9005 Bradley Ave, Sun Valley, CA 91352","Arcosa (Crushed Concrete / Aggregates) - Rialto":"250 E Santa Ana Ave, Rialto, CA 92316","Arcosa (Crushed Concrete / Aggregates) - Escondido":"8354 Nelson Way, Escondido, CA 92026","Arcosa (Crushed Concrete / Aggregates) - Beaumont":"861 W 4th Street, Beaumont, CA 92223","AMH Recycling":"11230 Roscoe Blvd, Sun Valley, CA 91352","Bradley Recycling(Security Paving)":"8960 Bradley Ave, Sun Valley, CA 91352","Arrow Construction Company":"507 E Ave L 12, Lancaster, CA 93535","Brubaker-Mann Inc":"36011 Soapmine Rd, Barstow, CA 92311","Panamint Valley Limestone":"82700 Trona Road, Trona, CA 93592","C&M Topsoil (Sylmar)":"12087 Lopez Canyon Rd, Sylmar, CA 91342","Foothill Soils (Coltrane Yard)":"22925 Coltrane Avenue, Newhall, CA 91321","Twin Mountain Rock Venture":"1000 Cinder Rd, Little Lake, CA 93542","Las Vegas Rock":"2 Prison Road, Jean, NV 89019","SMI":"6565 Meridian Ave, Lucerne Valley, CA 92356","FST Sand & Gravel":"21780 Temescal Canyon Road, Corona, CA 92883","Santa Paula Materials":"1224 East Santa Clara Street, Santa Paula, CA 93060"};
 
 const PM_LINES = {
-  1: {mat:"mat1", ps:"ps1", pa:"pa1", mi:"mi1", hr:"hr1", pr:"pr1", out:"bsOut1", full:true},
-  2: {mat:"mat2", ps:"ps2", pa:"pa2", mi:null,  hr:null,  pr:"pr2", out:"bsOut2", full:false}
+  1: {mat:"mat1", ps:"ps1", pa:"pa1", mi:"mi1", hr:"hr1", pr:"pr1", qty:"qty1", out:"bsOut1", full:true},
+  2: {mat:"mat2", ps:"ps2", pa:"pa2", mi:null,  hr:null,  pr:"pr2", qty:"qty2", out:"bsOut2", full:false}
 };
 let pmLast = {};
+let pmQtyInfo = {};
 
 function pmEsc(x){ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function pmMsg(t){ return '<div class="bs-note">'+pmEsc(t)+'</div>'; }
@@ -4591,24 +4592,40 @@ function findBestSource(line){
       rows.push({e: tonHits[i], miles: miles, haul: haul, total: tonHits[i].pr + haul});
     });
     if(!rows.length){ out.innerHTML = pmMsg("No drivable routes found — pick the plant manually."); return; }
-    rows.sort(function(a, b){ return a.total - b.total; });
+    // Rank on the ACTUAL total for the entered quantity: material is billed on
+    // actual tons, haul on the per-load (truck-cap) minimum tons — on small
+    // orders the haul outweighs the material and can flip the winner vs a
+    // simple $/ton comparison. No quantity yet → rank per delivered $/ton.
+    var qtyTons = 0;
+    try { qtyTons = (cfg.qty && typeof qtyToTons === "function") ? (qtyToTons(cfg.qty) || 0) : 0; } catch(e){}
+    var billTons = qtyTons > 0 ? (typeof minTons === "function" ? minTons(qtyTons) : Math.ceil(qtyTons / 25) * 25) : 0;
+    rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.e.pr + billTons * r.haul : 0; });
+    rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
     pmLast[line] = rows;
+    pmQtyInfo[line] = {tons: qtyTons, bill: billTons};
     out.innerHTML = pmRenderTable(line, rows, otherHits);
     pmApply(line, 0);
   });
 }
 
 function pmRenderTable(line, rows, otherHits){
-  let h = '<table><tr><th>Plant</th><th>Sell $/t</th><th>Miles</th><th>Haul $/t</th><th>Delivered $/t</th></tr>';
+  var qi = pmQtyInfo[line] || {tons: 0, bill: 0};
+  var byQty = qi.tons > 0;
+  let h = '<table><tr><th>Plant</th><th>Sell $/t</th><th>Miles</th><th>Haul $/t</th><th>Delivered $/t</th>' +
+          (byQty ? '<th>Total (' + qi.tons.toFixed(1) + 't)</th>' : '') + '</tr>';
   rows.forEach(function(r, i){
     h += '<tr data-bs="' + i + '" onclick="pmApply(' + line + ',' + i + ')"><td>' + pmEsc(r.e.p) +
          (i === 0 ? '<span class="bs-badge">LOWEST</span>' : '') + '</td><td>$' + r.e.pr.toFixed(2) +
          '</td><td>' + r.miles.toFixed(1) + '</td><td>$' + r.haul.toFixed(2) +
-         '</td><td><b>$' + r.total.toFixed(2) + '</b></td></tr>';
+         '</td><td>$' + r.total.toFixed(2) + '</td>' +
+         (byQty ? '<td><b>$' + r.job.toFixed(2) + '</b></td>' : '') + '</tr>';
   });
   h += '</table>';
   if(otherHits && otherHits.length) h += pmRenderOther(otherHits);
-  h += '<div class="bs-note">Lowest delivered cost auto-applied — click any row to override. Haul uses the current zone/access settings' + (PM_LINES[line].full ? '' : ' (price + plant applied; haul fields are on Material 1') + (PM_LINES[line].full ? '.' : ').') + '</div>';
+  h += '<div class="bs-note">' + (byQty
+        ? 'Ranked by TOTAL cost for ' + qi.tons.toFixed(1) + 't (material on actual tons, haul on the ' + qi.bill.toFixed(1) + 't per-load minimum).'
+        : 'Ranked by delivered $/ton — enter a quantity for exact totals.') +
+       ' Lowest auto-applied — click any row to override. Haul uses the current zone/access settings' + (PM_LINES[line].full ? '.' : ' (price + plant applied; haul fields are on Material 1).') + '</div>';
   return h;
 }
 
@@ -4681,13 +4698,23 @@ function mmAutoSource(i) {
     var matNow = trsNow.querySelector(".mm-mat");
     if(!selNow || (selNow.value && selNow.dataset.auto !== "1")) return;
     if(!matNow || matNow.value !== matName) return;
+    // Rank on the ACTUAL total for this row's quantity: material on actual
+    // tons, haul on the per-load (truck-cap) minimum tons — on small orders
+    // the haul outweighs the material and can flip the winner vs $/ton.
+    // No quantity entered yet → rank per delivered $/ton.
+    var qtyNow = parseFloat((trsNow.querySelector(".mm-qty")||{}).value) || 0;
+    var unitNow = (trsNow.querySelector(".mm-unit")||{}).value || "tons";
+    var rowTons = (unitNow === "load" || unitNow === "hour") ? 0 : unitToTons(qtyNow, unitNow);
+    var truckNow = (trsNow.querySelector(".mm-truck")||{}).value || "";
+    var capNow = (truckNow && TRUCK_RATES[truckNow]) ? TRUCK_RATES[truckNow].cap : 25;
+    var billTons = rowTons > 0 ? Math.ceil(rowTons / capNow) * capNow : 0;
     var best = null;
     resp.rows.forEach(function(r, k) {
       var el = r.elements[0];
       if(!el || el.status !== "OK") return;
       var haul = calcHaulRate(el.distance.value / 1609.344);
-      var total = hits[k].pr + haul;
-      if(!best || total < best.total) best = {e: hits[k], haul: haul, total: total};
+      var score = rowTons > 0 ? (rowTons * hits[k].pr + billTons * haul) : (hits[k].pr + haul);
+      if(!best || score < best.score) best = {e: hits[k], haul: haul, score: score, perTon: hits[k].pr + haul};
     });
     if(!best) return;
     var matched = false;
@@ -4697,7 +4724,10 @@ function mmAutoSource(i) {
     if(!matched) return;
     selNow.dataset.auto = "1";
     selNow.style.borderColor = "#2a8a4a";
-    selNow.title = "Auto-selected: lowest delivered cost — " + best.e.p + " ($" + best.total.toFixed(2) + "/t delivered). Pick a different plant to override.";
+    selNow.title = "Auto-selected: " + (rowTons > 0
+      ? "lowest TOTAL cost for " + rowTons.toFixed(1) + "t — " + best.e.p + " ($" + best.score.toFixed(2) + " total; haul billed on " + billTons.toFixed(1) + "t min)"
+      : "lowest delivered cost — " + best.e.p + " ($" + best.perTon.toFixed(2) + "/t delivered)") +
+      ". Pick a different plant to override.";
     var haulEl = trsNow.querySelector(".mm-haul");
     if(haulEl && (!haulEl.value || haulEl.dataset.auto === "1")) {
       haulEl.value = best.haul.toFixed(2); haulEl.dataset.auto = "1";
@@ -4712,6 +4742,24 @@ function mmAutoSource(i) {
     if(typeof calcMM === "function") calcMM();
   });
 }
+
+// ── Re-rank an auto-picked plant when the quantity changes (debounced) —
+// the total-cost winner can shift with tonnage. Manual picks are untouched.
+(function(){
+  var tbody = document.getElementById("mmTbody");
+  if(!tbody) return;
+  var t = null;
+  tbody.addEventListener("input", function(ev){
+    if(!ev.target.classList || !ev.target.classList.contains("mm-qty")) return;
+    var tr = ev.target.closest("tr");
+    var sel = tr ? tr.querySelector(".mm-plant") : null;
+    if(!sel || (sel.value && sel.dataset.auto !== "1")) return;
+    var trs = tbody.querySelectorAll("tr");
+    var i = Array.prototype.indexOf.call(trs, tr);
+    clearTimeout(t);
+    t = setTimeout(function(){ if(typeof mmAutoSource === "function") mmAutoSource(i); }, 600);
+  });
+})();
 
 // ── Add price-matrix plants missing from the static plant dropdowns ──
 (function(){
