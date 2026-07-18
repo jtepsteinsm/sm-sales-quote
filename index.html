@@ -4601,8 +4601,10 @@ function findBestSource(line){
     var billTons = qtyTons > 0 ? (typeof minTons === "function" ? minTons(qtyTons) : Math.ceil(qtyTons / 25) * 25) : 0;
     rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.e.pr + billTons * r.haul : 0; });
     rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
+    var totalPlants = rows.length;
+    rows = rows.slice(0, 5);
     pmLast[line] = rows;
-    pmQtyInfo[line] = {tons: qtyTons, bill: billTons};
+    pmQtyInfo[line] = {tons: qtyTons, bill: billTons, of: totalPlants};
     out.innerHTML = pmRenderTable(line, rows, otherHits);
     pmApply(line, 0);
   });
@@ -4622,7 +4624,7 @@ function pmRenderTable(line, rows, otherHits){
   });
   h += '</table>';
   if(otherHits && otherHits.length) h += pmRenderOther(otherHits);
-  h += '<div class="bs-note">' + (byQty
+  h += '<div class="bs-note">Top ' + rows.length + ' of ' + (qi.of || rows.length) + ' plants. ' + (byQty
         ? 'Ranked by TOTAL cost for ' + qi.tons.toFixed(1) + 't (material on actual tons, haul on the ' + qi.bill.toFixed(1) + 't per-load minimum).'
         : 'Ranked by delivered $/ton — enter a quantity for exact totals.') +
        ' Lowest auto-applied — click any row to override. Haul uses the current zone/access settings' + (PM_LINES[line].full ? '.' : ' (price + plant applied; haul fields are on Material 1).') + '</div>';
@@ -4670,15 +4672,16 @@ function mmAutoSource(i) {
   var tbody = document.getElementById("mmTbody");
   var tr = tbody ? tbody.querySelectorAll("tr")[i] : null;
   if(!tr) return;
-  if(typeof locPid === "undefined" || (!locPid && !locLat)) return;
   var sel = tr.querySelector(".mm-plant");
   if(!sel || (sel.value && sel.dataset.auto !== "1")) return;   // manual pick wins
   var matEl = tr.querySelector(".mm-mat");
   var matName = matEl ? matEl.value : "";
-  if(!matName || matName === "__other__") return;
-  if(typeof google === "undefined" || !google.maps) return;
+  if(!matName || matName === "__other__") { mmBsStatus(tr, ""); return; }
+  if(typeof locPid === "undefined" || (!locPid && !locLat)) { mmBsStatus(tr, "Enter the job-site address — the cheapest plant is picked automatically."); return; }
   var hits = pmMatchEntries(matName).filter(function(e){ return e.um === "ton"; }).slice(0, 25);
-  if(!hits.length) return;
+  if(!hits.length) { mmBsStatus(tr, "⚠ Not in the price matrix — pick the plant and price manually."); return; }
+  if(typeof google === "undefined" || !google.maps) { mmBsStatus(tr, "⚠ Google Maps not loaded — pick manually."); return; }
+  mmBsStatus(tr, "⟳ Comparing " + hits.length + " plant" + (hits.length !== 1 ? "s" : "") + "…");
   var dest = locPid ? {placeId: locPid} : {lat: locLat, lng: locLng};
   new google.maps.DistanceMatrixService().getDistanceMatrix({
     origins: hits.map(function(e){ return e.a; }),
@@ -4687,61 +4690,145 @@ function mmAutoSource(i) {
     unitSystem: google.maps.UnitSystem.IMPERIAL,
     avoidTolls: true
   }, function(resp, st) {
-    if(st !== "OK") return;
-    // Async safety: the user may have acted while the request was in flight.
-    // A manual plant pick, a material change, or a re-rendered table must not
-    // be overwritten by this (now stale) result.
-    var trsNow = document.getElementById("mmTbody");
-    trsNow = trsNow ? trsNow.querySelectorAll("tr")[i] : null;
-    if(!trsNow) return;
-    var selNow = trsNow.querySelector(".mm-plant");
-    var matNow = trsNow.querySelector(".mm-mat");
-    if(!selNow || (selNow.value && selNow.dataset.auto !== "1")) return;
-    if(!matNow || matNow.value !== matName) return;
+    // Async safety: re-locate the row; a manual pick, material change, or
+    // re-rendered table while the request was pending must not be clobbered.
+    var tbody2 = document.getElementById("mmTbody");
+    var tr2 = tbody2 ? tbody2.querySelectorAll("tr")[i] : null;
+    if(!tr2) return;
+    var sel2 = tr2.querySelector(".mm-plant");
+    var mat2 = tr2.querySelector(".mm-mat");
+    if(!sel2 || (sel2.value && sel2.dataset.auto !== "1")) return;
+    if(!mat2 || mat2.value !== matName) return;
+    if(st !== "OK") { mmBsStatus(tr2, "⚠ Distance lookup failed (" + st + ") — pick manually."); return; }
     // Rank on the ACTUAL total for this row's quantity: material on actual
-    // tons, haul on the per-load (truck-cap) minimum tons — on small orders
-    // the haul outweighs the material and can flip the winner vs $/ton.
-    // No quantity entered yet → rank per delivered $/ton.
-    var qtyNow = parseFloat((trsNow.querySelector(".mm-qty")||{}).value) || 0;
-    var unitNow = (trsNow.querySelector(".mm-unit")||{}).value || "tons";
+    // tons, haul on the per-load (truck-cap) minimum tons. No qty yet -> $/ton.
+    var qtyNow = parseFloat((tr2.querySelector(".mm-qty")||{}).value) || 0;
+    var unitNow = (tr2.querySelector(".mm-unit")||{}).value || "tons";
     var rowTons = (unitNow === "load" || unitNow === "hour") ? 0 : unitToTons(qtyNow, unitNow);
-    var truckNow = (trsNow.querySelector(".mm-truck")||{}).value || "";
+    var truckNow = (tr2.querySelector(".mm-truck")||{}).value || "";
     var capNow = (truckNow && TRUCK_RATES[truckNow]) ? TRUCK_RATES[truckNow].cap : 25;
     var billTons = rowTons > 0 ? Math.ceil(rowTons / capNow) * capNow : 0;
-    var best = null;
+    var ranked = [];
     resp.rows.forEach(function(r, k) {
       var el = r.elements[0];
       if(!el || el.status !== "OK") return;
       var haul = calcHaulRate(el.distance.value / 1609.344);
-      var score = rowTons > 0 ? (rowTons * hits[k].pr + billTons * haul) : (hits[k].pr + haul);
-      if(!best || score < best.score) best = {e: hits[k], haul: haul, score: score, perTon: hits[k].pr + haul};
+      ranked.push({e: hits[k], haul: haul, perTon: hits[k].pr + haul,
+                   score: rowTons > 0 ? (rowTons * hits[k].pr + billTons * haul) : (hits[k].pr + haul)});
     });
-    if(!best) return;
-    var matched = false;
-    for(var k = 0; k < selNow.options.length; k++) {
-      if((selNow.options[k].dataset && selNow.options[k].dataset.name) === best.e.p) { selNow.value = selNow.options[k].value; matched = true; break; }
-    }
-    if(!matched) return;
-    selNow.dataset.auto = "1";
-    selNow.style.borderColor = "#2a8a4a";
-    selNow.title = "Auto-selected: " + (rowTons > 0
+    if(!ranked.length) { mmBsStatus(tr2, "⚠ No drivable routes found — pick manually."); return; }
+    ranked.sort(function(a, b){ return a.score - b.score; });
+    var totalN = ranked.length;
+    ranked = ranked.slice(0, 5);
+    mmRank[i] = {rows: ranked, tons: rowTons, bill: billTons, of: totalN};
+    var best = ranked[0];
+    if(!mmSetPlant(sel2, best.e.p)) { mmBsStatus(tr2, "⚠ " + pmEsc(best.e.p) + " missing from the plant list — pick manually."); return; }
+    sel2.dataset.auto = "1";
+    sel2.style.borderColor = "#2a8a4a";
+    sel2.title = "Auto-selected: " + (rowTons > 0
       ? "lowest TOTAL cost for " + rowTons.toFixed(1) + "t — " + best.e.p + " ($" + best.score.toFixed(2) + " total; haul billed on " + billTons.toFixed(1) + "t min)"
       : "lowest delivered cost — " + best.e.p + " ($" + best.perTon.toFixed(2) + "/t delivered)") +
       ". Pick a different plant to override.";
-    var haulEl = trsNow.querySelector(".mm-haul");
+    var haulEl = tr2.querySelector(".mm-haul");
     if(haulEl && (!haulEl.value || haulEl.dataset.auto === "1")) {
       haulEl.value = best.haul.toFixed(2); haulEl.dataset.auto = "1";
       haulEl.style.borderColor = "#2a8a4a";
     }
-    var unitEl = trsNow.querySelector(".mm-unit");
-    var priceEl = trsNow.querySelector(".mm-price");
-    if(priceEl && (unitEl ? unitEl.value : "tons") === "tons" && (!priceEl.value || priceEl.dataset.auto === "1")) {
+    var unitEl2 = tr2.querySelector(".mm-unit");
+    var priceEl = tr2.querySelector(".mm-price");
+    if(priceEl && (unitEl2 ? unitEl2.value : "tons") === "tons" && (!priceEl.value || priceEl.dataset.auto === "1")) {
       priceEl.value = best.e.pr.toFixed(2); priceEl.dataset.auto = "1";
       priceEl.style.borderColor = "#2a8a4a";
     }
+    mmBsStatus(tr2, "✓ Lowest of " + totalN + " — <a href=\"javascript:void 0\" onclick=\"mmShowTop5(" + i + ", this)\">see top " + ranked.length + " ▾</a>");
     if(typeof calcMM === "function") calcMM();
   });
 }
+
+// ── Top-5 support: per-row rank storage, status line under the plant cell,
+// and a click-to-apply popover ──
+var mmRank = {};
+function mmSetPlant(sel, plantName) {
+  for(var k = 0; k < sel.options.length; k++) {
+    if((sel.options[k].dataset && sel.options[k].dataset.name) === plantName) { sel.value = sel.options[k].value; return true; }
+  }
+  return false;
+}
+function mmBsStatus(tr, html) {
+  var selEl = tr.querySelector(".mm-plant"); if(!selEl) return;
+  var td = selEl.closest("td"); if(!td) return;
+  var el = td.querySelector(".mm-bs-status");
+  if(!el) { el = document.createElement("div"); el.className = "mm-bs-status"; td.appendChild(el); }
+  el.innerHTML = html;
+}
+function mmShowTop5(i, anchor) {
+  var pop = document.getElementById("mmBsPop");
+  if(pop && pop.dataset.row === String(i) && pop.style.display === "block") { pop.style.display = "none"; return; }
+  var info = mmRank[i];
+  if(!info || !info.rows.length) return;
+  if(!pop) {
+    pop = document.createElement("div"); pop.id = "mmBsPop";
+    document.body.appendChild(pop);
+    document.addEventListener("click", function(ev){
+      var p = document.getElementById("mmBsPop");
+      if(p && p.style.display === "block" && !p.contains(ev.target) && !(ev.target.closest && ev.target.closest(".mm-bs-status"))) p.style.display = "none";
+    });
+  }
+  var byQty = info.tons > 0;
+  var h = '<div class="mm-bs-pop-hd">Top ' + info.rows.length + ' of ' + info.of + ' plants' +
+          (byQty ? ' — total for ' + info.tons.toFixed(1) + 't (haul billed on ' + info.bill.toFixed(1) + 't per-load min)' : ' — delivered $/ton') +
+          '. Click a row to use it.</div>';
+  h += '<table><tr><th>#</th><th>Plant</th><th>Sell $/t</th><th>Haul $/t</th><th>' + (byQty ? 'Total' : '$/t delivered') + '</th></tr>';
+  info.rows.forEach(function(r, k){
+    h += '<tr onclick="mmPickRank(' + i + ',' + k + ')"><td>' + (k+1) + '</td><td>' + pmEsc(r.e.p) +
+         (k === 0 ? ' <span class="bs-badge">LOWEST</span>' : '') + '</td><td>$' + r.e.pr.toFixed(2) +
+         '</td><td>$' + r.haul.toFixed(2) + '</td><td><b>$' + (byQty ? r.score.toFixed(2) : r.perTon.toFixed(2)) + '</b></td></tr>';
+  });
+  h += '</table>';
+  pop.innerHTML = h;
+  pop.dataset.row = String(i);
+  pop.style.display = "block";
+  var w = Math.min(560, window.innerWidth - 24);
+  pop.style.width = w + "px";
+  var rc = anchor.getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(rc.left, window.innerWidth - w - 12)) + "px";
+  pop.style.top = (rc.bottom + 6 + window.scrollY) + "px";
+}
+function mmPickRank(i, k) {
+  var info = mmRank[i]; if(!info || !info.rows[k]) return;
+  var r = info.rows[k];
+  var tbody = document.getElementById("mmTbody");
+  var tr = tbody ? tbody.querySelectorAll("tr")[i] : null;
+  if(!tr) return;
+  var sel = tr.querySelector(".mm-plant");
+  if(!sel || !mmSetPlant(sel, r.e.p)) return;
+  // #1 keeps auto behavior (re-ranks with qty); any other pick is an explicit
+  // override and stays put.
+  var isAuto = (k === 0);
+  sel.dataset.auto = isAuto ? "1" : "";
+  sel.style.borderColor = isAuto ? "#2a8a4a" : "#0b5394";
+  sel.title = r.e.p + " — picked from the top-5 list.";
+  var haulEl = tr.querySelector(".mm-haul");
+  if(haulEl) { haulEl.value = r.haul.toFixed(2); haulEl.dataset.auto = isAuto ? "1" : ""; }
+  var unitEl = tr.querySelector(".mm-unit");
+  var priceEl = tr.querySelector(".mm-price");
+  if(priceEl && (unitEl ? unitEl.value : "tons") === "tons") { priceEl.value = r.e.pr.toFixed(2); priceEl.dataset.auto = isAuto ? "1" : ""; }
+  var pop = document.getElementById("mmBsPop"); if(pop) pop.style.display = "none";
+  mmBsStatus(tr, "✓ Using #" + (k+1) + " of " + info.of + " — <a href=\"javascript:void 0\" onclick=\"mmShowTop5(" + i + ", this)\">top 5 ▾</a>");
+  if(typeof calcMM === "function") calcMM();
+}
+(function(){
+  var s = document.createElement("style");
+  s.textContent = ".mm-bs-status{font-size:10px;margin-top:3px;color:#5b6470;line-height:1.3}" +
+    ".mm-bs-status a{color:#0b5394;font-weight:700;text-decoration:none;cursor:pointer}" +
+    "#mmBsPop{display:none;position:absolute;z-index:99999;background:#fff;color:#1a1d21;border:1.5px solid #b0c8e8;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.28);padding:8px 10px;font-size:12px}" +
+    "#mmBsPop table{border-collapse:collapse;width:100%}" +
+    "#mmBsPop th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#5b6470}" +
+    "#mmBsPop th,#mmBsPop td{padding:4px 8px;border-bottom:1px solid #e2e8f0;text-align:left}" +
+    "#mmBsPop tr[onclick]{cursor:pointer}#mmBsPop tr[onclick]:hover{background:#eef5ff}" +
+    ".mm-bs-pop-hd{font-weight:600;margin-bottom:4px}";
+  document.head.appendChild(s);
+})();
 
 // ── Re-rank an auto-picked plant when the quantity changes (debounced) —
 // the total-cost winner can shift with tonnage. Manual picks are untouched.
