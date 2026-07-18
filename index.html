@@ -4548,11 +4548,52 @@ let pmQtyInfo = {};
 
 function pmEsc(x){ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function pmMsg(t){ return '<div class="bs-note">'+pmEsc(t)+'</div>'; }
-function pmNorm(x){ return String(x||"").toLowerCase().replace(/&quot;/g,'"').replace(/[^a-z0-9]/g,""); }
+function pmNorm(x){
+  var s = String(x||"").toLowerCase().replace(/&quot;/g,'"');
+  // Roman-numeral classes → digits so "Class II Rip Rap" matches "Class 2 Rip Rap"
+  s = s.replace(/\bclass\s+(iii|ii|iv|v|i)\b/g, function(_, r){ return "class " + ({i:1,ii:2,iii:3,iv:4,v:5})[r]; });
+  return s.replace(/[^a-z0-9]/g,"");
+}
 
+// Builder material name → price-matrix source, for names that differ from the
+// matrix. p restricts the alias to one plant when the product is plant-specific
+// (per Jason 2026-07-17: Del Rio is Cemex Moorpark's gravel). Add pairs here as
+// more unmatched materials get identified.
+const PM_ALIASES = {
+  '1" Del Rio':   {m: '1" Gravel',                p: 'Cemex (Moorpark)'},
+  '3/8" Del Rio': {m: '3/8" Gravel (Pea Gravel)', p: 'Cemex (Moorpark)'}
+};
+// Convert any matrix entry to a per-ton sell price so per-scoop / per-CY /
+// per-load items compare against per-ton plants in one ranking
+// (1 scoop = 25/33 t, 1 CY = 25/16.5 t, 1 load ~ 25 t).
+function pmPerTon(e){
+  if(e.um === "scoop") return e.pr / SCOOP_TO_TONS;
+  if(e.um === "CY")    return e.pr / CY_TO_TONS;
+  if(e.um === "load")  return e.pr / 25;
+  return e.pr;
+}
+// Sell price expressed in the quote row's unit (tons/CY/scoop). 0 = no fill.
+function pmPriceForUnit(r, unit){
+  var pt = (r.pt !== undefined) ? r.pt : pmPerTon(r.e);
+  if(unit === "tons")  return pt;
+  if(unit === "cy")    return pt * CY_TO_TONS;
+  if(unit === "scoop") return pt * SCOOP_TO_TONS;
+  return 0;
+}
+function pmSellCell(r){
+  var pt = (r.pt !== undefined) ? r.pt : pmPerTon(r.e);
+  return "$" + pt.toFixed(2) + (r.e.um !== "ton" ? " <span class=\"mm-bs-un\">($" + r.e.pr.toFixed(2) + "/" + pmEsc(r.e.um) + ")</span>" : "");
+}
 function pmMatchEntries(matName){
   const key = pmNorm(matName);
   if(!key) return [];
+  for(const a in PM_ALIASES){
+    if(pmNorm(a) === key){
+      const al = PM_ALIASES[a];
+      const mk = pmNorm(al.m);
+      return PRICE_MATRIX.filter(e => pmNorm(e.m) === mk && (!al.p || e.p === al.p));
+    }
+  }
   let hits = PRICE_MATRIX.filter(e => pmNorm(e.m) === key);
   if(!hits.length) hits = PRICE_MATRIX.filter(e => { const k = pmNorm(e.m); return k.indexOf(key) === 0 || key.indexOf(k) === 0; });
   return hits;
@@ -4570,9 +4611,8 @@ function findBestSource(line){
   else if(typeof locLat !== "undefined" && locLat && locLng) dest = {lat: locLat, lng: locLng};
   else { const a = s("location") || s("address"); if(a) dest = a; }
   if(!dest){ out.innerHTML = pmMsg("Set the delivery location first, then try again."); return; }
-  const tonHits = hits.filter(e => e.um === "ton").slice(0, 25);
-  const otherHits = hits.filter(e => e.um !== "ton");
-  if(!tonHits.length){ out.innerHTML = pmRenderOther(otherHits) + pmMsg("These items are priced per " + otherHits[0].um + " — no per-ton comparison; pick manually."); return; }
+  const tonHits = hits.slice(0, 25);
+  const otherHits = [];
   if(typeof google === "undefined" || !google.maps){ out.innerHTML = pmMsg("Google Maps not loaded — check connection and retry."); return; }
   out.innerHTML = pmMsg("Comparing " + tonHits.length + " plant" + (tonHits.length !== 1 ? "s" : "") + "…");
   new google.maps.DistanceMatrixService().getDistanceMatrix({
@@ -4589,7 +4629,8 @@ function findBestSource(line){
       if(!el || el.status !== "OK") return;
       const miles = el.distance.value / 1609.344;
       const haul = calcHaulRate(miles);
-      rows.push({e: tonHits[i], miles: miles, haul: haul, total: tonHits[i].pr + haul});
+      const pt = pmPerTon(tonHits[i]);
+      rows.push({e: tonHits[i], pt: pt, miles: miles, haul: haul, total: pt + haul});
     });
     if(!rows.length){ out.innerHTML = pmMsg("No drivable routes found — pick the plant manually."); return; }
     // Rank on the ACTUAL total for the entered quantity: material is billed on
@@ -4599,7 +4640,7 @@ function findBestSource(line){
     var qtyTons = 0;
     try { qtyTons = (cfg.qty && typeof qtyToTons === "function") ? (qtyToTons(cfg.qty) || 0) : 0; } catch(e){}
     var billTons = qtyTons > 0 ? (typeof minTons === "function" ? minTons(qtyTons) : Math.ceil(qtyTons / 25) * 25) : 0;
-    rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.e.pr + billTons * r.haul : 0; });
+    rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.pt + billTons * r.haul : 0; });
     rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
     var totalPlants = rows.length;
     rows = rows.slice(0, 5);
@@ -4617,7 +4658,7 @@ function pmRenderTable(line, rows, otherHits){
           (byQty ? '<th>Total (' + qi.tons.toFixed(1) + 't)</th>' : '') + '</tr>';
   rows.forEach(function(r, i){
     h += '<tr data-bs="' + i + '" onclick="pmApply(' + line + ',' + i + ')"><td>' + pmEsc(r.e.p) +
-         (i === 0 ? '<span class="bs-badge">LOWEST</span>' : '') + '</td><td>$' + r.e.pr.toFixed(2) +
+         (i === 0 ? '<span class="bs-badge">LOWEST</span>' : '') + '</td><td>' + pmSellCell(r) +
          '</td><td>' + r.miles.toFixed(1) + '</td><td>$' + r.haul.toFixed(2) +
          '</td><td>$' + r.total.toFixed(2) + '</td>' +
          (byQty ? '<td><b>$' + r.job.toFixed(2) + '</b></td>' : '') + '</tr>';
@@ -4658,7 +4699,7 @@ function pmApply(line, idx){
     if(typeof updateFormulaBox === "function") updateFormulaBox(row.miles);
   }
   if(cfg.hr){ const hrEl = document.getElementById(cfg.hr); if(hrEl){ hrEl.value = row.haul.toFixed(2); hrEl.style.borderColor = "rgba(0,191,255,.5)"; } }
-  if(cfg.pr){ const prEl = document.getElementById(cfg.pr); if(prEl){ prEl.value = row.e.pr.toFixed(2); prEl.style.borderColor = "rgba(0,191,255,.5)"; } }
+  if(cfg.pr){ const prEl = document.getElementById(cfg.pr); if(prEl){ const u = (typeof qtyUnits !== "undefined" && cfg.qty && qtyUnits[cfg.qty]) ? qtyUnits[cfg.qty] : "tons"; const rp = pmPriceForUnit(row, u); if(rp > 0){ prEl.value = rp.toFixed(2); prEl.style.borderColor = "rgba(0,191,255,.5)"; } } }
   const outEl = document.getElementById(cfg.out);
   if(outEl) outEl.querySelectorAll("tr[data-bs]").forEach(function(tr){ tr.classList.toggle("bs-on", +tr.dataset.bs === idx); });
   if(typeof calc === "function") calc();
@@ -4678,7 +4719,7 @@ function mmAutoSource(i) {
   var matName = matEl ? matEl.value : "";
   if(!matName || matName === "__other__") { mmBsStatus(tr, ""); return; }
   if(typeof locPid === "undefined" || (!locPid && !locLat)) { mmBsStatus(tr, "Enter the job-site address — the cheapest plant is picked automatically."); return; }
-  var hits = pmMatchEntries(matName).filter(function(e){ return e.um === "ton"; }).slice(0, 25);
+  var hits = pmMatchEntries(matName).slice(0, 25);
   if(!hits.length) { mmBsStatus(tr, "⚠ Not in the price matrix — pick the plant and price manually."); return; }
   if(typeof google === "undefined" || !google.maps) { mmBsStatus(tr, "⚠ Google Maps not loaded — pick manually."); return; }
   mmBsStatus(tr, "⟳ Comparing " + hits.length + " plant" + (hits.length !== 1 ? "s" : "") + "…");
@@ -4713,8 +4754,9 @@ function mmAutoSource(i) {
       var el = r.elements[0];
       if(!el || el.status !== "OK") return;
       var haul = calcHaulRate(el.distance.value / 1609.344);
-      ranked.push({e: hits[k], haul: haul, perTon: hits[k].pr + haul,
-                   score: rowTons > 0 ? (rowTons * hits[k].pr + billTons * haul) : (hits[k].pr + haul)});
+      var pt = pmPerTon(hits[k]);
+      ranked.push({e: hits[k], haul: haul, pt: pt, perTon: pt + haul,
+                   score: rowTons > 0 ? (rowTons * pt + billTons * haul) : (pt + haul)});
     });
     if(!ranked.length) { mmBsStatus(tr2, "⚠ No drivable routes found — pick manually."); return; }
     ranked.sort(function(a, b){ return a.score - b.score; });
@@ -4736,8 +4778,9 @@ function mmAutoSource(i) {
     }
     var unitEl2 = tr2.querySelector(".mm-unit");
     var priceEl = tr2.querySelector(".mm-price");
-    if(priceEl && (unitEl2 ? unitEl2.value : "tons") === "tons" && (!priceEl.value || priceEl.dataset.auto === "1")) {
-      priceEl.value = best.e.pr.toFixed(2); priceEl.dataset.auto = "1";
+    var rowUnitPrice = pmPriceForUnit(best, unitEl2 ? unitEl2.value : "tons");
+    if(priceEl && rowUnitPrice > 0 && (!priceEl.value || priceEl.dataset.auto === "1")) {
+      priceEl.value = rowUnitPrice.toFixed(2); priceEl.dataset.auto = "1";
       priceEl.style.borderColor = "#2a8a4a";
     }
     mmBsStatus(tr2, "✓ Lowest of " + totalN + " — <a href=\"javascript:void 0\" onclick=\"mmShowTop5(" + i + ", this)\">see top " + ranked.length + " ▾</a>");
@@ -4781,7 +4824,7 @@ function mmShowTop5(i, anchor) {
   h += '<table><tr><th>#</th><th>Plant</th><th>Sell $/t</th><th>Haul $/t</th><th>' + (byQty ? 'Total' : '$/t delivered') + '</th></tr>';
   info.rows.forEach(function(r, k){
     h += '<tr onclick="mmPickRank(' + i + ',' + k + ')"><td>' + (k+1) + '</td><td>' + pmEsc(r.e.p) +
-         (k === 0 ? ' <span class="bs-badge">LOWEST</span>' : '') + '</td><td>$' + r.e.pr.toFixed(2) +
+         (k === 0 ? ' <span class="bs-badge">LOWEST</span>' : '') + '</td><td>' + pmSellCell(r) +
          '</td><td>$' + r.haul.toFixed(2) + '</td><td><b>$' + (byQty ? r.score.toFixed(2) : r.perTon.toFixed(2)) + '</b></td></tr>';
   });
   h += '</table>';
@@ -4812,7 +4855,8 @@ function mmPickRank(i, k) {
   if(haulEl) { haulEl.value = r.haul.toFixed(2); haulEl.dataset.auto = isAuto ? "1" : ""; }
   var unitEl = tr.querySelector(".mm-unit");
   var priceEl = tr.querySelector(".mm-price");
-  if(priceEl && (unitEl ? unitEl.value : "tons") === "tons") { priceEl.value = r.e.pr.toFixed(2); priceEl.dataset.auto = isAuto ? "1" : ""; }
+  var rp = pmPriceForUnit(r, unitEl ? unitEl.value : "tons");
+  if(priceEl && rp > 0) { priceEl.value = rp.toFixed(2); priceEl.dataset.auto = isAuto ? "1" : ""; }
   var pop = document.getElementById("mmBsPop"); if(pop) pop.style.display = "none";
   mmBsStatus(tr, "✓ Using #" + (k+1) + " of " + info.of + " — <a href=\"javascript:void 0\" onclick=\"mmShowTop5(" + i + ", this)\">top 5 ▾</a>");
   if(typeof calcMM === "function") calcMM();
@@ -4826,7 +4870,8 @@ function mmPickRank(i, k) {
     "#mmBsPop th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#5b6470}" +
     "#mmBsPop th,#mmBsPop td{padding:4px 8px;border-bottom:1px solid #e2e8f0;text-align:left}" +
     "#mmBsPop tr[onclick]{cursor:pointer}#mmBsPop tr[onclick]:hover{background:#eef5ff}" +
-    ".mm-bs-pop-hd{font-weight:600;margin-bottom:4px}";
+    ".mm-bs-pop-hd{font-weight:600;margin-bottom:4px}" +
+    ".mm-bs-un{font-size:10px;color:#8a94a0}";
   document.head.appendChild(s);
 })();
 
