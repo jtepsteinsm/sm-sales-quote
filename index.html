@@ -4560,9 +4560,45 @@ function pmNorm(x){
 // (per Jason 2026-07-17: Del Rio is Cemex Moorpark's gravel). Add pairs here as
 // more unmatched materials get identified.
 const PM_ALIASES = {
-  '1" Del Rio':   {m: '1" Gravel',                p: 'Cemex (Moorpark)'},
-  '3/8" Del Rio': {m: '3/8" Gravel (Pea Gravel)', p: 'Cemex (Moorpark)'}
+  "1\" Del Rio": {m: "1\" Gravel", p: "Cemex (Moorpark)"},
+  "3/8\" Del Rio": {m: "3/8\" Gravel (Pea Gravel)", p: "Cemex (Moorpark)"},
+  "1 1/2\" Noiyos/Yosem": {m: "1\"-1 1/2\"  Noiyo Pebbles", p: "Cemex (Friant)"},
+  "2\" - 4\" Noiyos/Yosem": {m: "2\" x 4\" Noiyo Pebbles", p: "Cemex (Friant)"},
+  "3/4\" Noiyos/Yosem": {m: "3/4\"-1\" Noiyo Pebbles", p: "Cemex (Friant)"},
+  "3/8\" Noiyos/Yosem": {m: "3/8\" Noiyo Pebbles", p: "Cemex (Friant)"},
+  "4\" - 8\" Noiyos/Yosem": {m: "4\" x 8\" Noiyo Pebbles", p: "Cemex (Friant)"},
+  "1 1/2\" California Gold Rock": {m: "1 1/2\" Cal Gold Rock"},
+  "3/4\" California Gold Rock": {m: ["3/4\" California Gold", "3/4\" Cal Gold Rock"]},
+  "3/8\" California Gold Rock": {m: ["3/8\" California Gold Rock", "3/8\" Cal Gold Rock"]},
+  "2\" - 4\" Gold Rock": {m: "2\" - 4\" Mojave Gold Rock", p: "MRC Rock (Mojave)"},
+  "4\" - 8\" Gold Rock": {m: "4\" - 8\" Mojave Gold Rock", p: "MRC Rock (Mojave)"},
+  "3/8\" Gold Rock": {m: "3/8\" Desert Gold Rock", p: "MRC Rock (Mojave)"},
+  "Mojave Gold DG": {m: "Gold DG", p: "MRC Rock (Mojave)"},
+  "1 1/2\" Red Rock": {m: "Red 1 1/2\" CR", p: "MRC Rock (Mojave)"},
+  "3/4\" Red Rock": {m: "Red 3/4\" CR", p: "MRC Rock (Mojave)"},
+  "3/8\" Red Rock": {m: "Red 3/8\" CR", p: "MRC Rock (Mojave)"},
+  "1\" - 2\" White Rock": {m: ["1 1/2\" White Rock", "1 1/2\" Premium White Rock"]},
+  "18/30 White Sand": {m: "18 x 30 Limestone", p: "Panamint Valley Limestone"},
+  "1 1/2\" Crushed Aggregate Base": {m: "1 1/2\" Aggregate Base", p: "MRC Rock (Mojave)"},
+  "1/2\" Washed Crushed Rock": {m: "1/2\" Crushed Rock", p: "Martin Marietta (Eagle Valley / Corona)"},
+  "3/4\" Washed Crushed Rock": {m: "3/4\" Crushed Rock", p: "Martin Marietta (Eagle Valley / Corona)"},
+  "3/8\" Washed Crushed Rock": {m: "3/8\" Crushed Rock", p: "Martin Marietta (Eagle Valley / Corona)"},
+  "3/4\" Eagle Mountain (3/8\" Crushed)": {m: "3/8\" Crushed Rock", p: "Martin Marietta (Eagle Valley / Corona)"},
+  "3/8\" Eagle Mountain (3/8\" Crushed)": {m: "3/8\" Crushed Rock", p: "Martin Marietta (Eagle Valley / Corona)"},
+  "2\" - 5\" Cobble": {m: "2\"-4\" Cobble"},
+  "3\" Minus Crushed Rock": {m: "3\" Crushed Rock"},
+  "3\" - 6\" Crushed Rock": {m: "3\"-8+\" Crushed Rock", p: "75th Street Quarry and Recycling"},
+  "3/4\" - 1 1/2\" Arizona River Rock": {m: "3/4\" - 1.5\" Arizona River Rock", p: "75th Street Quarry and Recycling"},
+  "1 1/2\" - 3\" Arizona River Rock": {m: "1.5\" - 3\" Arizona River Rock", p: "75th Street Quarry and Recycling"},
+  "#30 Sand": {m: "#30 Silica Sand", p: "Gillibrand Industrial Sands (Simi Valley)"},
+  "CMB": {m: ["Crushed Miscellaneous Base (CMB)", "Class II Base / CMB"]},
+  "DG": {m: "Decomposed Granite (DG)"},
+  "Stabilized Decomposed Granite": {m: "Stabilized DG", p: "75th Street Quarry and Recycling"},
+  "3/4\" Black Lava": {m: "Black Lava Rock - Sold Per Scoop", p: "75th Street Quarry and Recycling"},
+  "Topsoil": {m: "Sandy Loam Topsoil (Invoiced in Cubic Yards)"},
 };
+const PM_SERVICE = {"Hourly Super 10": 1, "Hourly Transfer": 1, "Hourly Bottom Dump": 1, "Hourly End Dump": 1, "Clean Dirt Export": 1, "AC Export": 1, "PCC Export": 1, "Mixed Debris Export": 1, "Concrete - Washout": 1};
+const PM_SOURCE_HINTS = {"1\" Black Del Rio": "Comes from Orca (Long Beach) / 75th St \u2014 no QuickBooks price yet; enter price manually.", "3/8\" Black Del Rio": "Comes from Orca (Long Beach) \u2014 no QuickBooks price yet; enter price manually.", "1 1/2\" Del Rio": "Cemex (Moorpark) \u2014 no QuickBooks price for their 1 1/2\" gravel yet; enter manually.", "1 1/2\" Gold Rock": "MRC Mojave \u2014 no QuickBooks price yet; enter manually.", "2\" - 4\" Red Rock": "MRC Mojave \u2014 no QuickBooks price yet; enter manually.", "4\" - 8\" Red Rock": "MRC Mojave \u2014 no QuickBooks price yet; enter manually.", "2\" - 4\" Tropico": "MRC Mojave \u2014 no QuickBooks price yet; enter manually.", "3\" - 6\" Arizona River Rock": "75th St yard \u2014 no QuickBooks price yet; enter manually.", "3/4\" Bark Brown": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "3/4\" Red Lava": "75th St yard (burgundy lava scoops) \u2014 confirm price; enter manually.", "3/4\" Palm Springs Gold": "Whitewater Rock \u2014 plant not in the system yet; manual quote.", "3/4\" Wine Red": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "Wine Red DG": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "Stabilized Wine Red DG": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "California Gold DG": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "California Stabilized Gold DG": "Brubaker-Mann \u2014 no QuickBooks price yet; enter manually.", "#30 Silver Sand": "Gillibrand \u2014 no QuickBooks price yet; enter manually.", "G20 Sand": "Gillibrand \u2014 no QuickBooks price yet; enter manually.", "Angel Mix": "Corona Clay \u2014 plant not in the system yet; manual quote.", "Montecito Rock": "Santa Paula Materials \u2014 no QuickBooks price yet; enter manually.", "Gorilla Hair": "C&M Topsoil \u2014 no QuickBooks price yet; enter manually.", "Medium Bark Nuggets": "C&M Topsoil (sometimes Foothill) \u2014 no QuickBooks price yet; enter manually.", "Pink DG": "Big Iron / 75th St \u2014 no QuickBooks price yet; enter manually.", "Grey DG (Type II Rock Dust)": "Martin Marietta Eagle Valley per Jason (United sells Type II Slurry Dust) \u2014 no MM price yet; enter manually.", "Asphalt (customers must specify mix)": "Hot asphalt \u2014 need the mix design to price, and verify the plant will sell."};
 // Convert any matrix entry to a per-ton sell price so per-scoop / per-CY /
 // per-load items compare against per-ton plants in one ranking
 // (1 scoop = 25/33 t, 1 CY = 25/16.5 t, 1 load ~ 25 t).
@@ -4590,8 +4626,8 @@ function pmMatchEntries(matName){
   for(const a in PM_ALIASES){
     if(pmNorm(a) === key){
       const al = PM_ALIASES[a];
-      const mk = pmNorm(al.m);
-      return PRICE_MATRIX.filter(e => pmNorm(e.m) === mk && (!al.p || e.p === al.p));
+      const ms = (Array.isArray(al.m) ? al.m : [al.m]).map(pmNorm);
+      return PRICE_MATRIX.filter(e => ms.indexOf(pmNorm(e.m)) !== -1 && (!al.p || e.p === al.p));
     }
   }
   let hits = PRICE_MATRIX.filter(e => pmNorm(e.m) === key);
@@ -4605,7 +4641,11 @@ function findBestSource(line){
   const matName = getMatName(cfg.mat);
   if(!matName){ out.innerHTML = pmMsg("Pick a material first."); return; }
   const hits = pmMatchEntries(matName);
-  if(!hits.length){ out.innerHTML = pmMsg('No price-matrix entries for "'+matName+'" — enter the price manually.'); return; }
+  if(!hits.length){
+    var srcHint2 = (typeof PM_SOURCE_HINTS !== "undefined" && PM_SOURCE_HINTS[matName]) ? PM_SOURCE_HINTS[matName] : null;
+    out.innerHTML = pmMsg(srcHint2 || ('No price-matrix entries for "' + matName + '" — enter the price manually.'));
+    return;
+  }
   let dest = null;
   if(typeof locPid !== "undefined" && locPid) dest = {placeId: locPid};
   else if(typeof locLat !== "undefined" && locLat && locLng) dest = {lat: locLat, lng: locLng};
@@ -4718,9 +4758,16 @@ function mmAutoSource(i) {
   var matEl = tr.querySelector(".mm-mat");
   var matName = matEl ? matEl.value : "";
   if(!matName || matName === "__other__") { mmBsStatus(tr, ""); return; }
+  // Hourly trucking & export quotes: plant/destination is a manual pick, but
+  // the haul rate still auto-calculates from distance once it's chosen.
+  if(typeof PM_SERVICE !== "undefined" && PM_SERVICE[matName]) { mmBsStatus(tr, "Hourly/export — pick the plant or destination manually; haul rate auto-calculates from distance once picked."); return; }
   if(typeof locPid === "undefined" || (!locPid && !locLat)) { mmBsStatus(tr, "Enter the job-site address — the cheapest plant is picked automatically."); return; }
   var hits = pmMatchEntries(matName).slice(0, 25);
-  if(!hits.length) { mmBsStatus(tr, "⚠ Not in the price matrix — pick the plant and price manually."); return; }
+  if(!hits.length) {
+    var srcHint = (typeof PM_SOURCE_HINTS !== "undefined" && PM_SOURCE_HINTS[matName]) ? PM_SOURCE_HINTS[matName] : "Not in the price matrix — pick the plant and price manually.";
+    mmBsStatus(tr, "⚠ " + pmEsc(srcHint));
+    return;
+  }
   if(typeof google === "undefined" || !google.maps) { mmBsStatus(tr, "⚠ Google Maps not loaded — pick manually."); return; }
   mmBsStatus(tr, "⟳ Comparing " + hits.length + " plant" + (hits.length !== 1 ? "s" : "") + "…");
   var dest = locPid ? {placeId: locPid} : {lat: locLat, lng: locLng};
