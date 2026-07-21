@@ -4941,7 +4941,7 @@ function mmPickRank(i, k) {
 })();
 
 // ── Add price-matrix plants missing from the static plant dropdowns ──
-(function(){
+function pmApplyPlantDropdowns(){
   const selIds = ["ps1", "ps2", "hps", "fps"];
   let extraOpts = "";
   Object.keys(PM_PLANT_ADDR).forEach(function(name){
@@ -4959,7 +4959,54 @@ function mmPickRank(i, k) {
     }
   });
   if(extraOpts && typeof MM_PLANT_OPTS === "string") MM_PLANT_OPTS += extraOpts;
-})();
+}
+pmApplyPlantDropdowns();
+
+// ── LIVE PRICES: read the Price Matrix tab as the single source ──
+// The embedded PRICE_MATRIX above is the always-works fallback. When
+// PM_CSV_URL is set (Price Matrix tab published to web as CSV), prices load
+// live from the sheet on open — edit a price in the sheet, quotes use it.
+const PM_CSV_URL = "";  // <-- set to the published Price Matrix CSV URL
+function pmCsvParse(t){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<t.length;i++){var c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else { if(c==='"')q=true; else if(c===','){row.push(cur);cur="";}
+      else if(c==='\n'||c==='\r'){ if(c==='\r'&&t[i+1]==='\n')i++; row.push(cur);cur=""; if(row.length>1||row[0]!=="")rows.push(row); row=[]; }
+      else cur+=c; }
+  }
+  if(cur!==""||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+function pmSrcIndicator(kind,n){
+  var el=document.getElementById("pmSrc");
+  if(kind!=="live"){ if(el)el.remove(); return; }
+  if(!el){el=document.createElement("div");el.id="pmSrc";el.style.cssText="position:fixed;bottom:6px;left:6px;z-index:9998;font-size:10px;padding:2px 8px;border-radius:10px;background:#1a8f3c;color:#fff;opacity:.8";document.body.appendChild(el);}
+  el.textContent="Prices: live from sheet ("+n+")";
+}
+function pmLoadFromSheet(){
+  if(!PM_CSV_URL) return;  // stay on embedded, no indicator
+  fetch(PM_CSV_URL,{cache:"no-store"}).then(function(r){return r.text();}).then(function(txt){
+    var rows=pmCsvParse(txt); if(rows.length<2) throw new Error("empty");
+    var h=rows[0].map(function(x){return String(x).trim().toLowerCase();});
+    var im=h.indexOf("material"),ip=h.indexOf("plant"),ia=h.indexOf("plant address"),iu=h.indexOf("u/m"),ipr=h.indexOf("sell price");
+    if(im<0||ip<0||ipr<0) throw new Error("bad header");
+    var mat=[],addr={};
+    for(var i=1;i<rows.length;i++){var r=rows[i];
+      var m=(r[im]||"").trim(),p=(r[ip]||"").trim(); if(!m||!p)continue;
+      var um=(iu>-1?String(r[iu]||""):"").trim()||"ton";
+      var pr=parseFloat(String(r[ipr]||"").replace(/[^0-9.]/g,""))||0;
+      var a=(ia>-1?String(r[ia]||""):"").trim();
+      mat.push({m:m,p:p,a:a,pr:pr,um:um}); if(a)addr[p]=a;
+    }
+    if(!mat.length) throw new Error("no rows");
+    PRICE_MATRIX.length=0; Array.prototype.push.apply(PRICE_MATRIX,mat);
+    for(var k in addr) PM_PLANT_ADDR[k]=addr[k];
+    pmApplyPlantDropdowns();
+    pmSrcIndicator("live",mat.length);
+  }).catch(function(){ /* keep embedded silently */ });
+}
+pmLoadFromSheet();
 
 // ── >10,000-ton quotes require Jason Tepstein's review (policy 2026-07-15) ──
 (function(){
