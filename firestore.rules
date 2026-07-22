@@ -9,16 +9,14 @@ service cloud.firestore {
         && request.auth.token.email.matches('^[^@]+@smsalesinc[.]com$');
     }
 
-    // ── Existing top-level collections ───────────────────────────────
-    // Kept during the 7-day rollback window, then removed (Step 9).
-    match /quotes/{id} { allow read, write: if ok(); }
-    match /meta/{id}   { allow read, write: if ok(); }
-    // (no /customers block ever existed — customer writes were denied)
+    // ── Old top-level collections — READ-ONLY during the 7-day rollback window.
+    // Data relocated to companies/smsales/* on 2026-07-22. Kept readable as a
+    // rollback net; writes denied so nothing new lands here. Removed at Step 9.
+    match /quotes/{id} { allow read: if ok(); allow write: if false; }
+    match /meta/{id}   { allow read: if ok(); allow write: if false; }
 
-    // ── New company-scoped layout ────────────────────────────────────
-    // NOTE: /companies/smsales/dispatches is intentionally NOT granted to
-    // clients here — the dispatch mirror writes it server-side via IAM,
-    // which bypasses these rules, so it stays private to the mirror.
+    // ── New company-scoped layout (live). (dispatches is written server-side
+    // via IAM, which bypasses rules, so it is intentionally NOT exposed here.)
     match /companies/smsales/quotes/{id}    { allow read, write: if ok(); }
     match /companies/smsales/customers/{id} { allow read, write: if ok(); }
     match /companies/smsales/meta/{id}      { allow read, write: if ok(); }
