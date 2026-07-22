@@ -5381,7 +5381,7 @@ pmLoadFromSheet();
 
   // ── Firestore quote numbering ────────────────────────────────────────
   function nextQuoteNum() {
-    var ref = db.collection("meta").doc("quoteCounter");
+    var ref = _co("meta").doc("quoteCounter");
     return db.runTransaction(function (t) {
       return t.get(ref).then(function (d) {
         var c = (d.exists && d.data().count) || 0;
@@ -5410,7 +5410,7 @@ pmLoadFromSheet();
         var bpqn2 = document.getElementById("bpqn2"); if (bpqn2) bpqn2.textContent = assignedNum;
       }
       var now = firebase.firestore.FieldValue.serverTimestamp();
-      var ref = db.collection("quotes").doc(_fsQuoteId);
+      var ref = _co("quotes").doc(_fsQuoteId);
       var rec = {
         quoteNum: (typeof qnum !== "undefined") ? qnum : "",
         customer: payload.header.customer || "",
@@ -5544,7 +5544,7 @@ pmLoadFromSheet();
     if (!fbReady || !user) return;
     var listEl = document.getElementById("smPanelList");
     if (listEl) listEl.innerHTML = '<div style="padding:20px;text-align:center;opacity:.6;">Loading…</div>';
-    db.collection("quotes").orderBy("lastModifiedAt", "desc").limit(300).get().then(function (snap) {
+    _co("quotes").orderBy("lastModifiedAt", "desc").limit(300).get().then(function (snap) {
       _allQuotes = [];
       snap.forEach(function (doc) { _allQuotes.push({ id: doc.id, data: doc.data() }); });
       var sb = document.getElementById("smPanelSearch");
@@ -5638,7 +5638,7 @@ pmLoadFromSheet();
       return ref.put(blob, { contentType: "application/pdf" }).then(function () {
         return ref.getDownloadURL();
       }).then(function (url) {
-        return db.collection("quotes").doc(_fsQuoteId).set({
+        return _co("quotes").doc(_fsQuoteId).set({
           pdfUrl: url, pdfName: name,
           lastModifiedBy: user.email,
           lastModifiedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -5697,12 +5697,12 @@ pmLoadFromSheet();
     if (!user || !db || !data || !String(data.customer || "").trim()) return;
     var doc = { updatedBy: user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     CUST_FIELDS.forEach(function (f) { doc[f] = data[f] || ""; });
-    db.collection("customers").doc(custDocId(data.customer)).set(doc, { merge: true })
+    _co("customers").doc(custDocId(data.customer)).set(doc, { merge: true })
       .catch(function (e) { toast("Customer sync failed: " + e.message, false); });
   }
   function custDelete(name) {
     if (!user || !db || !String(name || "").trim()) return;
-    db.collection("customers").doc(custDocId(name)).delete()
+    _co("customers").doc(custDocId(name)).delete()
       .catch(function (e) { toast("Customer delete sync failed: " + e.message, false); });
   }
   // On sign-in: pull the shared list (shared wins per name), push up any
@@ -5710,7 +5710,7 @@ pmLoadFromSheet();
   function syncCustomers() {
     if (_custSynced || !user || !db) return;
     _custSynced = true;
-    db.collection("customers").get().then(function (snap) {
+    _co("customers").get().then(function (snap) {
       var local = (typeof getSavedCustomers === "function") ? getSavedCustomers() : [];
       var byName = {};
       local.forEach(function (c) {
@@ -5737,6 +5737,18 @@ pmLoadFromSheet();
     }).catch(function (e) { console.warn("customer sync failed", e); });
   }
 
+  // company-scoped collection handle (relocation: companies/smsales/<name>)
+  function _co(name) { return db.collection("companies").doc("smsales").collection(name); }
+
+  // deep-link routing: #/saved opens the saved-quotes panel, #/builder the builder
+  function handleRoute() {
+    if (!user) return;
+    var hsh = (location.hash || "").toLowerCase();
+    if (hsh === "#/saved") openPanel();
+    else if (hsh === "#/builder") closePanel();
+  }
+  window.addEventListener("hashchange", handleRoute);
+
   function init() {
     if (!TOP) return; // embedded: leave current postMessage behavior alone
     if (!window.firebase || !firebase.initializeApp) { console.warn("Firebase SDK not loaded"); return; }
@@ -5759,7 +5771,7 @@ pmLoadFromSheet();
       }
       user = u || null;
       refreshBar();
-      if (user) { hideGate(); syncCustomers(); } else showGate("signin");
+      if (user) { hideGate(); syncCustomers(); handleRoute(); } else showGate("signin");
     });
 
     // shared-customer hooks used by saveCustomer/deleteSavedCustomer

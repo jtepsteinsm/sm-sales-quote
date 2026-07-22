@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Verified @smsalesinc.com users only. Published ok() — unchanged.
+    function ok() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('^[^@]+@smsalesinc[.]com$');
+    }
+
+    // ── Existing top-level collections ───────────────────────────────
+    // Kept during the 7-day rollback window, then removed (Step 9).
+    match /quotes/{id} { allow read, write: if ok(); }
+    match /meta/{id}   { allow read, write: if ok(); }
+    // (no /customers block ever existed — customer writes were denied)
+
+    // ── New company-scoped layout ────────────────────────────────────
+    // NOTE: /companies/smsales/dispatches is intentionally NOT granted to
+    // clients here — the dispatch mirror writes it server-side via IAM,
+    // which bypasses these rules, so it stays private to the mirror.
+    match /companies/smsales/quotes/{id}    { allow read, write: if ok(); }
+    match /companies/smsales/customers/{id} { allow read, write: if ok(); }
+    match /companies/smsales/meta/{id}      { allow read, write: if ok(); }
+
+    // Deny-by-default: anything without an explicit allow above is denied.
+  }
+}
