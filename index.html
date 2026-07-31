@@ -1750,6 +1750,10 @@ const GKEY = "AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0";
 const TRUCK_RATES = { s10:{rate:135,cap:17}, tf:{rate:155,cap:25}, bd:{rate:140,cap:25}, ed:{rate:145,cap:22} };
 const TRUCK_LABELS = { s10:"Super 10", tf:"Transfer", bd:"Bottom Dump", ed:"End Dump" };
 const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
+// Capacity assumed when no truck has been picked yet. Every load-count and
+// minimum-tonnage path must use this same number (see minTonsForTruck/numLoads).
+const DEFAULT_TRUCK_CAP = 25;
+function truckCap(t) { return (t && TRUCK_RATES[t]) ? TRUCK_RATES[t].cap : DEFAULT_TRUCK_CAP; }
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
@@ -1862,6 +1866,7 @@ function setQt(t) {
 
 // ── TRUCK ─────────────────────────────────────────────────────────────────────
 function selTruck(type) {
+  const prevTruck = truck;
   truck = type;
   document.querySelectorAll(".tc").forEach(c => c.classList.remove("on"));
   document.getElementById("tr_"+type).classList.add("on");
@@ -1874,6 +1879,9 @@ function selTruck(type) {
     if(panel) panel.style.display = "";
   }
   calc();
+  // Truck capacity drives minimum tonnage, load count and — through billable
+  // tons — which plant is actually cheapest. Re-derive every line.
+  if(prevTruck !== type && typeof pmRederiveAll === "function") pmRederiveAll("truck", 250);
 }
 
 function onAccessChange() {
@@ -2016,8 +2024,12 @@ function getAutoHaulRate(miles) {
 
 function minTonsForTruck(actual, truckType) {
   if(actual <= 0) return actual;
-  if(!truckType || !TRUCK_RATES[truckType]) return actual; // no truck selected — no minimum applied
-  const cap = TRUCK_RATES[truckType].cap;
+  // Ruling (Jason, 2026-07-31): with no truck selected the minimum still
+  // applies and rounds to 25 tons — the same default basis numLoads() uses.
+  // Previously this returned the raw tonnage while numLoads() already assumed
+  // a 25-ton cap, so billable tons and load count disagreed on every quote
+  // written before a truck was picked.
+  const cap = (truckType && TRUCK_RATES[truckType]) ? TRUCK_RATES[truckType].cap : DEFAULT_TRUCK_CAP;
   return Math.ceil(actual / cap) * cap;
 }
 function minTons(actual) {
@@ -2043,8 +2055,18 @@ function applyMinPerLoad(qty, minPerLoad) {
 // Number of truck loads (ROUNDUP(qty/cap,0)) — used for per-load env fee
 function numLoads(qty) {
   if(qty <= 0) return 0;
-  const cap = (truck && TRUCK_RATES[truck]) ? TRUCK_RATES[truck].cap : 25;
-  return Math.ceil(qty / cap);
+  return Math.ceil(qty / truckCap(truck));
+}
+
+// ── Shared debounce ──────────────────────────────────────────────────────────
+// One mechanism for every "re-derive after the user stops typing" path
+// (standard-quote lines and multi-material rows). Keyed so independent rows
+// don't cancel one another — the old multi-material listener shared a single
+// timer, so typing in row 2 silently dropped row 1's pending re-rank.
+var _smDebTimers = {};
+function smDebounce(key, fn, ms) {
+  clearTimeout(_smDebTimers[key]);
+  _smDebTimers[key] = setTimeout(function(){ delete _smDebTimers[key]; fn(); }, ms || 600);
 }
 
 // ── ZONE CHECK ────────────────────────────────────────────────────────────────
@@ -2295,12 +2317,23 @@ function qtyToTons(id) {
 }
 
 // -- CUSTOM MATERIAL WRITE-IN --
+var MAT_LINE = { mat1: 1, mat2: 2 };
 function onMatSelect(sel) {
   var wrapId = sel.id + 'CustomWrap';
   var wrap = document.getElementById(wrapId);
   if(wrap) wrap.style.display = sel.value === '__other__' ? 'block' : 'none';
   calc();
+  // A new material invalidates the plant ranking, the price and the haul rate
+  // on this line — re-derive instead of leaving the old material's numbers.
+  if(MAT_LINE[sel.id] && typeof pmRederive === 'function') pmRederive(MAT_LINE[sel.id], 'material');
 }
+// Write-in materials change as the associate types.
+(function(){
+  Object.keys(MAT_LINE).forEach(function(id){
+    var el = document.getElementById(id + 'Custom');
+    if(el) el.addEventListener('input', function(){ pmRederive(MAT_LINE[id], 'material', 800); });
+  });
+})();
 
 function getMatName(id) {
   var sel = document.getElementById(id);
@@ -2528,6 +2561,8 @@ function initMaps() {
       autoAssignZone(p.address_components, locLat, locLng);
     }
     if(typeof mmRefreshHaulRates === "function") mmRefreshHaulRates();
+    // A new job site moves every distance, every haul rate and the ranking.
+    if(typeof pmRederiveAll === "function") pmRederiveAll("address", 300);
   });
 
   // Demo site
@@ -2545,12 +2580,20 @@ function initMaps() {
   });
 
   // Manual plant address fields
+  const PA_LINE = { pa1: 1, pa2: 2 };
   ["pa1","pa2","hpa","fpa"].forEach(function(fid) {
     const el = document.getElementById(fid);
     if(!el) return;
     const ac = new google.maps.places.Autocomplete(el,{fields:["place_id","formatted_address","geometry"]});
     ac.addListener("place_changed", function() {
       const p = ac.getPlace();
+      // Pinning a source address by hand is an override: keep it, but
+      // re-derive miles, haul rate, minimum tonnage and load count off it.
+      if(PA_LINE[fid]) {
+        const psEl = document.getElementById(PA_LINE[fid] === 1 ? "ps1" : "ps2");
+        if(psEl) psEl.dataset.auto = "";
+        if(typeof pmRederive === "function") pmRederive(PA_LINE[fid], "address", 300);
+      }
       if(fid === "pa2") {
         if(p.place_id) plantPid2 = p.place_id;
         if(p.geometry && p.geometry.location) {
@@ -2570,10 +2613,16 @@ function initMaps() {
   });
 }
 
+const PLANT_LINE = { ps1: 1, ps2: 2 };
 function onPlant(selId) {
   const sel = document.getElementById(selId);
+  // Reaching onPlant means the associate changed the dropdown by hand
+  // (pmApply sets .value programmatically, which fires no change event), so
+  // this pick is an override and must never be re-ranked away.
+  if(sel) sel.dataset.auto = "";
   const addr = sel.value;
   if(!addr) return;
+  if(PLANT_LINE[selId] && typeof pmRederive === "function") pmRederive(PLANT_LINE[selId], "plant", 0);
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
   if(manId) document.getElementById(manId).value=addr;
@@ -4559,6 +4608,11 @@ const PM_LINES = {
 };
 let pmLast = {};
 let pmQtyInfo = {};
+// Full ranked plant list + the (material|destination) signature it was built
+// from, so truck/quantity changes can re-rank without another Distance Matrix
+// call (neither one moves miles or the haul rate).
+let pmAllRows = {};
+let pmSig = {};
 
 function pmEsc(x){ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function pmMsg(t){ return '<div class="bs-note">'+pmEsc(t)+'</div>'; }
@@ -4696,6 +4750,10 @@ function findBestSource(line){
     rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.pt + billTons * r.haul : 0; });
     rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
     var totalPlants = rows.length;
+    // Keep the FULL ranked set: a truck-type or quantity change re-ranks on
+    // billable tonnage, and the new winner may not be in the old top 5.
+    pmAllRows[line] = rows;
+    pmSig[line] = matName + "|" + pmDestSig();
     rows = rows.slice(0, 5);
     pmLast[line] = rows;
     pmQtyInfo[line] = {tons: qtyTons, bill: billTons, of: totalPlants};
@@ -4736,6 +4794,9 @@ function pmApply(line, idx){
       if((o.dataset && o.dataset.name) === row.e.p){ psEl.value = o.value; matched = true; break; }
     }
     if(!matched) psEl.value = "";
+    // #1 stays "auto" and keeps re-ranking; any other row is an explicit
+    // override and is never re-picked. Same contract as the mm rows.
+    psEl.dataset.auto = (idx === 0) ? "1" : "";
   }
   const paEl = document.getElementById(cfg.pa); if(paEl) paEl.value = row.e.a;
   if(cfg.mi){ const miEl = document.getElementById(cfg.mi); if(miEl) miEl.value = row.miles.toFixed(1); }
@@ -4749,6 +4810,131 @@ function pmApply(line, idx){
   if(outEl) outEl.querySelectorAll("tr[data-bs]").forEach(function(tr){ tr.classList.toggle("bs-on", +tr.dataset.bs === idx); });
   if(typeof calc === "function") calc();
 }
+
+// ── STANDARD-QUOTE LINE RE-DERIVE ────────────────────────────────────────────
+// Best Source used to be button-only and never re-ranked, so changing the
+// material, the plant, the job-site address or the truck type left a stale
+// haul rate, a stale price, a stale minimum tonnage, a stale load count and a
+// stale ranking sitting in the quote. Every one of those inputs now re-derives
+// the whole line, debounced through the same smDebounce() the multi-material
+// rows use. A hand-picked plant is never re-picked — exactly the mm contract.
+
+// Ranking basis shared by findBestSource() and pmRerankCached().
+// total = pt x tons + haul x (loads x cap)
+// cap  = the selected truck's capacity, or DEFAULT_TRUCK_CAP (25) when none.
+function pmBillTons(qtyTons){
+  if(!(qtyTons > 0)) return 0;
+  var cap = truckCap(truck);
+  return Math.ceil(qtyTons / cap) * cap;
+}
+function pmScoreRows(rows, qtyTons){
+  var cap   = truckCap(truck);
+  var loads = qtyTons > 0 ? Math.ceil(qtyTons / cap) : 0;
+  var bill  = loads * cap;
+  rows.forEach(function(r){ r.job = qtyTons > 0 ? (qtyTons * r.pt + r.haul * bill) : 0; });
+  rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
+  return {cap: cap, loads: loads, bill: bill};
+}
+function pmDestSig(){
+  if(typeof locPid !== "undefined" && locPid) return "pid:" + locPid;
+  if(typeof locLat !== "undefined" && locLat && locLng) return "ll:" + locLat.toFixed(5) + "," + locLng.toFixed(5);
+  var a = (typeof s === "function") ? (s("location") || s("address")) : "";
+  return "addr:" + (a || "");
+}
+function pmHaveDest(){
+  if(typeof locPid !== "undefined" && locPid) return true;
+  if(typeof locLat !== "undefined" && locLat && locLng) return true;
+  return !!((typeof s === "function") && (s("location") || s("address")));
+}
+// A line is "auto" while its plant is empty or was applied as the #1 pick.
+function pmLineIsAuto(line){
+  var cfg = PM_LINES[line]; if(!cfg) return false;
+  var ps = document.getElementById(cfg.ps); if(!ps) return false;
+  return !ps.value || ps.dataset.auto === "1";
+}
+function pmSelectedPlantName(line){
+  var cfg = PM_LINES[line]; if(!cfg) return "";
+  var ps = document.getElementById(cfg.ps);
+  if(!ps || ps.selectedIndex < 0) return "";
+  var o = ps.options[ps.selectedIndex];
+  return (o && o.dataset && o.dataset.name) ? o.dataset.name : "";
+}
+// Re-rank the cached distance results. Truck type and quantity change the
+// billable tonnage — and therefore the winner. Miles never change, so no new
+// Distance Matrix call is needed; the haul rate IS truck-dependent (see
+// TRUCK_HAUL_MULT) and is recomputed from the cached miles below.
+function pmRerankCached(line){
+  var cfg = PM_LINES[line]; if(!cfg) return false;
+  var all = pmAllRows[line];
+  if(!all || !all.length) return false;
+  var out = document.getElementById(cfg.out); if(!out) return false;
+  var qtyTons = 0;
+  try { qtyTons = (cfg.qty && typeof qtyToTons === "function") ? (qtyToTons(cfg.qty) || 0) : 0; } catch(e){}
+  pmScoreRows(all, qtyTons);
+  var billTons = pmBillTons(qtyTons);
+  var rows = all.slice(0, 5);
+  pmLast[line] = rows;
+  pmQtyInfo[line] = {tons: qtyTons, bill: billTons, of: all.length};
+  out.innerHTML = pmRenderTable(line, rows);
+  if(pmLineIsAuto(line)) pmApply(line, 0);
+  else if(typeof calc === "function") calc();
+  return true;
+}
+// Re-price a hand-picked plant after a material change. If that plant has no
+// entry for the new material, say so instead of leaving the previous
+// material's price sitting in the field pretending to be valid.
+function pmRefreshPriceForPlant(line){
+  var cfg = PM_LINES[line]; if(!cfg) return;
+  var prEl = cfg.pr ? document.getElementById(cfg.pr) : null;
+  var outEl = document.getElementById(cfg.out);
+  var matName = (typeof getMatName === "function") ? getMatName(cfg.mat) : "";
+  var plantName = pmSelectedPlantName(line);
+  if(!prEl || !matName || !plantName) return;
+  var hit = pmMatchEntries(matName).filter(function(e){ return e.p === plantName; })[0];
+  if(!hit){
+    prEl.style.borderColor = "#c0392b";
+    if(outEl) outEl.innerHTML = pmMsg('⚠ ' + plantName + ' has no price-matrix entry for "' + matName +
+      '" — the price shown is from the previous material. Run Best Source or enter the price manually.');
+    return;
+  }
+  var u = (typeof qtyUnits !== "undefined" && cfg.qty && qtyUnits[cfg.qty]) ? qtyUnits[cfg.qty] : "tons";
+  var rp = pmPriceForUnit({e: hit}, u);
+  if(rp > 0){ prEl.value = rp.toFixed(2); prEl.style.borderColor = "rgba(0,191,255,.5)"; }
+}
+// reason: "material" | "plant" | "address" | "truck" | "qty"
+function pmRederiveNow(line, reason){
+  var cfg = PM_LINES[line]; if(!cfg) return;
+  var matName = (typeof getMatName === "function") ? getMatName(cfg.mat) : "";
+  if(!matName || !pmHaveDest()){ if(typeof calc === "function") calc(); return; }
+
+  // Truck/quantity only move the billable tonnage and the haul multiplier —
+  // re-rank the cache, no new distance lookup.
+  if((reason === "truck" || reason === "qty") && pmSig[line] === (matName + "|" + pmDestSig())){
+    if(pmRerankCached(line)) return;
+  }
+  if(!pmLineIsAuto(line)){
+    // Hand-picked plant: keep the plant, re-derive everything else on the line.
+    if(reason === "material" || reason === "plant") pmRefreshPriceForPlant(line);
+    if(cfg.full && typeof tryMiles === "function") tryMiles();   // miles + haul rate
+    if(typeof calc === "function") calc();                        // min tons + loads
+    return;
+  }
+  findBestSource(line);   // full re-rank; pmApply() then re-derives the line
+}
+function pmRederive(line, reason, ms){
+  smDebounce("pm:" + line, function(){ pmRederiveNow(line, reason); }, ms === undefined ? 600 : ms);
+}
+function pmRederiveAll(reason, ms){
+  Object.keys(PM_LINES).forEach(function(k){ pmRederive(k, reason, ms); });
+}
+// Quantity re-rank for the standard lines, mirroring the mm qty listener.
+(function(){
+  ["qty1", "qty2"].forEach(function(id, k){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("input", function(){ pmRederive(k + 1, "qty"); });
+  });
+})();
 
 // ── AUTO-SOURCE for multi-material rows: pick the lowest delivered-cost plant
 // as soon as a material and the job site are known. A plant the associate
@@ -4932,7 +5118,6 @@ function mmPickRank(i, k) {
 (function(){
   var tbody = document.getElementById("mmTbody");
   if(!tbody) return;
-  var t = null;
   tbody.addEventListener("input", function(ev){
     if(!ev.target.classList || !ev.target.classList.contains("mm-qty")) return;
     var tr = ev.target.closest("tr");
@@ -4940,8 +5125,7 @@ function mmPickRank(i, k) {
     if(!sel || (sel.value && sel.dataset.auto !== "1")) return;
     var trs = tbody.querySelectorAll("tr");
     var i = Array.prototype.indexOf.call(trs, tr);
-    clearTimeout(t);
-    t = setTimeout(function(){ if(typeof mmAutoSource === "function") mmAutoSource(i); }, 600);
+    smDebounce("mm:" + i, function(){ if(typeof mmAutoSource === "function") mmAutoSource(i); }, 600);
   });
 })();
 
