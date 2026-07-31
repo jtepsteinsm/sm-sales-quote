@@ -1747,13 +1747,58 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
 <script>
 // ── CONSTANTS & STATE ────────────────────────────────────────────────────────
 const GKEY = "AIzaSyB2dL3IdWI01wQhZU-j26J7sjZSKiZ7Vn0";
+// TRUCK_RATES.rate IS NOT THE HAUL MULTIPLIER — DO NOT WIRE IT INTO HAUL MATH.
+// The .rate values (135/155/140/145) are hourly truck-cost benchmarks from an
+// unrelated feature that was never finished: their ONLY reader is
+// getTruckConfig() below, which is dead code (grep — it is never called), as
+// are the rs10/rtf/rbd/red override inputs in the Truck Overrides panel.
+// They have never priced a quote, so they are unvalidated numbers, not a spec.
+// The per-truck haul adjustment lives in TRUCK_HAUL_MULT (below) and is a
+// MULTIPLIER on the transfer rate, not an hourly cost. If you came here
+// thinking you found a bug where .rate is ignored — you did not. Leave it.
+// Only .cap is live: minimum tonnage, load count, and per-load env fee.
 const TRUCK_RATES = { s10:{rate:135,cap:17}, tf:{rate:155,cap:25}, bd:{rate:140,cap:25}, ed:{rate:145,cap:22} };
 const TRUCK_LABELS = { s10:"Super 10", tf:"Transfer", bd:"Bottom Dump", ed:"End Dump" };
 const TRUCK_MIN    = { s10:17, tf:25, bd:25, ed:22 };
 // Capacity assumed when no truck has been picked yet. Every load-count and
 // minimum-tonnage path must use this same number (see minTonsForTruck/numLoads).
 const DEFAULT_TRUCK_CAP = 25;
-function truckCap(t) { return (t && TRUCK_RATES[t]) ? TRUCK_RATES[t].cap : DEFAULT_TRUCK_CAP; }
+
+// ── PER-TRUCK HAUL RATE MULTIPLIERS ──────────────────────────────────────────
+// TRANSFER IS THE STANDARD. calcHaulRate() produces the transfer rate; the
+// existing zone / access / job-type selectors keep modifying it exactly as
+// they always have, and the multiplier layers on top of that result. When the
+// customer requests a specific truck type, the quoted haul rate scales by:
+//
+//   Transfer .................. 1.00   (baseline — the formula is calibrated here)
+//   Super 10 / Super Tag /
+//     Strong Arm .............. 1.29   (one shared group)
+//   End Dump .................. 1.12
+//   Bottom Dump ............... 0.95
+//   10-Wheeler ................ treated as Transfer (see TRUCK_ALIAS)
+//   nothing selected .......... 1.00   (with the existing 25-ton default cap)
+//
+// These are NOT TRUCK_RATES[*].rate — read the comment on TRUCK_RATES.
+const TRUCK_HAUL_MULT = {
+  tf:  1.00,   // Transfer
+  s10: 1.29,   // Super 10   ┐
+  st:  1.29,   // Super Tag  ├─ one shared group
+  sa:  1.29,   // Strong Arm ┘
+  ed:  1.12,   // End Dump
+  bd:  0.95    // Bottom Dump
+};
+// A 10-Wheeler is a transfer tractor running without its trailer: same 25-ton
+// minimum, same rate. It gets no entry of its own — it maps to "tf" for BOTH
+// capacity and multiplier. ("st"/"sa" are priced above but are not yet options
+// in the truck picker; they are listed so that adding them prices correctly.)
+const TRUCK_ALIAS = { w10: "tf" };
+function truckKey(t) { return (t && TRUCK_ALIAS[t]) ? TRUCK_ALIAS[t] : (t || ""); }
+// Unknown or unselected truck → 1.00, i.e. quote the transfer standard.
+function truckHaulMult(t) {
+  var m = TRUCK_HAUL_MULT[truckKey(t)];
+  return (typeof m === "number" && m > 0) ? m : 1.00;
+}
+function truckCap(t) { var k = truckKey(t); return (k && TRUCK_RATES[k]) ? TRUCK_RATES[k].cap : DEFAULT_TRUCK_CAP; }
 
 let qt="std", pay="cash", qnum="";
 let truck=null, haulback="one";
@@ -1985,13 +2030,24 @@ function getTransferFee() {
   return (access === "no_far") ? 1.75 : 0;
 }
 
-function calcHaulRate(miles) {
+// `truckType` is optional. Omitted (undefined) → the global `truck`, which is
+// what every standard-quote caller wants. The multi-material rows each carry
+// their own truck and pass it explicitly.
+//
+// ROUNDING: unchanged. There is still exactly ONE rounding step, still the
+// last thing that happens before the $6.00 floor. The multiplier is applied to
+// the un-rounded base, so we never round twice and never accumulate a second
+// half-cent of error. For the Transfer / no-truck baseline the multiplier is
+// 1.00 and `base * 1.00 === base` exactly in IEEE-754, so the returned value
+// is bit-identical to the pre-multiplier behaviour, floor included.
+function calcHaulRate(miles, truckType) {
   if(miles <= 0) return 0;
   const zoneMult = getZoneMult();
   const accessMod = getAccessMod();
   const transferFee = getTransferFee();
+  const mult = truckHaulMult(truckType === undefined ? truck : truckType);
   const base = ((0.2175 * miles) + 2.7) * 1.25 * zoneMult + accessMod + transferFee;
-  return Math.max(Math.round(base * 100) / 100, 6.00);
+  return Math.max(Math.round(base * mult * 100) / 100, 6.00);
 }
 
 function updateFormulaBox(miles) {
@@ -2004,7 +2060,11 @@ function updateFormulaBox(miles) {
   const baseCalc = ((0.2175 * miles) + 2.7) * 1.25;
   const afterZone = baseCalc * zoneMult;
   const afterAccess = afterZone + accessMod;
-  const final = Math.max(Math.round((afterAccess + transferFee) * 100) / 100, 6.00);
+  // Derived from calcHaulRate() rather than recomputed, so the box can never
+  // disagree with the rate actually quoted (it now carries the truck
+  // multiplier). Mathematically identical to the old inline expression.
+  const truckMult = truckHaulMult(truck);
+  const final = calcHaulRate(miles);
   const zoneKey = s("zoneSelect") || "Z0";
   const zoneLabel = ZONE_MULTIPLIERS[zoneKey] ? ZONE_MULTIPLIERS[zoneKey].label : "Z0 — Open/Rural";
 
@@ -2015,11 +2075,13 @@ function updateFormulaBox(miles) {
   document.getElementById("fCycleTime").textContent  = (accessMod>=0?"+":"")+accessMod.toFixed(2)+" access modifier";
   document.getElementById("fCapacity").textContent   = transferFee>0 ? "+$1.75/ton transfer staging fee" : "No transfer fee";
   document.getElementById("fHaulback").textContent   = haulback==="back"?"Haul-Back applied":haulback==="round"?"Round Trip":"One-Way";
-  document.getElementById("fResult").textContent     = fmt(final) + " / ton" + (final===6.00?" (minimum)":"");
+  document.getElementById("fResult").textContent     = fmt(final) + " / ton" +
+    (truckMult !== 1 ? " (×" + truckMult.toFixed(2) + " " + (TRUCK_LABELS[truckKey(truck)] || "truck") + " vs Transfer)" : "") +
+    (final===6.00?" (minimum)":"");
 }
 
-function getAutoHaulRate(miles) {
-  return calcHaulRate(miles);
+function getAutoHaulRate(miles, truckType) {
+  return calcHaulRate(miles, truckType);
 }
 
 function minTonsForTruck(actual, truckType) {
@@ -2029,7 +2091,7 @@ function minTonsForTruck(actual, truckType) {
   // Previously this returned the raw tonnage while numLoads() already assumed
   // a 25-ton cap, so billable tons and load count disagreed on every quote
   // written before a truck was picked.
-  const cap = (truckType && TRUCK_RATES[truckType]) ? TRUCK_RATES[truckType].cap : DEFAULT_TRUCK_CAP;
+  const cap = truckCap(truckType);
   return Math.ceil(actual / cap) * cap;
 }
 function minTons(actual) {
@@ -2037,7 +2099,7 @@ function minTons(actual) {
 }
 // Returns the default per-load minimum for a given unit + truck type
 function getDefaultMinPerLoad(unit, truckType) {
-  var cap = (truckType && TRUCK_RATES[truckType] && TRUCK_RATES[truckType].cap) ? TRUCK_RATES[truckType].cap : 25;
+  var cap = truckCap(truckType);
   // CY per load = truck tonnage capacity converted to CY (truck-aware, so a
   // Super 10's 17t ≈ 11.56 CY, not a flat 17 CY). Flat 17 undercounted loads
   // (and thus the per-load env fee) for anything smaller than a 25t truck.
@@ -3644,17 +3706,28 @@ function calcMM() {
   document.getElementById("tpt").textContent    = "$0.00/ton";
 }
 
+// The mm rows each carry their own truck, so their haul rate must be derived
+// with THAT row's multiplier — never the global `truck`.
+function mmRowTruck(rowIndex) {
+  var tbody = document.getElementById("mmTbody");
+  var tr = tbody ? tbody.querySelectorAll("tr")[rowIndex] : null;
+  return tr ? ((tr.querySelector(".mm-truck") || {}).value || "") : "";
+}
 // autoFillHaul: fills every mm-haul input (breakdown mode)
 function autoFillHaul() {
-  var autoHR = getAutoHaulRate(currentMiles || 0);
-  if(autoHR <= 0) {
+  var miles = currentMiles || 0;
+  if(getAutoHaulRate(miles) <= 0) {
     alert("No job site selected yet \u2014 enter the job site address first so miles can be calculated.");
     return;
   }
   var tbody = document.getElementById("mmTbody");
   if(!tbody) return;
-  tbody.querySelectorAll(".mm-haul").forEach(function(el) {
-    el.value = autoHR.toFixed(2);
+  // Same miles for every row, but each row's own truck multiplier.
+  tbody.querySelectorAll("tr").forEach(function(tr, i) {
+    var el = tr.querySelector(".mm-haul");
+    if(!el) return;
+    el.value = getAutoHaulRate(miles, mmRowTruck(i)).toFixed(2);
+    el.dataset.auto = "1";
     el.style.borderColor = "rgba(0,191,255,.6)";
   });
   calcMM();
@@ -3715,9 +3788,10 @@ function onMMPlant(selectEl, rowIndex) {
     }, function(resp, st) {
       if(st === "OK" && resp.rows[0].elements[0].status === "OK") {
         var miles = resp.rows[0].elements[0].distance.value / 1609.344;
-        var rate = getAutoHaulRate(miles);
+        var rate = getAutoHaulRate(miles, mmRowTruck(rowIndex));
         if(rate > 0) {
           haulEl.value = rate.toFixed(2);
+          haulEl.dataset.auto = "1";
           haulEl.style.borderColor = "#2a8a4a";
           calcMM();
         }
@@ -3725,8 +3799,8 @@ function onMMPlant(selectEl, rowIndex) {
     });
   } else {
     // No Maps — just fill with current global rate if available
-    var autoHR = getAutoHaulRate(currentMiles || 0);
-    if(autoHR > 0) { haulEl.value = autoHR.toFixed(2); calcMM(); }
+    var autoHR = getAutoHaulRate(currentMiles || 0, mmRowTruck(rowIndex));
+    if(autoHR > 0) { haulEl.value = autoHR.toFixed(2); haulEl.dataset.auto = "1"; calcMM(); }
   }
 }
 
@@ -3753,9 +3827,10 @@ function onMMCustomAddr(el, rowIndex) {
     }, function(resp, st) {
       if(st === "OK" && resp.rows[0].elements[0].status === "OK") {
         var miles = resp.rows[0].elements[0].distance.value / 1609.344;
-        var rate = getAutoHaulRate(miles);
+        var rate = getAutoHaulRate(miles, mmRowTruck(rowIndex));
         if(rate > 0) {
           haulEl.value = rate.toFixed(2);
+          haulEl.dataset.auto = "1";
           haulEl.style.borderColor = "#2a8a4a";
           calcMM();
         }
@@ -3802,10 +3877,35 @@ function onMMTruckChange(sel, rowIndex) {
   var unit = unitEl ? unitEl.value : "tons";
   if(unit === "tons") _mmSetMinLoad(rowIndex, unit, sel.value);
   calcMM();
-  // Truck capacity changes the billable tonnage and therefore which plant is
-  // cheapest — re-rank this row the same way a quantity change does.
-  // (Auto-picked plants only; a hand-picked plant is left alone.)
-  smDebounce("mm:" + rowIndex, function(){ if(typeof mmAutoSource === "function") mmAutoSource(rowIndex); }, 250);
+  // Truck capacity changes the billable tonnage — and, since TRUCK_HAUL_MULT,
+  // the haul rate too — so both the winner and the rate have to be re-derived.
+  // Same debounce key as the quantity listener, so one edit never fires twice.
+  smDebounce("mm:" + rowIndex, function(){ mmRederiveRow(rowIndex); }, 250);
+}
+
+// Re-derive one mm row. Mirrors pmRederiveNow() for the standard lines:
+//   • auto-picked (or empty) plant → full re-rank, which re-derives the rate
+//   • hand-picked plant            → keep the plant, re-derive the rate off it
+//   • hand-typed haul rate         → never touched
+function mmRederiveRow(i) {
+  var tbody = document.getElementById("mmTbody");
+  var tr = tbody ? tbody.querySelectorAll("tr")[i] : null;
+  if(!tr) return;
+  var sel = tr.querySelector(".mm-plant");
+  if(!sel || !sel.value || sel.dataset.auto === "1") {
+    if(typeof mmAutoSource === "function") mmAutoSource(i);
+    return;
+  }
+  // Hand-picked plant: mmAutoSource() deliberately bails here, so without this
+  // branch a truck change would leave the previous truck's haul rate in place.
+  var haulEl = tr.querySelector(".mm-haul");
+  if(haulEl && haulEl.value && haulEl.dataset.auto !== "1") return;   // manual rate wins
+  if(sel.value === "__other__") {
+    var custom = tr.querySelector(".mm-plant-custom-addr");
+    if(custom && custom.value.trim().length >= 6 && typeof onMMCustomAddr === "function") onMMCustomAddr(custom, i);
+  } else if(typeof onMMPlant === "function") {
+    onMMPlant(sel, i);
+  }
 }
 
 // applyAutoHaul: works for ALL quote types — fills the right haul rate field
@@ -3843,7 +3943,6 @@ function getMMData() {
   var miles = currentMiles
     || parseFloat((document.getElementById("mmMiles")||{}).value)
     || v("mi1") || v("hmi") || v("dmi") || 0;
-  var autoHR = getAutoHaulRate(miles);
   tbody.querySelectorAll("tr").forEach(function(tr) {
     var matEl   = tr.querySelector(".mm-mat");
     var plantEl = tr.querySelector(".mm-plant");
@@ -3866,9 +3965,10 @@ function getMMData() {
     var qty   = parseFloat((tr.querySelector(".mm-qty")  ||{}).value)  || 0;
     var price = parseFloat((tr.querySelector(".mm-price")||{}).value)  || 0;
     var haulEl = tr.querySelector(".mm-haul");
-    var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : autoHR;
-    var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
     var rowTruck  = (tr.querySelector(".mm-truck")  ||{}).value || "";
+    // Fallback rate is derived with THIS row's truck, not the global one.
+    var haul  = (haulEl && haulEl.value) ? parseFloat(haulEl.value) : getAutoHaulRate(miles, rowTruck);
+    var env   = parseFloat((tr.querySelector(".mm-env")  ||{}).value)  || 0;
     var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
     var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
     var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
@@ -4883,10 +4983,17 @@ function pmSelectedPlantName(line){
   var o = ps.options[ps.selectedIndex];
   return (o && o.dataset && o.dataset.name) ? o.dataset.name : "";
 }
-// Re-rank the cached distance results. Truck type and quantity change the
-// billable tonnage — and therefore the winner. Miles never change, so no new
-// Distance Matrix call is needed; the haul rate IS truck-dependent (see
-// TRUCK_HAUL_MULT) and is recomputed from the cached miles below.
+// Re-rank the cached distance results. Only MILES are cached — everything
+// derived from them is recomputed here.
+//
+// This function was originally written on the assumption that a truck change
+// moves the billable tonnage but NOT the haul rate, so it re-ranked straight
+// off the cached rows. TRUCK_HAUL_MULT makes that assumption false: every
+// cached row's `haul` (and therefore `total`) belongs to whichever truck was
+// selected when findBestSource() last ran, and re-ranking off it would quote
+// a Bottom Dump at the Transfer rate. Miles genuinely do not change, so the
+// fix costs no new Distance Matrix call: re-derive haul from cached miles.
+// This also picks up any zone / access / job-type change for free.
 function pmRerankCached(line){
   var cfg = PM_LINES[line]; if(!cfg) return false;
   var all = pmAllRows[line];
@@ -4894,6 +5001,7 @@ function pmRerankCached(line){
   var out = document.getElementById(cfg.out); if(!out) return false;
   var qtyTons = 0;
   try { qtyTons = (cfg.qty && typeof qtyToTons === "function") ? (qtyToTons(cfg.qty) || 0) : 0; } catch(e){}
+  all.forEach(function(r){ r.haul = calcHaulRate(r.miles); r.total = r.pt + r.haul; });
   pmScoreRows(all, qtyTons);
   var billTons = pmBillTons(qtyTons);
   var rows = all.slice(0, 5);
@@ -5019,7 +5127,7 @@ function mmAutoSource(i) {
     resp.rows.forEach(function(r, k) {
       var el = r.elements[0];
       if(!el || el.status !== "OK") return;
-      var haul = calcHaulRate(el.distance.value / 1609.344);
+      var haul = calcHaulRate(el.distance.value / 1609.344, truckNow);
       var pt = pmPerTon(hits[k]);
       var ef = pmEnvFee(hits[k]);
       ranked.push({e: hits[k], haul: haul, pt: pt, ef: ef, perTon: pt + haul,
@@ -5158,7 +5266,11 @@ function mmPickRank(i, k) {
   var tbody = document.getElementById("mmTbody");
   if(!tbody) return;
   tbody.addEventListener("input", function(ev){
-    if(!ev.target.classList || !ev.target.classList.contains("mm-qty")) return;
+    if(!ev.target.classList) return;
+    // Typing a haul rate by hand clears the auto flag, so no re-derive path
+    // (here, mmAutoSource, mmRederiveRow) can overwrite it later.
+    if(ev.target.classList.contains("mm-haul")) { ev.target.dataset.auto = ""; return; }
+    if(!ev.target.classList.contains("mm-qty")) return;
     var tr = ev.target.closest("tr");
     var sel = tr ? tr.querySelector(".mm-plant") : null;
     if(!sel || (sel.value && sel.dataset.auto !== "1")) return;
