@@ -4674,6 +4674,14 @@ const PM_SOURCE_HINTS = {"1\" Black Del Rio": "Comes from Orca (Long Beach) / 75
 // Convert any matrix entry to a per-ton sell price so per-scoop / per-CY /
 // per-load items compare against per-ton plants in one ranking
 // (1 scoop = 25/33 t, 1 CY = 25/16.5 t, 1 load ~ 25 t).
+// Per-LOAD environmental fee carried on a price-matrix row. The 324 rows
+// synced before this field existed have no "ef" key at all; absent, blank,
+// non-numeric and negative all mean 0, so nothing is charged by surprise.
+function pmEnvFee(e){
+  if(!e) return 0;
+  var n = parseFloat(e.ef);
+  return (isFinite(n) && n > 0) ? n : 0;
+}
 function pmPerTon(e){
   if(e.um === "scoop") return e.pr / SCOOP_TO_TONS;
   if(e.um === "CY")    return e.pr / CY_TO_TONS;
@@ -4741,7 +4749,7 @@ function findBestSource(line){
       const miles = el.distance.value / 1609.344;
       const haul = calcHaulRate(miles);
       const pt = pmPerTon(tonHits[i]);
-      rows.push({e: tonHits[i], pt: pt, miles: miles, haul: haul, total: pt + haul});
+      rows.push({e: tonHits[i], pt: pt, miles: miles, haul: haul, total: pt + haul, ef: pmEnvFee(tonHits[i])});
     });
     if(!rows.length){ out.innerHTML = pmMsg("No drivable routes found — pick the plant manually."); return; }
     // Rank on the ACTUAL total for the entered quantity: material is billed on
@@ -4750,9 +4758,8 @@ function findBestSource(line){
     // simple $/ton comparison. No quantity yet → rank per delivered $/ton.
     var qtyTons = 0;
     try { qtyTons = (cfg.qty && typeof qtyToTons === "function") ? (qtyToTons(cfg.qty) || 0) : 0; } catch(e){}
-    var billTons = qtyTons > 0 ? (typeof minTons === "function" ? minTons(qtyTons) : Math.ceil(qtyTons / 25) * 25) : 0;
-    rows.forEach(function(r){ r.job = qtyTons > 0 ? qtyTons * r.pt + billTons * r.haul : 0; });
-    rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
+    pmScoreRows(rows, qtyTons);
+    var billTons = pmBillTons(qtyTons);
     var totalPlants = rows.length;
     // Keep the FULL ranked set: a truck-type or quantity change re-ranks on
     // billable tonnage, and the new winner may not be in the old top 5.
@@ -4769,19 +4776,25 @@ function findBestSource(line){
 function pmRenderTable(line, rows){
   var qi = pmQtyInfo[line] || {tons: 0, bill: 0};
   var byQty = qi.tons > 0;
-  let h = '<table><tr><th>Plant</th><th>Sell $/t</th><th>Miles</th><th>Haul $/t</th><th>Delivered $/t</th>' +
+  // The Env $/load column only appears when at least one ranked plant
+  // actually carries a fee — an all-zero column is noise.
+  var showEf = pmAnyEnvFee(rows);
+  let h = '<table><tr><th>Plant</th><th>Sell $/t</th><th>Miles</th><th>Haul $/t</th>' +
+          (showEf ? '<th>Env $/load</th>' : '') + '<th>Delivered $/t</th>' +
           (byQty ? '<th>Total (' + qi.tons.toFixed(1) + 't)</th>' : '') + '</tr>';
   rows.forEach(function(r, i){
     h += '<tr data-bs="' + i + '" onclick="pmApply(' + line + ',' + i + ')"><td>' + pmEsc(r.e.p) +
          (i === 0 ? '<span class="bs-badge">LOWEST</span>' : '') + '</td><td>' + pmSellCell(r) +
-         '</td><td>' + r.miles.toFixed(1) + '</td><td>$' + r.haul.toFixed(2) +
-         '</td><td>$' + r.total.toFixed(2) + '</td>' +
+         '</td><td>' + r.miles.toFixed(1) + '</td><td>$' + r.haul.toFixed(2) + '</td>' +
+         (showEf ? '<td>' + ((r.ef || 0) > 0 ? '$' + r.ef.toFixed(2) : '—') + '</td>' : '') +
+         '<td>$' + r.total.toFixed(2) + '</td>' +
          (byQty ? '<td><b>$' + r.job.toFixed(2) + '</b></td>' : '') + '</tr>';
   });
   h += '</table>';
   h += '<div class="bs-note">Top ' + rows.length + ' of ' + (qi.of || rows.length) + ' plants. ' + (byQty
-        ? 'Ranked by TOTAL cost for ' + qi.tons.toFixed(1) + 't (material on actual tons, haul on the ' + qi.bill.toFixed(1) + 't per-load minimum).'
-        : 'Ranked by delivered $/ton — enter a quantity for exact totals.') +
+        ? 'Ranked by TOTAL cost for ' + qi.tons.toFixed(1) + 't (material on actual tons, haul on the ' + qi.bill.toFixed(1) + 't per-load minimum' +
+          (showEf ? ', plus the per-load environmental fee on ' + numLoads(qi.tons) + ' load' + (numLoads(qi.tons) !== 1 ? 's' : '') : '') + ').'
+        : 'Ranked by delivered $/ton' + (showEf ? ' plus the per-load environmental fee spread over a full ' + truckCap(truck) + 't load' : '') + ' — enter a quantity for exact totals.') +
        ' Lowest auto-applied — click any row to override. Haul uses the current zone/access settings' + (PM_LINES[line].full ? '.' : ' (price + plant applied; haul fields are on Material 1).') + '</div>';
   return h;
 }
@@ -4824,8 +4837,10 @@ function pmApply(line, idx){
 // rows use. A hand-picked plant is never re-picked — exactly the mm contract.
 
 // Ranking basis shared by findBestSource() and pmRerankCached().
-// total = pt x tons + haul x (loads x cap)
+// total = pt x tons + haul x (loads x cap) + ef x loads
 // cap  = the selected truck's capacity, or DEFAULT_TRUCK_CAP (25) when none.
+// With no quantity yet there is no load count, so rank on delivered $/ton with
+// the per-load fee spread across a full load (ef / cap).
 function pmBillTons(qtyTons){
   if(!(qtyTons > 0)) return 0;
   var cap = truckCap(truck);
@@ -4835,10 +4850,15 @@ function pmScoreRows(rows, qtyTons){
   var cap   = truckCap(truck);
   var loads = qtyTons > 0 ? Math.ceil(qtyTons / cap) : 0;
   var bill  = loads * cap;
-  rows.forEach(function(r){ r.job = qtyTons > 0 ? (qtyTons * r.pt + r.haul * bill) : 0; });
-  rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.total - b.total; });
+  rows.forEach(function(r){
+    var ef = r.ef || 0;
+    r.job    = qtyTons > 0 ? (qtyTons * r.pt + r.haul * bill + ef * loads) : 0;
+    r.rankPerTon = r.pt + r.haul + (ef / cap);   // ranking basis when there is no qty
+  });
+  rows.sort(function(a, b){ return qtyTons > 0 ? a.job - b.job : a.rankPerTon - b.rankPerTon; });
   return {cap: cap, loads: loads, bill: bill};
 }
+function pmAnyEnvFee(rows){ return rows.some(function(r){ return (r.ef || 0) > 0; }); }
 function pmDestSig(){
   if(typeof locPid !== "undefined" && locPid) return "pid:" + locPid;
   if(typeof locLat !== "undefined" && locLat && locLng) return "ll:" + locLat.toFixed(5) + "," + locLng.toFixed(5);
@@ -4989,22 +5009,28 @@ function mmAutoSource(i) {
     var unitNow = (tr2.querySelector(".mm-unit")||{}).value || "tons";
     var rowTons = (unitNow === "load" || unitNow === "hour") ? 0 : unitToTons(qtyNow, unitNow);
     var truckNow = (tr2.querySelector(".mm-truck")||{}).value || "";
-    var capNow = (truckNow && TRUCK_RATES[truckNow]) ? TRUCK_RATES[truckNow].cap : 25;
-    var billTons = rowTons > 0 ? Math.ceil(rowTons / capNow) * capNow : 0;
+    // total = pt x tons + haul x (loads x cap) + ef x loads; cap falls back to
+    // DEFAULT_TRUCK_CAP (25) when the row has no truck. Same formula as the
+    // standard lines' pmScoreRows().
+    var capNow   = truckCap(truckNow);
+    var loadsNow = rowTons > 0 ? Math.ceil(rowTons / capNow) : 0;
+    var billTons = loadsNow * capNow;
     var ranked = [];
     resp.rows.forEach(function(r, k) {
       var el = r.elements[0];
       if(!el || el.status !== "OK") return;
       var haul = calcHaulRate(el.distance.value / 1609.344);
       var pt = pmPerTon(hits[k]);
-      ranked.push({e: hits[k], haul: haul, pt: pt, perTon: pt + haul,
-                   score: rowTons > 0 ? (rowTons * pt + billTons * haul) : (pt + haul)});
+      var ef = pmEnvFee(hits[k]);
+      ranked.push({e: hits[k], haul: haul, pt: pt, ef: ef, perTon: pt + haul,
+                   score: rowTons > 0 ? (rowTons * pt + haul * billTons + ef * loadsNow)
+                                      : (pt + haul + ef / capNow)});
     });
     if(!ranked.length) { mmBsStatus(tr2, "⚠ No drivable routes found — pick manually."); return; }
     ranked.sort(function(a, b){ return a.score - b.score; });
     var totalN = ranked.length;
     ranked = ranked.slice(0, 5);
-    mmRank[i] = {rows: ranked, tons: rowTons, bill: billTons, of: totalN};
+    mmRank[i] = {rows: ranked, tons: rowTons, bill: billTons, loads: loadsNow, cap: capNow, of: totalN};
     var best = ranked[0];
     if(!mmSetPlant(sel2, best.e.p)) { mmBsStatus(tr2, "⚠ " + pmEsc(best.e.p) + " missing from the plant list — pick manually."); return; }
     sel2.dataset.auto = "1";
@@ -5060,14 +5086,23 @@ function mmShowTop5(i, anchor) {
     });
   }
   var byQty = info.tons > 0;
+  // Same rule as the standard table: only show the fee column when a ranked
+  // plant actually carries one.
+  var showEf = pmAnyEnvFee(info.rows);
+  var efLoads = info.loads || 0, efCap = info.cap || DEFAULT_TRUCK_CAP;
   var h = '<div class="mm-bs-pop-hd">Top ' + info.rows.length + ' of ' + info.of + ' plants' +
-          (byQty ? ' — total for ' + info.tons.toFixed(1) + 't (haul billed on ' + info.bill.toFixed(1) + 't per-load min)' : ' — delivered $/ton') +
+          (byQty ? ' — total for ' + info.tons.toFixed(1) + 't (haul billed on ' + info.bill.toFixed(1) + 't per-load min' +
+                   (showEf ? ', plus the per-load environmental fee on ' + efLoads + ' load' + (efLoads !== 1 ? 's' : '') : '') + ')'
+                 : ' — delivered $/ton' + (showEf ? ' plus the per-load environmental fee spread over a full ' + efCap + 't load' : '')) +
           '. Click a row to use it.</div>';
-  h += '<table><tr><th>#</th><th>Plant</th><th>Sell $/t</th><th>Haul $/t</th><th>' + (byQty ? 'Total' : '$/t delivered') + '</th></tr>';
+  h += '<table><tr><th>#</th><th>Plant</th><th>Sell $/t</th><th>Haul $/t</th>' +
+       (showEf ? '<th>Env $/load</th>' : '') + '<th>' + (byQty ? 'Total' : '$/t delivered') + '</th></tr>';
   info.rows.forEach(function(r, k){
     h += '<tr onclick="mmPickRank(' + i + ',' + k + ')"><td>' + (k+1) + '</td><td>' + pmEsc(r.e.p) +
          (k === 0 ? ' <span class="bs-badge">LOWEST</span>' : '') + '</td><td>' + pmSellCell(r) +
-         '</td><td>$' + r.haul.toFixed(2) + '</td><td><b>$' + (byQty ? r.score.toFixed(2) : r.perTon.toFixed(2)) + '</b></td></tr>';
+         '</td><td>$' + r.haul.toFixed(2) + '</td>' +
+         (showEf ? '<td>' + ((r.ef || 0) > 0 ? '$' + r.ef.toFixed(2) : '—') + '</td>' : '') +
+         '<td><b>$' + (byQty ? r.score.toFixed(2) : r.perTon.toFixed(2)) + '</b></td></tr>';
   });
   h += '</table>';
   pop.innerHTML = h;
