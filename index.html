@@ -1705,7 +1705,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
     <div class="ct">Freight Rate Formula Reference</div>
     <p style="font-size:12px;color:#4a7cc7;margin-bottom:16px;">
       <strong>Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)</strong><br>
-      <span style="font-size:11px;color:#6090b0;">Minimum rate: $6.00/ton · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
+      <span style="font-size:11px;color:#6090b0;">Minimum rate: $6.00/ton Transfer standard (scales with truck multiplier) · Transfer staging fee: +$1.75/ton when staging &gt;1 mile from site</span>
     </p>
     <div class="g2">
       <div>
@@ -1994,7 +1994,8 @@ function getTruckConfig() {
 // Haul-back   = one-way drive + load_allowance, reduced by credit %
 // ── FREIGHT RATE FORMULA ─────────────────────────────────────────────────────
 // Rate = ROUND(((0.2175 × miles) + 2.7) × 1.25 × zone_multiplier + access_modifier, 2)
-// Minimum: $6.00
+// Minimum: $6.00 on the Transfer standard, BEFORE the truck multiplier — the
+// floor scales with the truck (see calcHaulRate).
 
 const ZONE_MULTIPLIERS = {
   Z0: {mult:1.00, label:"Z0 — Open/Rural (Palmdale, Lancaster, Victorville, Mojave)"},
@@ -2034,12 +2035,16 @@ function getTransferFee() {
 // what every standard-quote caller wants. The multi-material rows each carry
 // their own truck and pass it explicitly.
 //
-// ROUNDING: unchanged. There is still exactly ONE rounding step, still the
-// last thing that happens before the $6.00 floor. The multiplier is applied to
-// the un-rounded base, so we never round twice and never accumulate a second
-// half-cent of error. For the Transfer / no-truck baseline the multiplier is
-// 1.00 and `base * 1.00 === base` exactly in IEEE-754, so the returned value
-// is bit-identical to the pre-multiplier behaviour, floor included.
+// FLOOR: the $6.00 minimum is the minimum TRANSFER rate (Jason, 2026-07-31),
+// so it scales with the truck like every other component: floor the un-rounded
+// transfer-standard base at 6.00 FIRST, then apply the multiplier. A near-zero
+// haul in a Super 10 quotes 6.00 × 1.29 = $7.74/ton, not $6.00.
+//
+// ROUNDING: still exactly ONE rounding step and still the LAST thing that
+// happens, so no double rounding. For the Transfer / no-truck baseline the
+// multiplier is 1.00 and the result is bit-identical to the pre-multiplier
+// behaviour: with base ≥ 6 both orderings reduce to round(base); with base < 6
+// both return exactly 6.00.
 function calcHaulRate(miles, truckType) {
   if(miles <= 0) return 0;
   const zoneMult = getZoneMult();
@@ -2047,7 +2052,7 @@ function calcHaulRate(miles, truckType) {
   const transferFee = getTransferFee();
   const mult = truckHaulMult(truckType === undefined ? truck : truckType);
   const base = ((0.2175 * miles) + 2.7) * 1.25 * zoneMult + accessMod + transferFee;
-  return Math.max(Math.round(base * mult * 100) / 100, 6.00);
+  return Math.round(Math.max(base, 6.00) * mult * 100) / 100;
 }
 
 function updateFormulaBox(miles) {
@@ -2075,9 +2080,11 @@ function updateFormulaBox(miles) {
   document.getElementById("fCycleTime").textContent  = (accessMod>=0?"+":"")+accessMod.toFixed(2)+" access modifier";
   document.getElementById("fCapacity").textContent   = transferFee>0 ? "+$1.75/ton transfer staging fee" : "No transfer fee";
   document.getElementById("fHaulback").textContent   = haulback==="back"?"Haul-Back applied":haulback==="round"?"Round Trip":"One-Way";
+  // The floor scales with the truck: minimum quoted rate = round(6.00 × mult).
+  const floorRate = Math.round(6.00 * truckMult * 100) / 100;
   document.getElementById("fResult").textContent     = fmt(final) + " / ton" +
     (truckMult !== 1 ? " (×" + truckMult.toFixed(2) + " " + (TRUCK_LABELS[truckKey(truck)] || "truck") + " vs Transfer)" : "") +
-    (final===6.00?" (minimum)":"");
+    (final===floorRate?" (minimum)":"");
 }
 
 function getAutoHaulRate(miles, truckType) {
