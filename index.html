@@ -3802,6 +3802,10 @@ function onMMTruckChange(sel, rowIndex) {
   var unit = unitEl ? unitEl.value : "tons";
   if(unit === "tons") _mmSetMinLoad(rowIndex, unit, sel.value);
   calcMM();
+  // Truck capacity changes the billable tonnage and therefore which plant is
+  // cheapest — re-rank this row the same way a quantity change does.
+  // (Auto-picked plants only; a hand-picked plant is left alone.)
+  smDebounce("mm:" + rowIndex, function(){ if(typeof mmAutoSource === "function") mmAutoSource(rowIndex); }, 250);
 }
 
 // applyAutoHaul: works for ALL quote types — fills the right haul rate field
