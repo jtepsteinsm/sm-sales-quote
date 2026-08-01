@@ -4507,6 +4507,9 @@ function genBreakdownQuote() {
 }
 
 function printQ() {
+  // Group 4: while prices are red (fetch failed / stale), outbound actions
+  // need a one-time confirm. Data entry is untouched.
+  if (typeof pmOutboundGate === "function" && !pmOutboundGate()) return;
   genQuote();
   // genQuote() fires window._smOnGenerate(), which kicks off the async
   // saveQuote() that assigns the real Firestore quote number. Rendering the
@@ -4579,6 +4582,7 @@ async function savePdfToWebApp() {
 }
 
 function copyEmail() {
+  if (typeof pmOutboundGate === "function" && !pmOutboundGate()) return;
   genQuote();
   const grand=parseFloat(document.getElementById("tgrand").textContent.replace("$",""))||0;
   const disp=pay==="cc"?grand*1.04:grand;
@@ -4704,6 +4708,8 @@ function calcMilesManual() {
 .bs-badge{background:#1a8f3c;color:#fff;border-radius:4px;padding:1px 6px;font-size:.7rem;font-weight:700;margin-left:6px}
 .bs-note{font-size:.75rem;opacity:.75;margin-top:4px}
 #jtReviewBanner{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#8a1f1f;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-size:.95rem;box-shadow:0 -2px 10px rgba(0,0,0,.4)}
+#pmFailBanner{display:none;position:fixed;left:0;right:0;top:0;z-index:9999;background:#8a1f1f;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-size:.95rem;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+#pmFailBanner a{color:#ffd28a;text-decoration:underline;cursor:pointer;margin-left:10px;white-space:nowrap}
 </style>
 <script>
 // ═══ BEST SOURCE — auto-pick lowest delivered cost (added 2026-07-15) ═══
@@ -5315,11 +5321,87 @@ pmApplyPlantDropdowns();
 // the builder loads it on open, so editing a price in the sheet + clicking
 // sync updates every quote. If the file is missing/unreachable, embedded wins.
 const PM_DATA_URL = "https://jtepsteinsm.github.io/sm-sales-quote/price-matrix.json";
-function pmSrcIndicator(kind,n){
-  var el=document.getElementById("pmSrc");
-  if(kind!=="live"){ if(el)el.remove(); return; }
-  if(!el){el=document.createElement("div");el.id="pmSrc";el.style.cssText="position:fixed;bottom:6px;left:6px;z-index:9998;font-size:10px;padding:2px 8px;border-radius:10px;background:#1a8f3c;color:#fff;opacity:.8";document.body.appendChild(el);}
-  el.textContent="Prices: live ("+n+")";
+// Vintage of the embedded PRICE_MATRIX fallback above (its header comment says
+// which xlsx it came from). Regenerate with gen_pm_embed.py and BUMP THIS DATE
+// with it — the red banner names this date to the associate.
+const PM_EMBEDDED_AS_OF = "2026-07-15";
+
+// ── GROUP 4: loud price-fetch failure ────────────────────────────────────────
+// A quote written on the embedded fallback can silently under-charge (observed
+// worst case: 36% under current sheet prices), so failure is never silent:
+//   green  fetch OK and the sheet sync is < 48 h old   — badge shows sync age
+//   amber  fetch OK, sync 48 h – 14 d old              — badge dismissible for
+//                                                        the session
+//   red    fetch FAILED, or sync > 14 d old            — fixed top banner (not
+//          dismissible), auto-retry once after 30 s, and Print/Save PDF + Copy
+//          Email gated behind a one-time confirm(). Data entry stays open.
+// A successful retry replaces the banner with the green badge in place — the
+// matrix is swapped live (same as initial load), no reload needed.
+let pmPriceState = "red";        // embedded until a fetch proves otherwise
+let pmRedReason  = "failed";     // "failed" | "stale" (only meaningful when red)
+let pmPriceCount = 0, pmSyncAgeMs = null;
+let pmAutoRetryUsed = false, pmOutboundAck = false;
+
+function pmAgeText(ms){
+  if(ms == null || isNaN(ms)) return "unknown";
+  var h = ms/3600000;
+  if(h < 1)  return Math.max(1, Math.round(ms/60000)) + " min ago";
+  if(h < 48) return Math.round(h) + " h ago";
+  return Math.round(h/24) + " d ago";
+}
+function pmClassify(ageMs){
+  if(ageMs == null || isNaN(ageMs)) return "red";   // no updatedAt → can't vouch
+  if(ageMs > 14*24*3600000) return "red";
+  if(ageMs > 48*3600000)    return "amber";
+  return "green";
+}
+function pmBadge(){
+  var el = document.getElementById("pmSrc");
+  if(pmPriceState === "amber" && sessionStorage.getItem("pmAmberDismissed")){ if(el) el.remove(); return; }
+  if(!el){ el = document.createElement("div"); el.id = "pmSrc"; document.body.appendChild(el); }
+  var base = "position:fixed;bottom:6px;left:6px;z-index:9998;font-size:10px;padding:2px 8px;border-radius:10px;color:#fff;";
+  el.onclick = null;
+  if(pmPriceState === "green"){
+    el.style.cssText = base + "background:#1a8f3c;opacity:.8";
+    el.textContent = "Prices: live (" + pmPriceCount + ") · synced " + pmAgeText(pmSyncAgeMs);
+  } else if(pmPriceState === "amber"){
+    el.style.cssText = base + "background:#a86d00;opacity:.95;cursor:pointer";
+    el.textContent = "⚠ Prices: live (" + pmPriceCount + ") · synced " + pmAgeText(pmSyncAgeMs) + "  ✕";
+    el.title = "Sheet sync is getting old — run “Sync Price Matrix → GitHub” in the Dispatch Sheet. Click to dismiss for this session.";
+    el.onclick = function(){ sessionStorage.setItem("pmAmberDismissed","1"); el.remove(); };
+  } else {
+    el.style.cssText = base + "background:#8a1f1f;opacity:.95";
+    el.textContent = (pmRedReason === "stale")
+      ? "✖ Prices: STALE — synced " + pmAgeText(pmSyncAgeMs)
+      : "✖ Prices: EMBEDDED (" + PM_EMBEDDED_AS_OF + ")";
+  }
+}
+function pmBanner(){
+  var b = document.getElementById("pmFailBanner");
+  if(pmPriceState !== "red"){ if(b) b.style.display = "none"; return; }
+  if(!b){ b = document.createElement("div"); b.id = "pmFailBanner"; document.body.appendChild(b); }
+  var msg = (pmRedReason === "stale")
+    ? "⚠ LIVE PRICES LAST SYNCED " + pmAgeText(pmSyncAgeMs).toUpperCase() + " — RUN “SYNC PRICE MATRIX → GITHUB” IN THE DISPATCH SHEET BEFORE SENDING QUOTES."
+    : "⚠ LIVE PRICES FAILED TO LOAD — QUOTING FROM EMBEDDED PRICES DATED " + PM_EMBEDDED_AS_OF + ". SELL PRICES MAY BE WRONG AND QUOTES MAY UNDER-CHARGE.";
+  b.innerHTML = "";
+  b.appendChild(document.createTextNode(msg));
+  var a = document.createElement("a");
+  a.textContent = "RETRY NOW";
+  a.onclick = function(){ a.textContent = "RETRYING…"; pmLoadFromSheet(); return false; };
+  b.appendChild(a);
+  b.style.display = "block";
+}
+function pmRender(){ pmBadge(); pmBanner(); }
+// One-time confirm() gate on outbound actions (Print/Save PDF, Copy Email)
+// while red. OK is remembered for the session; Cancel asks again next time.
+function pmOutboundGate(){
+  if(pmPriceState !== "red" || pmOutboundAck) return true;
+  var why = (pmRedReason === "stale")
+    ? "Live prices are STALE — last synced " + pmAgeText(pmSyncAgeMs) + "."
+    : "Live prices FAILED to load — this quote is built on embedded prices dated " + PM_EMBEDDED_AS_OF + ".";
+  var ok = confirm(why + "\n\nSell prices may be wrong and the quote may UNDER-CHARGE.\nSend it out anyway?\n\n(OK = don't ask again this session)");
+  if(ok) pmOutboundAck = true;
+  return ok;
 }
 function pmLoadFromSheet(){
   if(!PM_DATA_URL) return;
@@ -5328,8 +5410,16 @@ function pmLoadFromSheet(){
     PRICE_MATRIX.length=0; Array.prototype.push.apply(PRICE_MATRIX, j.matrix);
     if(j.plantAddr) for(var k in j.plantAddr) PM_PLANT_ADDR[k]=j.plantAddr[k];
     pmApplyPlantDropdowns();
-    pmSrcIndicator("live", j.matrix.length);
-  }).catch(function(){ /* keep embedded silently */ });
+    pmPriceCount = j.matrix.length;
+    pmSyncAgeMs  = j.updatedAt ? (Date.now() - Date.parse(j.updatedAt)) : null;
+    pmPriceState = pmClassify(pmSyncAgeMs);
+    pmRedReason  = "stale";   // fetch worked, so red can only mean stale
+    pmRender();
+  }).catch(function(){
+    pmPriceState = "red"; pmRedReason = "failed";
+    pmRender();
+    if(!pmAutoRetryUsed){ pmAutoRetryUsed = true; setTimeout(pmLoadFromSheet, 30000); }
+  });
 }
 pmLoadFromSheet();
 
