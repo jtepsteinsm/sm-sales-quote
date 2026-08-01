@@ -1,9 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Group 5 harness: per-truck haul multipliers.
 // Pulls the REAL calcHaulRate + constants out of the repo's index.html
-// (post-change) and the REAL pre-Phase-2 calcHaulRate out of
-// `git show origin/master:index.html`, then asserts the Transfer / no-truck
-// baseline is byte-identical.
+// (post-change) and the REAL pre-Phase-2 calcHaulRate out of the pinned
+// baseline commit, then asserts the Transfer / no-truck baseline is
+// byte-identical.
+//
+// The baseline is the last pre-Phase-2 master commit, PINNED by SHA — it must
+// not track a branch: once phase2 merged, origin/master itself carries the
+// two-arg calcHaulRate and can no longer serve as "before".
 //
 // Run from anywhere inside the repo:  node test/group5-haul-multiplier-harness.js
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12,7 +16,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const REPO = path.resolve(__dirname, '..');
 const NEW = fs.readFileSync(path.join(REPO, 'index.html'), 'utf8');
-const OLD = execSync('git show origin/master:index.html', { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
+const BASELINE = process.env.G5_BASELINE || '13facca3963e4580043c117fe79409134df51fa4';
+const OLD = execSync('git show ' + BASELINE + ':index.html', { cwd: REPO, maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
 
 function grab(src, re, what) { const m = src.match(re); if (!m) throw new Error('not found: ' + what); return m[0]; }
 
@@ -30,7 +35,7 @@ const STUBS = `
   function getTransferFee(){ return ACCESS==="no_far" ? 1.75 : 0; }
 `;
 
-// ---- OLD (origin/master, pre-Phase-2) --------------------------------------
+// ---- OLD (pinned pre-Phase-2 baseline) --------------------------------------
 const oldSrc = STUBS + grab(OLD, /function calcHaulRate\(miles\) \{[\s\S]*?\n\}/, 'old calcHaulRate');
 const OLDMOD = {}; (new Function('M', oldSrc + '\nM.calcHaulRate=calcHaulRate;'))(OLDMOD);
 
@@ -79,7 +84,7 @@ for (const mi of MILES) {
   console.log(line);
 }
 
-console.log('\n=== 3. BASELINE BYTE-IDENTITY vs origin/master (pre-Phase-2) ===');
+console.log('\n=== 3. BASELINE BYTE-IDENTITY vs pre-Phase-2 baseline (13facca) ===');
 const ENVS = [['Z0','easy','standard'],['Z2','canyon','standard'],['Z5','no_far','rush'],['Z3','commercial','repeat'],['Z4','tight','standard']];
 let n = 0;
 for (const [z,a,j] of ENVS) {
