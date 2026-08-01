@@ -5321,10 +5321,13 @@ pmApplyPlantDropdowns();
 // the builder loads it on open, so editing a price in the sheet + clicking
 // sync updates every quote. If the file is missing/unreachable, embedded wins.
 const PM_DATA_URL = "https://jtepsteinsm.github.io/sm-sales-quote/price-matrix.json";
-// Vintage of the embedded PRICE_MATRIX fallback above (its header comment says
-// which xlsx it came from). Regenerate with gen_pm_embed.py and BUMP THIS DATE
-// with it — the red banner names this date to the associate.
-const PM_EMBEDDED_AS_OF = "2026-07-15";
+// Vintage of the embedded PRICE_MATRIX fallback above: the array was generated
+// 2026-07-16 from Price Matrix - FINAL.xlsx (2026-07-15) and LAST EDITED in
+// d8e077b on 2026-07-21 (reconcile + Jason's 32 tab price edits, 290→293
+// entries) — that reconcile date, not the xlsx date, is when its prices were
+// last verified. Regenerate with gen_pm_embed.py and BUMP THIS DATE with it —
+// the red banner names this date to the associate.
+const PM_EMBEDDED_AS_OF = "2026-07-21";
 
 // ── GROUP 4: loud price-fetch failure ────────────────────────────────────────
 // A quote written on the embedded fallback can silently under-charge (observed
@@ -5382,7 +5385,7 @@ function pmBanner(){
   if(!b){ b = document.createElement("div"); b.id = "pmFailBanner"; document.body.appendChild(b); }
   var msg = (pmRedReason === "stale")
     ? "⚠ LIVE PRICES LAST SYNCED " + pmAgeText(pmSyncAgeMs).toUpperCase() + " — RUN “SYNC PRICE MATRIX → GITHUB” IN THE DISPATCH SHEET BEFORE SENDING QUOTES."
-    : "⚠ LIVE PRICES FAILED TO LOAD — QUOTING FROM EMBEDDED PRICES DATED " + PM_EMBEDDED_AS_OF + ". SELL PRICES MAY BE WRONG AND QUOTES MAY UNDER-CHARGE.";
+    : "⚠ LIVE PRICES FAILED TO LOAD — QUOTING FROM EMBEDDED PRICES DATED " + PM_EMBEDDED_AS_OF + ". SELL PRICES MAY BE WRONG AND QUOTES MAY UNDER-CHARGE — VERIFY PRICES AGAINST THE DISPATCH SHEET BEFORE SENDING.";
   b.innerHTML = "";
   b.appendChild(document.createTextNode(msg));
   var a = document.createElement("a");
