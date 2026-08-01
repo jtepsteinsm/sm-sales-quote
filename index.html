@@ -5315,6 +5315,81 @@ function pmApplyPlantDropdowns(){
 }
 pmApplyPlantDropdowns();
 
+// ── MATERIALS MIRROR THE PRICE MATRIX (2026-08-01) ───────────────────────────
+// The Material dropdowns were a hand-baked list that drifted from the sheet
+// (136 baked options while the synced matrix carried 162 materials — 102 sheet
+// materials could not be picked at all). They are now rebuilt from
+// PRICE_MATRIX: once here against the embedded fallback, and again after the
+// live fetch swaps the matrix in. NOT derived from the matrix and preserved
+// verbatim wherever they already appear: the placeholder, the Hourly Service
+// and Export / Disposal optgroups (PM_SERVICE entries — they price via their
+// own paths, not matrix rows), and the trailing "Other…" (__other__) custom
+// option. A selected material that vanishes from the sheet is resurrected as
+// an extra option so an in-progress quote never loses its selection.
+function pmMaterialNames(){
+  var seen = {}, out = [];
+  for(var i = 0; i < PRICE_MATRIX.length; i++){
+    var m = PRICE_MATRIX[i] && PRICE_MATRIX[i].m;
+    if(!m || seen[m]) continue;
+    if(typeof PM_SERVICE !== "undefined" && PM_SERVICE[m]) continue;
+    seen[m] = 1; out.push(m);
+  }
+  return out.sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true, sensitivity:"base"}); });
+}
+function pmRebuildMaterialSelect(sel){
+  if(!sel) return;
+  var keep = sel.value;
+  var otherOpt = null;
+  Array.prototype.slice.call(sel.children).forEach(function(k){
+    if(k.tagName === "OPTGROUP") return;                 // service groups stay
+    if(k.value === "") return;                           // placeholder stays
+    if(k.value === "__other__"){ otherOpt = k; return; } // custom entry stays
+    // flat service options (e.g. "Concrete - Washout" outside any optgroup)
+    if(typeof PM_SERVICE !== "undefined" && PM_SERVICE[k.value]) return;
+    sel.removeChild(k);
+  });
+  pmMaterialNames().forEach(function(n){
+    var o = document.createElement("option");
+    o.value = n; o.textContent = n;
+    sel.insertBefore(o, otherOpt);
+  });
+  if(keep){
+    sel.value = keep;
+    if(sel.value !== keep){   // sheet dropped it mid-quote — resurrect
+      var o = document.createElement("option");
+      o.value = keep; o.textContent = keep + " (no longer in Price Matrix)";
+      sel.insertBefore(o, otherOpt);
+      sel.value = keep;
+    }
+  }
+}
+var PM_MM_SPECIALS = null;   // placeholder/optgroups/__other__ captured from the baked template once
+function pmRebuildMMTemplate(){
+  if(typeof MM_MAT_OPTS !== "string") return;
+  if(!PM_MM_SPECIALS){
+    var ph = MM_MAT_OPTS.match(/<option value="">[^<]*<\/option>/);
+    var gr = MM_MAT_OPTS.match(/<optgroup[\s\S]*?<\/optgroup>/g);
+    var ot = MM_MAT_OPTS.match(/<option value="__other__"[^>]*>[^<]*<\/option>/);
+    // flat service options living outside the optgroups (e.g. Concrete - Washout)
+    var flat = MM_MAT_OPTS.replace(/<optgroup[\s\S]*?<\/optgroup>/g, ""), svc = [];
+    if(typeof PM_SERVICE !== "undefined") for(var k in PM_SERVICE){
+      var fm = flat.match(new RegExp('<option value="' + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '">[^<]*<\/option>'));
+      if(fm) svc.push(fm[0]);
+    }
+    PM_MM_SPECIALS = { ph: ph ? ph[0] : "", gr: gr ? gr.join("") : "", svc: svc.join(""), ot: ot ? ot[0] : "" };
+  }
+  MM_MAT_OPTS = PM_MM_SPECIALS.ph + PM_MM_SPECIALS.gr + PM_MM_SPECIALS.svc
+    + pmMaterialNames().map(function(n){ return '<option value="' + pmEsc(n) + '">' + pmEsc(n) + '</option>'; }).join("")
+    + PM_MM_SPECIALS.ot;
+}
+function pmApplyMaterialDropdowns(){
+  pmRebuildMMTemplate();
+  pmRebuildMaterialSelect(document.getElementById("mat1"));
+  pmRebuildMaterialSelect(document.getElementById("mat2"));
+  document.querySelectorAll("select.mm-mat").forEach(pmRebuildMaterialSelect);
+}
+pmApplyMaterialDropdowns();
+
 // ── LIVE PRICES: read price-matrix.json (synced from the Price Matrix tab) ──
 // The embedded PRICE_MATRIX above is the always-works fallback. The sheet's
 // "Sync Price Matrix → GitHub" menu writes price-matrix.json into this repo;
@@ -5413,6 +5488,7 @@ function pmLoadFromSheet(){
     PRICE_MATRIX.length=0; Array.prototype.push.apply(PRICE_MATRIX, j.matrix);
     if(j.plantAddr) for(var k in j.plantAddr) PM_PLANT_ADDR[k]=j.plantAddr[k];
     pmApplyPlantDropdowns();
+    pmApplyMaterialDropdowns();
     pmPriceCount = j.matrix.length;
     pmSyncAgeMs  = j.updatedAt ? (Date.now() - Date.parse(j.updatedAt)) : null;
     pmPriceState = pmClassify(pmSyncAgeMs);
