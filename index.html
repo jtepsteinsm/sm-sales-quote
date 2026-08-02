@@ -5294,24 +5294,65 @@ function mmPickRank(i, k) {
 })();
 
 // ── Add price-matrix plants missing from the static plant dropdowns ──
-function pmApplyPlantDropdowns(){
-  const selIds = ["ps1", "ps2", "hps", "fps"];
-  let extraOpts = "";
-  Object.keys(PM_PLANT_ADDR).forEach(function(name){
-    const addr = PM_PLANT_ADDR[name];
-    selIds.forEach(function(id){
-      const sel = document.getElementById(id);
-      if(!sel) return;
-      for(let i = 0; i < sel.options.length; i++){ if((sel.options[i].dataset && sel.options[i].dataset.name) === name) return; }
-      const o = document.createElement("option");
-      o.value = addr; o.textContent = name; o.dataset.name = name;
-      sel.appendChild(o);
-    });
-    if(typeof MM_PLANT_OPTS === "string" && MM_PLANT_OPTS.indexOf('data-name="' + name + '"') === -1){
-      extraOpts += '<option value="' + pmEsc(addr) + '" data-name="' + pmEsc(name) + '">' + pmEsc(name) + '</option>';
-    }
+// ── PLANTS MIRROR THE PRICE MATRIX (2026-08-02) ──────────────────────────────
+// Was append-only: sheet plants were added but dead ones never left, so the
+// dropdowns showed up to 28 phantom plants (Rock Pros pits, West Valley pits,
+// retired CalPortland spellings…) with no rows behind them, and a plant whose
+// ADDRESS changed in the sheet kept quoting miles to the old address forever.
+// Now a full mirror of PM_PLANT_ADDR: options are removed / address-refreshed /
+// added so the dropdowns match the sheet exactly. Preserved: the placeholder
+// and the mm-row "✏ Other (enter manually)" (__other__) entry. A selected
+// plant that vanishes from the sheet is resurrected as a marked option so an
+// in-progress quote keeps its value.
+function pmRebuildPlantSelect(sel){
+  if(!sel) return;
+  var keep = sel.value, keepName = "", otherOpt = null, present = {};
+  Array.prototype.slice.call(sel.children).forEach(function(k){
+    if(k.tagName === "OPTION" && k.value === keep && k.dataset && k.dataset.name) keepName = k.dataset.name;
   });
-  if(extraOpts && typeof MM_PLANT_OPTS === "string") MM_PLANT_OPTS += extraOpts;
+  Array.prototype.slice.call(sel.children).forEach(function(k){
+    if(k.tagName !== "OPTION") return;
+    if(k.value === "") return;                            // placeholder stays
+    if(k.value === "__other__"){ otherOpt = k; return; }  // manual-entry stays
+    var nm = (k.dataset && k.dataset.name) || "";
+    if(nm && PM_PLANT_ADDR[nm]){ k.value = PM_PLANT_ADDR[nm]; present[nm] = 1; } // refresh address
+    else sel.removeChild(k);                              // phantom — gone
+  });
+  Object.keys(PM_PLANT_ADDR).sort().forEach(function(nm){
+    if(present[nm]) return;
+    var o = document.createElement("option");
+    o.value = PM_PLANT_ADDR[nm]; o.textContent = nm; o.dataset.name = nm;
+    sel.insertBefore(o, otherOpt);
+  });
+  if(keepName && PM_PLANT_ADDR[keepName]){ sel.value = PM_PLANT_ADDR[keepName]; } // follow address change
+  else if(keep){
+    sel.value = keep;
+    if(sel.value !== keep){   // sheet dropped it mid-quote — resurrect
+      var o = document.createElement("option");
+      o.value = keep; o.textContent = (keepName || keep) + " (no longer in Price Matrix)"; o.dataset.name = "";
+      sel.insertBefore(o, otherOpt);
+      sel.value = keep;
+    }
+  }
+}
+var PM_MM_PLANT_SPECIALS = null;   // placeholder/__other__ captured from the baked template once
+function pmRebuildMMPlantTemplate(){
+  if(typeof MM_PLANT_OPTS !== "string") return;
+  if(!PM_MM_PLANT_SPECIALS){
+    var ph = MM_PLANT_OPTS.match(/<option value="">[^<]*<\/option>/);
+    var ot = MM_PLANT_OPTS.match(/<option value="__other__"[^>]*>[^<]*<\/option>/);
+    PM_MM_PLANT_SPECIALS = { ph: ph ? ph[0] : "", ot: ot ? ot[0] : "" };
+  }
+  MM_PLANT_OPTS = PM_MM_PLANT_SPECIALS.ph
+    + Object.keys(PM_PLANT_ADDR).sort().map(function(nm){
+        return '<option value="' + pmEsc(PM_PLANT_ADDR[nm]) + '" data-name="' + pmEsc(nm) + '">' + pmEsc(nm) + '</option>';
+      }).join("")
+    + PM_MM_PLANT_SPECIALS.ot;
+}
+function pmApplyPlantDropdowns(){
+  pmRebuildMMPlantTemplate();
+  ["ps1", "ps2", "hps", "fps"].forEach(function(id){ pmRebuildPlantSelect(document.getElementById(id)); });
+  document.querySelectorAll("select.mm-plant").forEach(pmRebuildPlantSelect);
 }
 pmApplyPlantDropdowns();
 
@@ -5486,7 +5527,13 @@ function pmLoadFromSheet(){
   fetch(PM_DATA_URL,{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error("no file"); return r.json(); }).then(function(j){
     if(!j || !Array.isArray(j.matrix) || !j.matrix.length) throw new Error("empty");
     PRICE_MATRIX.length=0; Array.prototype.push.apply(PRICE_MATRIX, j.matrix);
-    if(j.plantAddr) for(var k in j.plantAddr) PM_PLANT_ADDR[k]=j.plantAddr[k];
+    if(j.plantAddr && Object.keys(j.plantAddr).length){
+      // MIRROR, not merge: the sheet is the source of truth, so plants deleted
+      // or renamed there must disappear here too. The embedded map only seeds
+      // the dropdowns until this fetch lands (or when it fails).
+      for(var k0 in PM_PLANT_ADDR) delete PM_PLANT_ADDR[k0];
+      for(var k in j.plantAddr) PM_PLANT_ADDR[k]=j.plantAddr[k];
+    }
     pmApplyPlantDropdowns();
     pmApplyMaterialDropdowns();
     pmPriceCount = j.matrix.length;
