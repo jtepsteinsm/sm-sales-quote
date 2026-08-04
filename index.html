@@ -665,7 +665,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
               </label>
             </div>
           </div>
-          <div class="field"><label>Env Fee ($)</label><input type="number" id="ef1" value="10" min="0" step="0.01" oninput="calc()"></div>
+          <div class="field"><label>Env Fee ($)</label><input type="number" id="ef1" value="10" min="0" step="0.01" data-auto="1" oninput="this.dataset.auto='';calc()"></div>
         </div>
       </div>
     </div>
@@ -882,7 +882,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
               <option value="135">$135 — Different Plant</option>
             </select>
           </div>
-          <div class="field"><label>Env Fee ($)</label><input type="number" id="ef2" value="10.98" min="0" step="0.01" oninput="calc()"></div>
+          <div class="field"><label>Env Fee ($)</label><input type="number" id="ef2" value="10.98" min="0" step="0.01" data-auto="1" oninput="this.dataset.auto='';calc()"></div>
         </div>
       </div>
     </div>
@@ -2692,6 +2692,14 @@ function onPlant(selId) {
   const addr = sel.value;
   if(!addr) return;
   if(PLANT_LINE[selId] && typeof pmRederive === "function") pmRederive(PLANT_LINE[selId], "plant", 0);
+  // env fee follows the pick, like haul — a hand-picked plant updates it too
+  if(PLANT_LINE[selId] && typeof pmEnvFeeFor === "function" && typeof PM_LINES !== "undefined"){
+    const lnCfg = PM_LINES[PLANT_LINE[selId]];
+    const po = sel.options[sel.selectedIndex];
+    const pn = (po && po.dataset && po.dataset.name) ? po.dataset.name : "";
+    const mn = (lnCfg && typeof getMatName === "function") ? getMatName(lnCfg.mat) : "";
+    if(lnCfg && lnCfg.ef && mn && pn) pmSetEnvField(document.getElementById(lnCfg.ef), pmEnvFeeFor(mn, pn));
+  }
   const manMap = {ps1:"pa1",ps2:"pa2",hps:"hpa",fps:"fpa"};
   const manId = manMap[selId];
   if(manId) document.getElementById(manId).value=addr;
@@ -3645,7 +3653,7 @@ function renderMMRows() {
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-qty" placeholder="0" min="0" step="0.5" value="' + qtyVal + '" oninput="calcMM()" style="' + inStyle + 'margin-bottom:3px;"><select class="mm-unit" data-prevunit="' + unitVal + '" onchange="onMMUnitChange(this,' + i + ')" style="' + inStyle + 'font-size:10px;padding:3px 4px;">' + unitOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-price" placeholder="0.00" min="0" step="0.01" value="' + priceVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-haul" placeholder="auto" min="0" step="0.01" value="' + haulVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
-      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" data-auto="1" oninput="this.dataset.auto=&quot;&quot;;calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:100px;"><select class="mm-truck" onchange="onMMTruckChange(this,' + i + ')" style="' + inStyle + '">' + truckOpts + '</select></td>'
       + '<td style="padding:4px 3px;width:70px;"><input type="number" class="mm-minload" placeholder="' + minLoadDef + '" min="1" step="1" value="' + minLoadVal + '" oninput="calcMM()" title="Min per load — auto-filled, manually overridable" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
@@ -3778,6 +3786,20 @@ function onMMPlant(selectEl, rowIndex) {
   var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
   var haulEl = row ? row.querySelector(".mm-haul") : null;
   if(!haulEl) return;
+
+  // env fee follows the pick, like haul — runs before the job-site guard
+  // because the fee needs no mileage
+  if(typeof pmEnvFeeFor === "function"){
+    var envEl = row.querySelector(".mm-env");
+    var po = selectEl.options[selectEl.selectedIndex];
+    var pn = (po && po.dataset && po.dataset.name) ? po.dataset.name : "";
+    var matSel = row.querySelector(".mm-mat");
+    var mn = matSel ? (matSel.value === "__other__" ? ((row.querySelector(".mm-mat-custom")||{}).value||"").trim() : matSel.value) : "";
+    if(envEl && pn && mn){
+      var mmFee = pmEnvFeeFor(mn, pn);
+      if(mmFee > 0){ envEl.value = mmFee.toFixed(2); envEl.dataset.auto = "1"; if(typeof calcMM === "function") calcMM(); }
+    }
+  }
 
   // If no job site yet, just return
   if(!locLat && !locLng && !locPid) return;
@@ -4720,8 +4742,8 @@ const PRICE_MATRIX = [{"m":"1 1/2\" Crushed Rock","p":"75th Street Quarry and Re
 const PM_PLANT_ADDR = {"75th Street Quarry and Recycling":"38050 75th Street East, Palmdale, CA","SM Sales Yard":"17524 Sierra Hwy, Santa Clarita, CA 91351","United Rock Products":"1245 East Arrow Highway, Irwindale, CA 91706","Cemex (Lytle Creek)":"3221 N Riverside Ave, Rialto, CA 92376","Cemex (Redlands)":"8731 Orange St, Redlands, CA 92374","Cemex (Friant)":"13475 N Friant Rd, Friant, CA 93626","Cemex (Moorpark)":"9035 Roseland Ave, Moorpark, CA 93021","Cemex (Bell Terminal)":"5091 Rickenbacker Rd, Bell, CA 90201","Cemex (White Mountain)":"24724 Quarry Rd, Apple Valley, CA 92307","Granite Construction (Big Rock)":"34809 155th Street East, Llano, CA 93544","Granite Construction (Handley Ranch)":"25485 Iverson Road, Gonzales, CA 93926","Hi-Grade Materials (Littlerock)":"6500 E Avenue T, Littlerock, CA 93552","Hi-Grade Materials (Lucerne)":"8701 Meridian Road, Lucerne Valley, CA 92356","Hi-Grade Materials (Lancaster)":"411 W Avenue H6, Lancaster, CA 93534","Martin Marietta (Eagle Valley / Corona)":"19494 River Rock Road, Corona, CA 91718","Martin Marietta (Irwindale)":"13550 Live Oak Avenue, Irwindale, CA 91706","Martin Marietta (Garfield Recycle - Long Beach)":"6956 Cherry Ave, Long Beach, CA 90805","Martin Marietta (Long Beach Recycle)":"2850 California Ave, Long Beach, CA 90755","MRC Rock (Mojave)":"10618 Mojave-Tropico Road, Mojave, CA 93501","MRC Rock (Ojai)":"15558 Maricopa Hwy, Ojai, CA 93023","MRC Rock & Sand":"1565 Ventura St, Fillmore, CA 93015","Gillibrand Industrial Sands (Simi Valley)":"5810 Bennett Road, Simi Valley, CA 93062","Vulcan Materials (Durbin)":"5050 N. Irwindale Avenue, Irwindale, CA 91702","Vulcan Materials (Reliance)":"16001 E Foothill Blvd, Irwindale, CA 91702","Vulcan Materials (Palmdale)":"6851 E Avenue T, Palmdale, CA 93552","Coast Aggregates (Palmdale)":"13114 E Avenue T, Palmdale, CA 93543","Wayne J Sand & Gravel":"9455 Buena Vista St., Moorpark, CA 93021","CalPortland (Fillmore)":"3500 Grimes Canyon Road, Fillmore, CA 93021","CalPortland (Apple Valley)":"18400 Falchion Rd, Apple Valley, CA 92307","Grimes Rock, Inc.":"3500 Grimes Canyon Road, Fillmore, CA 93021","Arcosa (Crushed Concrete / Aggregates) - Sun Valley":"9005 Bradley Ave, Sun Valley, CA 91352","Arcosa (Crushed Concrete / Aggregates) - Rialto":"250 E Santa Ana Ave, Rialto, CA 92316","Arcosa (Crushed Concrete / Aggregates) - Escondido":"8354 Nelson Way, Escondido, CA 92026","Arcosa (Crushed Concrete / Aggregates) - Beaumont":"861 W 4th Street, Beaumont, CA 92223","AMH Recycling":"11230 Roscoe Blvd, Sun Valley, CA 91352","Bradley Recycling(Security Paving)":"8960 Bradley Ave, Sun Valley, CA 91352","Arrow Construction Company":"507 E Ave L 12, Lancaster, CA 93535","Brubaker-Mann Inc":"36011 Soapmine Rd, Barstow, CA 92311","Panamint Valley Limestone":"82700 Trona Road, Trona, CA 93592","C&M Topsoil (Sylmar)":"12087 Lopez Canyon Rd, Sylmar, CA 91342","Foothill Soils (Coltrane Yard)":"22925 Coltrane Avenue, Newhall, CA 91321","Twin Mountain Rock Venture":"1000 Cinder Rd, Little Lake, CA 93542","Las Vegas Rock":"2 Prison Road, Jean, NV 89019","SMI":"6565 Meridian Ave, Lucerne Valley, CA 92356","FST Sand & Gravel":"21780 Temescal Canyon Road, Corona, CA 92883","Santa Paula Materials":"1224 East Santa Clara Street, Santa Paula, CA 93060"};
 
 const PM_LINES = {
-  1: {mat:"mat1", ps:"ps1", pa:"pa1", mi:"mi1", hr:"hr1", pr:"pr1", qty:"qty1", out:"bsOut1", full:true},
-  2: {mat:"mat2", ps:"ps2", pa:"pa2", mi:null,  hr:null,  pr:"pr2", qty:"qty2", out:"bsOut2", full:false}
+  1: {mat:"mat1", ps:"ps1", pa:"pa1", mi:"mi1", hr:"hr1", pr:"pr1", ef:"ef1", qty:"qty1", out:"bsOut1", full:true},
+  2: {mat:"mat2", ps:"ps2", pa:"pa2", mi:null,  hr:null,  pr:"pr2", ef:"ef2", qty:"qty2", out:"bsOut2", full:false}
 };
 let pmLast = {};
 let pmQtyInfo = {};
@@ -4794,6 +4816,26 @@ function pmEnvFee(e){
   if(!e) return 0;
   var n = parseFloat(e.ef);
   return (isFinite(n) && n > 0) ? n : 0;
+}
+// ── ENV FEE FOLLOWS THE PICK (Jason's ruling, 2026-08-03) ────────────────────
+// Whenever a plant is picked — auto-rank, top-5 click, or a hand change of the
+// plant dropdown — the row's Env Fee field updates from that plant's ef in the
+// price matrix, exactly like haul does. Hard-coded field defaults ($10 rows /
+// $10.98) are only the fallback for plants with no fee on file: fee absent or
+// 0 → the field is left alone.
+function pmEnvFeeFor(matName, plantName){
+  if(!matName || !plantName) return 0;
+  try{
+    var hits = pmMatchEntries(matName);
+    for(var i = 0; i < hits.length; i++){ if(hits[i].p === plantName) return pmEnvFee(hits[i]); }
+  }catch(e){}
+  return 0;
+}
+function pmSetEnvField(el, fee){
+  if(!el || !(fee > 0)) return;
+  el.value = fee.toFixed(2);
+  el.dataset.auto = "1";
+  el.style.borderColor = "rgba(0,191,255,.5)";
 }
 function pmPerTon(e){
   if(e.um === "scoop") return e.pr / SCOOP_TO_TONS;
@@ -4936,6 +4978,8 @@ function pmApply(line, idx){
   }
   if(cfg.hr){ const hrEl = document.getElementById(cfg.hr); if(hrEl){ hrEl.value = row.haul.toFixed(2); hrEl.style.borderColor = "rgba(0,191,255,.5)"; } }
   if(cfg.pr){ const prEl = document.getElementById(cfg.pr); if(prEl){ const u = (typeof qtyUnits !== "undefined" && cfg.qty && qtyUnits[cfg.qty]) ? qtyUnits[cfg.qty] : "tons"; const rp = pmPriceForUnit(row, u); if(rp > 0){ prEl.value = rp.toFixed(2); prEl.style.borderColor = "rgba(0,191,255,.5)"; } } }
+  // env fee follows the pick, like haul — unconditional on explicit picks
+  if(cfg.ef) pmSetEnvField(document.getElementById(cfg.ef), pmEnvFee(row.e));
   const outEl = document.getElementById(cfg.out);
   if(outEl) outEl.querySelectorAll("tr[data-bs]").forEach(function(tr){ tr.classList.toggle("bs-on", +tr.dataset.bs === idx); });
   if(typeof calc === "function") calc();
@@ -5172,6 +5216,14 @@ function mmAutoSource(i) {
       priceEl.value = rowUnitPrice.toFixed(2); priceEl.dataset.auto = "1";
       priceEl.style.borderColor = "#2a8a4a";
     }
+    // env fee follows the pick, like haul — passive re-rank respects a
+    // hand-typed fee (auto flag cleared by .mm-env oninput)
+    var envEl2 = tr2.querySelector(".mm-env");
+    var fee2 = pmEnvFee(best.e);
+    if(envEl2 && fee2 > 0 && envEl2.dataset.auto === "1") {
+      envEl2.value = fee2.toFixed(2);
+      envEl2.style.borderColor = "#2a8a4a";
+    }
     mmBsStatus(tr2, "✓ Lowest of " + totalN + " — <a href=\"javascript:void 0\" onclick=\"mmShowTop5(" + i + ", this)\">see top " + ranked.length + " ▾</a>");
     if(typeof calcMM === "function") calcMM();
   });
@@ -5251,6 +5303,9 @@ function mmPickRank(i, k) {
   sel.title = r.e.p + " — picked from the top-5 list.";
   var haulEl = tr.querySelector(".mm-haul");
   if(haulEl) { haulEl.value = r.haul.toFixed(2); haulEl.dataset.auto = isAuto ? "1" : ""; }
+  // env fee follows the pick, like haul — unconditional on explicit picks
+  var envElPk = tr.querySelector(".mm-env");
+  if(envElPk && typeof pmEnvFee === "function"){ var feePk = pmEnvFee(r.e); if(feePk > 0){ envElPk.value = feePk.toFixed(2); envElPk.dataset.auto = isAuto ? "1" : ""; } }
   var unitEl = tr.querySelector(".mm-unit");
   var priceEl = tr.querySelector(".mm-price");
   var rp = pmPriceForUnit(r, unitEl ? unitEl.value : "tons");
