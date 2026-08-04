@@ -3707,7 +3707,7 @@ function calcMM() {
       else                       sumH += tr2("Material", fmt(c.matCost));
     }
     if(c.tax > 0) sumH += tr2("Sales Tax (" + v("taxr") + "%)", fmt(c.tax));
-    if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " @ " + fmt(row.haul) + "/load)", fmt(c.haulBase)); }
+    if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " @ " + fmt(c.haulPerLoad) + "/load)", fmt(c.haulBase)); }
     else if(c.mode === 'ton') sumH += tr2("Haul (" + c.effTons.toFixed(2) + "t @ " + fmt(row.haul) + "/ton)" + (c.shared ? " — shared load" : ""), fmt(c.haulBase));
     if(c.scAmt > 0) sumH += tr2("Fuel Surcharge", fmt(c.scAmt));
     if(c.efTotal > 0) sumH += tr2("Env Fee (" + c.loads + " load" + (c.loads !== 1 ? "s" : "") + " x " + fmt(row.env) + ")" + (c.shared ? " — shared" : ""), fmt(c.efTotal));
@@ -3880,15 +3880,19 @@ function onMMUnitChange(sel, rowIndex) {
   var row = document.getElementById("mmTbody").querySelectorAll("tr")[rowIndex];
   var truckEl = row ? row.querySelector(".mm-truck") : null;
   var truckType = truckEl ? truckEl.value : "";
-  // Auto-convert Price & Haul fields between $/ton and $/load using truck capacity
+  // Auto-convert the PRICE field between $/ton and $/load using truck capacity
   // (e.g. $6/ton <-> $102/load on a Super 10). Only when a truck cap is known.
+  // The HAUL field is NOT converted: it is always $/ton (column header says
+  // so, every auto-fill writes a per-ton rate) and load mode bills it as
+  // truck-minimum × rate per load inside computeMMRow (Jason, 2026-08-04).
+  // Converting it here only held until the next auto-fill overwrote it.
   var prev = sel.getAttribute("data-prevunit") || "tons";
   var nu = sel.value;
-  var cap = (truckType && TRUCK_RATES[truckType]) ? TRUCK_RATES[truckType].cap : 0;
+  var cap = truckType ? truckCap(truckType) : 0;
   if(cap > 0 && row) {
     var toLoad   = (prev !== 'load' && prev !== 'hour' && nu === 'load');
     var fromLoad = (prev === 'load' && nu !== 'load' && nu !== 'hour');
-    [row.querySelector(".mm-price"), row.querySelector(".mm-haul")].forEach(function(el){
+    [row.querySelector(".mm-price")].forEach(function(el){
       if(!el || !el.value) return;
       var val = parseFloat(el.value);
       if(!(val > 0)) return;
@@ -4052,16 +4056,23 @@ function computeMMRow(row, txr, shr) {
   var mode = (unit === 'hour') ? 'hour' : (unit === 'load') ? 'load' : 'ton';
   var matCost = row.qty * row.price;
   var tax = matCost * txr;
-  var sc = 0, haulBase = 0, haul = 0, effTons = 0, loads = 0, efTotal = 0, efTax = 0, effQtyUnit = row.qty;
+  var sc = 0, haulBase = 0, haul = 0, effTons = 0, loads = 0, efTotal = 0, efTax = 0, effQtyUnit = row.qty, haulPerLoad = 0;
   if(mode === 'hour') {
     // hourly all-in: hours x rate; no haul, no env fee
   } else if(mode === 'load') {
     loads = Math.ceil(row.qty > 0 ? row.qty : 0);
-    var capL = (row.truck && TRUCK_RATES[row.truck]) ? TRUCK_RATES[row.truck].cap : 25;
+    // Per-load haul = truck-type minimum tonnage × per-ton haul rate (Jason's
+    // ruling, 2026-08-04). The haul FIELD is always $/ton — the column header
+    // says so and every auto-fill path (plant pick, Best Source, truck-change
+    // re-derive) writes calcHaulRate's per-ton output — so billing the field
+    // directly as $/load undercharged haul by the whole truck capacity
+    // (~17–25×). truckCap() so the 10-Wheeler alias resolves.
+    var capL = truckCap(row.truck);
     effTons = row.qty * capL;
     sc = getMmFuelSurcharge(row.haul);
-    haulBase = row.haul * row.qty;          // $/load x loads (direct)
-    haul = (row.haul + sc) * row.qty;
+    haulPerLoad = row.haul * capL;
+    haulBase = row.haul * effTons;
+    haul = (row.haul + sc) * effTons;
     efTotal = loads * row.env;
     efTax = efTotal * txr;
   } else if(shr) {
@@ -4087,6 +4098,7 @@ function computeMMRow(row, txr, shr) {
   var rowTotal = matCost + tax + haul + efTotal + efTax;
   return { mode:mode, matCost:matCost, tax:tax, sc:sc, scAmt:(haul-haulBase),
            haulBase:haulBase, haul:haul, effTons:effTons, effQtyUnit:effQtyUnit,
+           haulPerLoad:haulPerLoad,
            loads:loads, efTotal:efTotal, efTax:efTax, rowTotal:rowTotal,
            shared: shr ? shr.shared : false,
            minHit: shr ? shr.minHit : (mode === 'ton' && effQtyUnit > row.qty) };
@@ -4355,7 +4367,7 @@ function genBreakdownQuote() {
       sumH += hdr(secLabel + " " + (idx+1) + (row.desc ? " \u2014 " + row.desc : ""));
       if(row.price > 0) sumH += tr2(c.mode==='hour' ? "Service" : "Material", fmt(c.matCost));
       if(c.tax > 0) sumH += tr2("Sales Tax ("+v("taxr")+"%)", fmt(c.tax));
-      if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul ("+c.loads+" load"+(c.loads!==1?"s":"")+" @ "+fmt(row.haul)+"/load)", fmt(c.haulBase)); }
+      if(c.mode === 'load') { if(row.haul > 0) sumH += tr2("Haul ("+c.loads+" load"+(c.loads!==1?"s":"")+" @ "+fmt(c.haulPerLoad)+"/load)", fmt(c.haulBase)); }
       else if(c.mode === 'ton') sumH += tr2("Haul ("+c.effTons.toFixed(2)+"t @ "+fmt(row.haul)+"/ton)"+(c.shared?" — shared load":""), fmt(c.haulBase));
       if(c.scAmt > 0) sumH += tr2("Fuel Surcharge", fmt(c.scAmt));
       if(c.efTotal > 0) sumH += tr2("Env Fee ("+c.loads+" load"+(c.loads!==1?"s":"")+" x "+fmt(row.env)+")"+(c.shared?" — shared":""), fmt(c.efTotal));
@@ -4377,7 +4389,7 @@ function genBreakdownQuote() {
       } else if(c.mode === 'load') {
         sec += brkLine(row.qty+' '+unitLabelPlural+' @ '+fmt(row.price)+'/load', c.matCost);
         if(c.tax > 0) sec += brkLine('Sales Tax ('+v("taxr")+'%)', c.tax);
-        if(row.haul > 0) sec += brkLine('Haul ('+c.loads+' load'+(c.loads!==1?'s':'')+' @ '+fmt(row.haul)+'/load)', c.haulBase);
+        if(row.haul > 0) sec += brkLine('Haul ('+c.loads+' load'+(c.loads!==1?'s':'')+' @ '+fmt(c.haulPerLoad)+'/load)', c.haulBase);
         if(c.scAmt > 0) sec += brkLine('Fuel/COL Surcharge', c.scAmt);
         if(c.efTotal > 0) sec += brkLine('Environmental Fee (' + c.loads + ' load' + (c.loads!==1?'s':'') + ' x ' + fmt(row.env) + ')', c.efTotal);
         if(c.efTax > 0) sec += brkLine('Env Fee Tax', c.efTax);
