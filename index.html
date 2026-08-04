@@ -4759,6 +4759,14 @@ function pmNorm(x){
   var s = String(x||"").toLowerCase().replace(/&quot;/g,'"');
   // Roman-numeral classes → digits so "Class II Rip Rap" matches "Class 2 Rip Rap"
   s = s.replace(/\bclass\s+(iii|ii|iv|v|i)\b/g, function(_, r){ return "class " + ({i:1,ii:2,iii:3,iv:4,v:5})[r]; });
+  // Size grammar must survive normalization — flattening every symbol made
+  // 3/8" == 3" - 8" (fraction vs range) and 2' - 4' == 24" (feet vs inches),
+  // so picking 3" - 8" Crushed Rock priced 3/8" Crushed Rock (caught by
+  // Jason, 2026-08-04). Inch marks are the default unit and simply drop.
+  s = s.replace(/["”]/g, "");                                // inches: unmarked
+  s = s.replace(/(\d)\s*\/\s*(\d)/g, "$1frac$2");            // 3/8 is a fraction
+  s = s.replace(/(\d)\s*['’]/g, "$1ft");                     // 2' is feet, not 2x
+  s = s.replace(/(\d[a-z]*)\s*[-–—]\s*(\d)/g, "$1to$2");     // 3 - 8 is a range
   return s.replace(/[^a-z0-9]/g,"");
 }
 
