@@ -3605,7 +3605,8 @@ function renderMMRows() {
       matC: tr.querySelector(".mm-mat-custom") ? tr.querySelector(".mm-mat-custom").value : "",
       truck:   tr.querySelector(".mm-truck")   ? tr.querySelector(".mm-truck").value   : "",
       unit:    tr.querySelector(".mm-unit")    ? tr.querySelector(".mm-unit").value    : "tons",
-      minload: tr.querySelector(".mm-minload") ? tr.querySelector(".mm-minload").value : ""
+      minload: tr.querySelector(".mm-minload") ? tr.querySelector(".mm-minload").value : "",
+      coload:  tr.querySelector(".mm-coload")  ? tr.querySelector(".mm-coload").checked : false
     });
   });
 
@@ -3655,7 +3656,8 @@ function renderMMRows() {
       + '<td style="padding:4px 3px;width:90px;"><input type="number" class="mm-haul" placeholder="auto" min="0" step="0.01" value="' + haulVal + '" oninput="calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:80px;"><input type="number" class="mm-env" placeholder="10.00" min="0" step="0.01" value="' + envVal + '" data-auto="1" oninput="this.dataset.auto=&quot;&quot;;calcMM()" style="' + inStyle + '"></td>'
       + '<td style="padding:4px 3px;width:100px;"><select class="mm-truck" onchange="onMMTruckChange(this,' + i + ')" style="' + inStyle + '">' + truckOpts + '</select></td>'
-      + '<td style="padding:4px 3px;width:70px;"><input type="number" class="mm-minload" placeholder="' + minLoadDef + '" min="1" step="1" value="' + minLoadVal + '" oninput="calcMM()" title="Min per load — auto-filled, manually overridable" style="' + inStyle + '"></td>'
+      + '<td style="padding:4px 3px;width:70px;"><input type="number" class="mm-minload" placeholder="' + minLoadDef + '" min="1" step="1" value="' + minLoadVal + '" oninput="calcMM()" title="Min per load — auto-filled, manually overridable" style="' + inStyle + '">'
+      + '<label style="display:flex;align-items:center;gap:3px;margin-top:3px;font-size:9px;font-weight:700;color:#4a7cc7;cursor:pointer;white-space:nowrap;" title="Ride on the same truck as the matching row above (same plant + truck)."><input type="checkbox" class="mm-coload"' + (ex.coload ? ' checked' : '') + ' onchange="calcMM()" style="width:auto;margin:0;cursor:pointer;"> Co-load &#9650;</label></td>'
       + '<td style="padding:4px 3px;min-width:160px;">' + pSel + '</td>'
       + '</tr>';
   }
@@ -4005,7 +4007,8 @@ function getMMData() {
     var rowUnit   = (tr.querySelector(".mm-unit")   ||{}).value || "tons";
     var rowMinRaw = parseFloat((tr.querySelector(".mm-minload")||{}).value);
     var rowMin    = rowMinRaw > 0 ? rowMinRaw : getDefaultMinPerLoad(rowUnit, rowTruck);
-    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, unit: rowUnit, price: price, haul: haul, env: env, truck: rowTruck, minload: rowMin});
+    var coload    = !!((tr.querySelector(".mm-coload")||{}).checked);
+    if(qty > 0 || desc) rows.push({desc: desc, plant: plant, qty: qty, unit: rowUnit, price: price, haul: haul, env: env, truck: rowTruck, minload: rowMin, coload: coload});
   });
   return rows;
 }
@@ -4018,9 +4021,11 @@ function getMMData() {
 // Group MM rows that ride the same truck from the same plant so the per-load
 // (truck-cap) minimum applies ONCE to the combined quantity instead of per
 // material — 8 scoops + 3 scoops on one truck = one 25t-min load, not two
-// minimums. Hourly/per-load rows and rows with a manually overridden min/load
-// keep their own row-level math. Env fee is charged once per group (on its
-// first row) from the group's load count.
+// minimums. Co-loading is explicit opt-in: only rows with the Co-load box
+// checked group (same truck + plant). Hourly/per-load rows and rows with a
+// manually overridden min/load keep their own row-level math. The group's
+// combined load count is split per-row (proportional to tonnage) so each
+// row's env fee bills at its OWN rate.
 function mmComputeShared(rows) {
   var groups = {};
   rows.forEach(function(row, i) {
@@ -4028,24 +4033,39 @@ function mmComputeShared(rows) {
     // The min/load field auto-fills with the unit default, so only a value
     // that DIFFERS from the default counts as a manual override.
     var custom = row.minload > 0 && row.minload !== getDefaultMinPerLoad(rowUnit, row.truck);
-    var solo = rowUnit === 'load' || rowUnit === 'hour' || custom;
-    var key = solo ? ("solo" + i) : ((row.truck || "") + "|" + (row.plant || ""));
+    var solo = !row.coload || rowUnit === 'load' || rowUnit === 'hour' || custom;
+    var key = solo ? ("solo" + i) : (truckKey(row.truck) + "|" + (row.plant || ""));
     (groups[key] = groups[key] || []).push(i);
   });
   var out = rows.map(function(){ return {}; });
   Object.keys(groups).forEach(function(key) {
     var idxs = groups[key];
     if(key.indexOf("solo") === 0) { out[idxs[0]] = null; return; }  // row-level math
-    var first = rows[idxs[0]];
-    var cap = (first.truck && TRUCK_RATES[first.truck]) ? TRUCK_RATES[first.truck].cap : 25;
+    var cap = truckCap(rows[idxs[0]].truck);
+    var tons = idxs.map(function(i){ return unitToTons(rows[i].qty, rows[i].unit || "tons"); });
     var actual = 0;
-    idxs.forEach(function(i){ actual += unitToTons(rows[i].qty, rows[i].unit || "tons"); });
+    tons.forEach(function(t){ actual += t; });
     var billTons = actual > 0 ? Math.ceil(actual / cap) * cap : 0;
     var loads = actual > 0 ? Math.ceil(billTons / cap) : 0;
+    // Per-row env-fee loads: each row's proportional share of the group's
+    // combined count, rounded; the rounding remainder lands on the largest
+    // row (spilling to the next-largest only if a clamp blocks it) so the
+    // group total always equals ceil(sum/cap). A row's share stays within
+    // [0, what its own tonnage alone would need].
+    var rowLoads = tons.map(function(t){ return actual > 0 ? Math.round(loads * t / actual) : 0; });
+    var assigned = 0;
+    rowLoads.forEach(function(n){ assigned += n; });
+    var rem = loads - assigned;
+    var order = tons.map(function(_, k){ return k; }).sort(function(a, b){ return tons[b] - tons[a]; });
+    for(var oi = 0; oi < order.length && rem !== 0; oi++) {
+      var k2 = order[oi];
+      var next = Math.min(Math.ceil(tons[k2] / cap), Math.max(0, rowLoads[k2] + rem));
+      rem -= (next - rowLoads[k2]);
+      rowLoads[k2] = next;
+    }
     idxs.forEach(function(i, k) {
-      var rowTons = unitToTons(rows[i].qty, rows[i].unit || "tons");
-      out[i] = {billTons: actual > 0 ? billTons * rowTons / actual : 0, loads: loads,
-                envHere: k === 0, shared: idxs.length > 1, minHit: billTons > actual};
+      out[i] = {billTons: actual > 0 ? billTons * tons[k] / actual : 0, loads: rowLoads[k],
+                shared: idxs.length > 1, minHit: billTons > actual};
     });
   });
   return out;
@@ -4076,9 +4096,9 @@ function computeMMRow(row, txr, shr) {
     efTotal = loads * row.env;
     efTax = efTotal * txr;
   } else if(shr) {
-    // shared-load group math (see mmComputeShared)
+    // shared-load group math (see mmComputeShared); loads = this row's share
     effTons = shr.billTons;
-    loads = shr.envHere ? shr.loads : 0;
+    loads = shr.loads;
     sc = getMmFuelSurcharge(row.haul);
     haulBase = row.haul * effTons;
     haul = (row.haul + sc) * effTons;
@@ -5914,12 +5934,15 @@ pmLoadFromSheet();
     });
     function rowVals(tr, cls) {
       var o = {};
-      cls.forEach(function (c) { var e = tr.querySelector("." + c); o[c] = e ? e.value : ""; });
+      cls.forEach(function (c) {
+        var e = tr.querySelector("." + c);
+        o[c] = e ? (e.type === "checkbox" ? (e.checked ? "1" : "") : e.value) : "";
+      });
       return o;
     }
     var materials = [], demo = [];
     var mmCls = ["mm-plant", "mm-plant-custom-name", "mm-plant-custom-addr", "mm-mat",
-      "mm-mat-custom", "mm-qty", "mm-price", "mm-haul", "mm-env", "mm-truck", "mm-unit", "mm-minload"];
+      "mm-mat-custom", "mm-qty", "mm-price", "mm-haul", "mm-env", "mm-truck", "mm-unit", "mm-minload", "mm-coload"];
     var dmCls = ["dm-mat", "dm-mat-custom", "dm-qty", "dm-unit", "dm-truck", "dm-haul", "dm-dump", "dm-minload"];
     var mb = document.getElementById("mmTbody");
     if (mb) mb.querySelectorAll("tr").forEach(function (tr) { materials.push(rowVals(tr, mmCls)); });
@@ -5955,6 +5978,40 @@ pmLoadFromSheet();
       },
       total: grand
     };
+  }
+
+  // Re-derive the pre-opt-in implicit grouping for a legacy payload: rows
+  // with qty > 0 that shared the OLD raw truck|plant key (same load/hour and
+  // min/load-override exemptions, no truck-alias mapping — faithful to the
+  // historical key) get their Co-load box checked.
+  function _legacyColoadBackfill(trs) {
+    var groups = {};
+    trs.forEach(function (tr) {
+      function val(c) { var e = tr.querySelector(c); return e ? e.value : ""; }
+      var qty = parseFloat(val(".mm-qty")) || 0;
+      if (!(qty > 0)) return;
+      var unit = val(".mm-unit") || "tons";
+      var truckV = val(".mm-truck") || "";
+      var minRaw = parseFloat(val(".mm-minload"));
+      if (unit === "load" || unit === "hour"
+        || (minRaw > 0 && minRaw !== getDefaultMinPerLoad(unit, truckV))) return;
+      var sel = tr.querySelector(".mm-plant");
+      var plant = "";
+      if (sel) {
+        if (sel.value === "__other__") plant = val(".mm-plant-custom-name").trim();
+        else if (sel.selectedIndex >= 0) plant = sel.options[sel.selectedIndex].text;
+      }
+      if (plant === "— Select plant —") plant = "";
+      var key = truckV + "|" + plant;
+      (groups[key] = groups[key] || []).push(tr);
+    });
+    Object.keys(groups).forEach(function (k) {
+      if (groups[k].length < 2) return;
+      groups[k].forEach(function (tr) {
+        var cb = tr.querySelector(".mm-coload");
+        if (cb) cb.checked = true;
+      });
+    });
   }
 
   // ── restore (used by Open/Edit in later steps) ───────────────────────
@@ -5997,7 +6054,16 @@ pmLoadFromSheet();
         set(".mm-haul", m["mm-haul"]);
         set(".mm-env", m["mm-env"]);
         set(".mm-minload", m["mm-minload"]);
+        var cb = tr.querySelector(".mm-coload");
+        if (cb) cb.checked = !!m["mm-coload"];
       });
+      // Payloads saved before the Co-load checkbox existed have no mm-coload
+      // field; those quotes were priced with implicit truck|plant grouping,
+      // so check the boxes they would have grouped under to keep their
+      // original totals on reopen.
+      if (p.materials.length && !p.materials.some(function (m) { return "mm-coload" in m; })) {
+        _legacyColoadBackfill(trs);
+      }
     }
     if (typeof renderDemoRows === "function") renderDemoRows();
     if (p.demo) {
