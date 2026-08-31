@@ -658,7 +658,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           <div class="field">
             <label>Tax Rate (%) <span class="txbadge" id="txbadge"></span></label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="taxr" value="0" min="0" step="0.01" style="flex:1;" oninput="calc();if(typeof calcMM==='function'&&qStyle==='breakdown')calcMM();">
+              <input type="number" id="taxr" value="0" min="0" step="0.01" style="flex:1;" oninput="taxManualEdit()">
               <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#e8251f;cursor:pointer;white-space:nowrap;">
                 <input type="checkbox" id="taxExempt" onchange="setTaxExempt(this.checked)" style="width:15px;height:15px;cursor:pointer;">
                 Tax Exempt / Resale
@@ -1330,7 +1330,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
       <div>
         <div class="fr2">
           <div class="field"><label>Env Fee ($)</label><input type="number" id="def_" value="10" min="0" step="0.01" oninput="calcDemo()"></div>
-          <div class="field"><label>Tax Rate (%)</label><input type="number" id="dtaxr" value="0" min="0" step="0.01" oninput="calcDemo()"></div>
+          <div class="field"><label>Tax Rate (%)</label><input type="number" id="dtaxr" value="0" min="0" step="0.01" oninput="taxRateSource='manual';calcDemo()"></div>
         </div>
         <div class="field"><label>Mark Up ($/ton)</label><input type="number" id="dmu" value="0" min="0" step="0.01" oninput="calcDemo()"></div>
         <div class="field" style="background:rgba(247,201,72,.07);border:1.5px solid rgba(247,201,72,.25);border-radius:6px;padding:10px 12px;margin-top:4px;">
@@ -2648,7 +2648,14 @@ function initMaps() {
     if(p.place_id) { locPid=p.place_id; tryMiles(); }
     if(p.geometry && p.geometry.location) {
       locLat=p.geometry.location.lat(); locLng=p.geometry.location.lng();
-      fetchTax(locLat,locLng);
+      // County hint so the fallback estimates the right county, not LA.
+      let county = "";
+      if(p.address_components) {
+        p.address_components.forEach(c => {
+          if(c.types.includes("administrative_area_level_2")) county = c.long_name;
+        });
+      }
+      fetchTax(locLat, locLng, county);
       autoAssignZone(p.address_components, locLat, locLng);
     }
   });
@@ -2905,20 +2912,26 @@ function straightLineFallback(applyMiles, stEl) {
 }
 
 // ── CA COUNTY TAX FALLBACK TABLE ──────────────────────────────────────────────
+// Countywide (unincorporated-area) rates from cdtfa.ca.gov, refreshed
+// 2026-08-31 and spot-verified against the CDTFA geocoded API. Last resort
+// only — the sm-tax-proxy Worker serves the real district rate.
 const CA_TAX = {
-  "los angeles":0.1025,"san bernardino":0.0775,"riverside":0.0775,
-  "orange":0.0775,"ventura":0.0775,"san diego":0.0775,"kern":0.0775,
-  "santa barbara":0.0775,"san luis obispo":0.0775,"fresno":0.0975,
-  "tulare":0.0775,"kings":0.0725,"monterey":0.0925,"santa cruz":0.0875,
-  "san benito":0.0775,"merced":0.0775,"madera":0.0775,"stanislaus":0.0875,
+  "los angeles":0.0975,"san bernardino":0.0775,"riverside":0.0775,
+  "orange":0.0775,"ventura":0.0725,"san diego":0.0775,"kern":0.0825,
+  "santa barbara":0.0775,"san luis obispo":0.0725,"fresno":0.07975,
+  "tulare":0.0775,"kings":0.0725,"monterey":0.0875,"santa cruz":0.095,
+  "san benito":0.0825,"merced":0.0775,"madera":0.0775,"stanislaus":0.07875,
   "san joaquin":0.0775,"alameda":0.1025,"contra costa":0.0875,
-  "san francisco":0.0875,"san mateo":0.0875,"santa clara":0.0925,
-  "marin":0.0875,"sonoma":0.0875,"napa":0.0775,"solano":0.0775,
-  "yolo":0.0775,"sacramento":0.0875,"el dorado":0.0775,"placer":0.0725,
-  "nevada":0.0725,"shasta":0.0775,"humboldt":0.0875,"default":0.0775
+  "san francisco":0.08625,"san mateo":0.09375,"santa clara":0.0975,
+  "marin":0.0825,"sonoma":0.0925,"napa":0.0775,"solano":0.07375,
+  "yolo":0.0725,"sacramento":0.0775,"el dorado":0.0725,"placer":0.0725,
+  "nevada":0.075,"shasta":0.0725,"humboldt":0.0875,"default":0.0775
 };
+// Where the displayed rate came from — "cdtfa" (live), "estimate" (county
+// table), or "manual" (hand-typed). Serialized into the quote doc.
+var taxRateSource = "";
 
-function applyTaxRate(pct, source, badge) {
+function applyTaxRate(pct, source, badge, srcType) {
   var taxrEl = document.getElementById("taxr");
   var teEl = document.getElementById("taxExempt");
   if(teEl && teEl.checked) {
@@ -2929,52 +2942,55 @@ function applyTaxRate(pct, source, badge) {
     taxrEl.value = pct;
   }
   document.getElementById("dtaxr").value = pct;
+  taxRateSource = srcType || "cdtfa";
+  var srcColor = taxRateSource === "estimate" ? "#b8742a" : "#2a8a4a";
   const txst = document.getElementById("txst");
   ["txbadge","dtxbadge"].forEach(id=>{
     const b=document.getElementById(id);
-    if(b){ b.textContent=badge; b.style.display="inline"; }
+    if(b){ b.textContent=badge; b.style.display="inline"; b.style.color=srcColor; }
   });
-  if(txst){ txst.textContent = badge + " · " + source; txst.style.color="#2a8a4a"; }
+  if(txst){ txst.textContent = badge + " · " + source; txst.style.color=srcColor; }
+  calc();
+  if(typeof calcMM === "function" && qStyle === "breakdown") calcMM();
+}
+
+// Hand-typed rate: mark the source and recalc (wired to #taxr oninput).
+function taxManualEdit() {
+  taxRateSource = "manual";
+  ["txbadge","dtxbadge"].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){ b.textContent="✎ manual"; b.style.color="#555"; b.style.display="inline"; }
+  });
   calc();
   if(typeof calcMM === "function" && qStyle === "breakdown") calcMM();
 }
 
 // ── CA TAX LOOKUP ─────────────────────────────────────────────────────────────
+// Server-side via the sm-tax-proxy Worker: CDTFA sends no CORS headers so the
+// browser can never read it directly, and the public CORS proxies the old
+// chain rode on died Aug 2026. County table is the last resort only.
+const TAX_PROXY = "https://sm-tax-proxy.jason-81c.workers.dev";
 function fetchTax(lat, lng, countyHint) {
   const txst = document.getElementById("txst");
   if(txst) { txst.textContent="⟳ Looking up CA sales tax..."; txst.style.color="#4a7cc7"; }
-  const cdtfaUrl = `https://services.maps.cdtfa.ca.gov/api/taxrate/GetRateByLngLat?Longitude=${lng}&Latitude=${lat}`;
-
-  function applyRate(data) {
-    if(data.taxRateInfo && data.taxRateInfo.length>0) {
-      const info = data.taxRateInfo[0];
-      const pct = (info.rate*100).toFixed(4).replace(/\.?0+$/,"");
-      const jur = info.jurisdiction||info.city||info.county||"CA";
-      const cty = info.county||"";
-      applyTaxRate(pct, "✓ CA tax rate auto-filled — edit if needed", `✓ ${pct}% — ${jur}${cty&&cty!==jur?", "+cty:""}`);
-      return true;
-    }
-    return false;
-  }
 
   function countyFallback() {
-    // Use county from address components or try to reverse-geocode
     const county = (countyHint||"").toLowerCase().replace(" county","").trim();
     const rate = CA_TAX[county] || CA_TAX["los angeles"]; // default to LA rate
-    const pct = (rate*100).toFixed(2).replace(/\.?0+$/,"");
+    const pct = (rate*100).toFixed(3).replace(/\.?0+$/,"");
     const label = county ? county.replace(/\b\w/g,c=>c.toUpperCase())+" County" : "Los Angeles County";
-    applyTaxRate(pct, `⚠ Estimated rate (${label}) — CDTFA lookup unavailable`, `~${pct}% — ${label} (est.)`);
+    applyTaxRate(pct, `⚠ Estimated rate (${label}) — live lookup unavailable`, `~${pct}% — ${label} (est.)`, "estimate");
   }
 
-  fetch(cdtfaUrl, {signal: AbortSignal.timeout(4000)})
-    .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
-    .catch(()=>fetch(`https://corsproxy.io/?${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
-      .then(r=>r.json()).then(d=>{ if(!applyRate(d)) countyFallback(); })
-      .catch(()=>fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cdtfaUrl)}`, {signal: AbortSignal.timeout(4000)})
-        .then(r=>r.json()).then(w=>{ if(!applyRate(JSON.parse(w.contents))) countyFallback(); })
-        .catch(()=>countyFallback())
-      )
-    );
+  fetch(`${TAX_PROXY}/taxrate?lat=${lat}&lng=${lng}`, {signal: AbortSignal.timeout(6000)})
+    .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+    .then(d=>{
+      if(!(d && d.rate > 0)) throw new Error("no rate");
+      const pct = (d.rate*100).toFixed(4).replace(/\.?0+$/,"");
+      const jur = d.jurisdiction||"CA";
+      applyTaxRate(pct, "✓ CA tax rate auto-filled — edit if needed", `✓ ${pct}% — ${jur}${d.county&&d.county!==jur?", "+d.county:""}`, "cdtfa");
+    })
+    .catch(countyFallback);
 }
 
 // ── GEO-FENCE MAP ─────────────────────────────────────────────────────────────
@@ -5972,7 +5988,8 @@ pmLoadFromSheet();
         pay: (typeof pay !== "undefined") ? pay : "cash",
         currentMiles: (typeof currentMiles !== "undefined") ? currentMiles : 0,
         currentMiles2: (typeof currentMiles2 !== "undefined") ? currentMiles2 : 0,
-        truck: (typeof truck !== "undefined") ? truck : null
+        truck: (typeof truck !== "undefined") ? truck : null,
+        taxSource: (typeof taxRateSource !== "undefined") ? taxRateSource : ""
       },
       inputs: inputs,
       materials: materials,
@@ -6039,6 +6056,7 @@ pmLoadFromSheet();
       if (typeof currentMiles !== "undefined") currentMiles = p.state.currentMiles || 0;
       if (typeof currentMiles2 !== "undefined") currentMiles2 = p.state.currentMiles2 || 0;
       if (typeof truck !== "undefined") truck = p.state.truck || null;
+      if (typeof taxRateSource !== "undefined") taxRateSource = p.state.taxSource || "";
     }
     // Scalar inputs first (sets brkMatCount/taxr/toggles/header before render)
     if (p.inputs) Object.keys(p.inputs).forEach(function (id) {
