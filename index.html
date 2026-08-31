@@ -658,7 +658,7 @@ input[readonly]{background:#f0f4f8!important;cursor:default;}
           <div class="field">
             <label>Tax Rate (%) <span class="txbadge" id="txbadge"></span></label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="taxr" value="0" min="0" step="0.01" style="flex:1;">
+              <input type="number" id="taxr" value="0" min="0" step="0.01" style="flex:1;" oninput="calc();if(typeof calcMM==='function'&&qStyle==='breakdown')calcMM();">
               <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#e8251f;cursor:pointer;white-space:nowrap;">
                 <input type="checkbox" id="taxExempt" onchange="setTaxExempt(this.checked)" style="width:15px;height:15px;cursor:pointer;">
                 Tax Exempt / Resale
@@ -1955,7 +1955,12 @@ function setTaxExempt(checked) {
   } else {
     taxr.disabled = false;
     taxr.style.opacity = "";
-    taxr.value = taxr.dataset.prevVal || "0";
+    if(!(parseFloat(taxr.value) > 0)) {
+      taxr.value = taxr.dataset.prevVal || "0";
+      // Reopened exempt quotes carry no stashed rate (dataset.prevVal is not
+      // serialized) — re-derive from the job site instead of leaving 0.
+      if(!(parseFloat(taxr.value) > 0) && locLat != null && locLng != null) fetchTax(locLat, locLng);
+    }
   }
   calc();
 }
@@ -2914,7 +2919,15 @@ const CA_TAX = {
 };
 
 function applyTaxRate(pct, source, badge) {
-  document.getElementById("taxr").value = pct;
+  var taxrEl = document.getElementById("taxr");
+  var teEl = document.getElementById("taxExempt");
+  if(teEl && teEl.checked) {
+    // Active exemption: hold the looked-up rate for un-exempting instead of
+    // silently re-adding tax to an exempt quote on an address change.
+    taxrEl.dataset.prevVal = pct;
+  } else {
+    taxrEl.value = pct;
+  }
   document.getElementById("dtaxr").value = pct;
   const txst = document.getElementById("txst");
   ["txbadge","dtxbadge"].forEach(id=>{
@@ -6033,6 +6046,12 @@ pmLoadFromSheet();
       var r = p.inputs[id];
       if (r.c !== undefined) el.checked = r.c; else el.value = r.v;
     });
+    // Route the restored exempt flag through setTaxExempt so #taxr's
+    // disabled/greyed state matches the checkbox (the raw loop above only
+    // sets .checked). Safe for non-exempt quotes: the un-exempt branch
+    // never clobbers a restored nonzero rate.
+    var teRestored = document.getElementById("taxExempt");
+    if (teRestored && typeof setTaxExempt === "function") setTaxExempt(teRestored.checked);
     if (typeof renderMMRows === "function") renderMMRows();
     if (p.materials) {
       var trs = document.querySelectorAll("#mmTbody tr");
